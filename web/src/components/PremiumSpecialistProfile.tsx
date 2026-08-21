@@ -66,10 +66,10 @@ export default function PremiumSpecialistProfile({
               <img
                 src={withBasePath(premium.logoImageUrl)}
                 alt={specialist.name}
-                className="-mt-14 h-28 w-28 shrink-0 rounded-3xl border-4 border-white object-cover shadow-xl sm:-mt-20 sm:h-40 sm:w-40"
+                className="relative z-10 -mt-14 h-28 w-28 shrink-0 rounded-3xl border-4 border-white object-cover shadow-xl sm:-mt-20 sm:h-40 sm:w-40"
               />
             ) : (
-              <div className="-mt-14 flex h-28 w-28 shrink-0 items-center justify-center rounded-3xl border-4 border-white bg-zinc-900 text-2xl font-semibold text-white shadow-xl sm:-mt-20 sm:h-40 sm:w-40">
+              <div className="relative z-10 -mt-14 flex h-28 w-28 shrink-0 items-center justify-center rounded-3xl border-4 border-white bg-zinc-900 text-2xl font-semibold text-white shadow-xl sm:-mt-20 sm:h-40 sm:w-40">
                 {specialist.avatarInitials}
               </div>
             )}

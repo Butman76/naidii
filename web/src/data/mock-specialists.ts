@@ -3,7 +3,7 @@ import type { Specialist, SpecialistBadge } from "@/types/specialist";
 // TODO: replace with a real fetch from PocketBase (specialist_profiles,
 // joined with promotions for the Топ-20 grid per ТЗ §4.4/§8.3) once the
 // backend is reachable over a public domain — see pocketbase/README.md.
-// This placeholder data exists only to preview the homepage layout while
+// This placeholder data exists only to preview page layouts while
 // naidii.ru's DNS is still pending (expected 2026-08-24).
 const TEMPLATES: Array<{
   name: string;
@@ -77,9 +77,8 @@ const BADGE_CYCLE: SpecialistBadge[][] = [
   [],
 ];
 
-export const mockTopSpecialists: Specialist[] = Array.from(
-  { length: 20 },
-  (_, i) => {
+function buildMockSpecialists(count: number): Specialist[] {
+  return Array.from({ length: count }, (_, i) => {
     const t = TEMPLATES[i % TEMPLATES.length];
     return {
       id: `mock-${i + 1}`,
@@ -100,5 +99,13 @@ export const mockTopSpecialists: Specialist[] = Array.from(
         .slice(0, 2)
         .toUpperCase(),
     };
-  }
-);
+  });
+}
+
+// Топ-20 продвигаемых специалистов для главной (ТЗ §4.4/§8.3).
+export const mockTopSpecialists: Specialist[] = buildMockSpecialists(20);
+
+// Полный каталог для /specialists — крупнее, чтобы было на чём проверять
+// фильтры и сортировку. Первые 20 совпадают с mockTopSpecialists, т.к. оба
+// массива детерминированно строятся из одних и тех же шаблонов.
+export const mockSpecialists: Specialist[] = buildMockSpecialists(48);

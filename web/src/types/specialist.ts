@@ -6,6 +6,7 @@ export interface Specialist {
   name: string;
   title: string;
   shortDescription: string;
+  category: string;
   skills: string[];
   priceFrom: string;
   rating: number;

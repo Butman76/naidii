@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import SpecialistCard from "./SpecialistCard";
 import { mockSpecialists } from "@/data/mock-specialists";
+import { CATEGORIES } from "@/data/categories";
 
 type SortOption = "rating" | "priceAsc" | "reviews";
 
@@ -17,15 +18,24 @@ function parsePriceFrom(priceFrom: string): number {
   return digits ? Number(digits) : Infinity;
 }
 
-const ALL_SKILLS = Array.from(
-  new Set(mockSpecialists.flatMap((s) => s.skills))
-).sort();
-
 export default function SpecialistsCatalog() {
   const [query, setQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [remoteOnly, setRemoteOnly] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("rating");
+
+  function selectCategory(slug: string | null) {
+    setActiveCategory(slug);
+    setSelectedSkills([]);
+  }
+
+  const availableSkills = useMemo(() => {
+    const pool = activeCategory
+      ? mockSpecialists.filter((s) => s.category === activeCategory)
+      : mockSpecialists;
+    return Array.from(new Set(pool.flatMap((s) => s.skills))).sort();
+  }, [activeCategory]);
 
   function toggleSkill(skill: string) {
     setSelectedSkills((prev) =>
@@ -39,6 +49,7 @@ export default function SpecialistsCatalog() {
     const q = query.trim().toLowerCase();
 
     const list = mockSpecialists.filter((s) => {
+      if (activeCategory && s.category !== activeCategory) return false;
       if (remoteOnly && !s.location.includes("Удалённо")) return false;
       if (
         selectedSkills.length > 0 &&
@@ -58,7 +69,7 @@ export default function SpecialistsCatalog() {
       if (sortBy === "reviews") return b.reviewsCount - a.reviewsCount;
       return b.rating - a.rating;
     });
-  }, [query, selectedSkills, remoteOnly, sortBy]);
+  }, [query, activeCategory, selectedSkills, remoteOnly, sortBy]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -96,8 +107,36 @@ export default function SpecialistsCatalog() {
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        {ALL_SKILLS.map((skill) => {
+      <div className="mt-6 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => selectCategory(null)}
+          className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+            activeCategory === null
+              ? "border-zinc-900 bg-zinc-900 text-white"
+              : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-400"
+          }`}
+        >
+          Все направления
+        </button>
+        {CATEGORIES.map((category) => (
+          <button
+            key={category.slug}
+            type="button"
+            onClick={() => selectCategory(category.slug)}
+            className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+              activeCategory === category.slug
+                ? "border-zinc-900 bg-zinc-900 text-white"
+                : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-400"
+            }`}
+          >
+            {category.name}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        {availableSkills.map((skill) => {
           const active = selectedSkills.includes(skill);
           return (
             <button

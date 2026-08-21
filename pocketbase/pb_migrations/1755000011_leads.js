@@ -49,12 +49,17 @@ migrate((app) => {
       "CREATE INDEX idx_leads_profile ON leads (specialist_profile_id)",
       "CREATE INDEX idx_leads_status ON leads (status)",
     ],
-    listRule: "specialist_profile_id.user_id = @request.auth.id || customer_id = @request.auth.id || @request.auth.role = \"admin\"",
-    viewRule: "specialist_profile_id.user_id = @request.auth.id || customer_id = @request.auth.id || @request.auth.role = \"admin\"",
-    createRule: "",
-    updateRule: "specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\"",
-    deleteRule: "@request.auth.role = \"admin\"",
   })
+
+  // saved once first so the table exists before rules that traverse into
+  // specialist_profile_id.* are validated.
+  app.save(collection)
+
+  collection.listRule = "specialist_profile_id.user_id = @request.auth.id || customer_id = @request.auth.id || @request.auth.role = \"admin\""
+  collection.viewRule = "specialist_profile_id.user_id = @request.auth.id || customer_id = @request.auth.id || @request.auth.role = \"admin\""
+  collection.createRule = ""
+  collection.updateRule = "specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\""
+  collection.deleteRule = "@request.auth.role = \"admin\""
 
   return app.save(collection)
 }, (app) => {

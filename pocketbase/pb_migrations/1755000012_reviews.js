@@ -44,12 +44,17 @@ migrate((app) => {
     indexes: [
       "CREATE INDEX idx_reviews_profile ON reviews (specialist_profile_id)",
     ],
-    listRule: "status = \"approved\" || customer_id = @request.auth.id || specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\"",
-    viewRule: "status = \"approved\" || customer_id = @request.auth.id || specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\"",
-    createRule: "@request.auth.id != \"\" && @request.body.customer_id = @request.auth.id",
-    updateRule: "@request.auth.role = \"admin\" || @request.auth.role = \"moderator\"",
-    deleteRule: "@request.auth.role = \"admin\"",
   })
+
+  // saved once first so the table exists before rules that traverse into
+  // specialist_profile_id.* are validated.
+  app.save(collection)
+
+  collection.listRule = "status = \"approved\" || customer_id = @request.auth.id || specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\""
+  collection.viewRule = "status = \"approved\" || customer_id = @request.auth.id || specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\""
+  collection.createRule = "@request.auth.id != \"\" && @request.body.customer_id = @request.auth.id"
+  collection.updateRule = "@request.auth.role = \"admin\" || @request.auth.role = \"moderator\""
+  collection.deleteRule = "@request.auth.role = \"admin\""
 
   return app.save(collection)
 }, (app) => {

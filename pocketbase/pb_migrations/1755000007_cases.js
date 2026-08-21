@@ -48,12 +48,17 @@ migrate((app) => {
     indexes: [
       "CREATE INDEX idx_cases_profile ON cases (specialist_profile_id)",
     ],
-    listRule: "moderation_status = \"approved\" || specialist_profile_id.user_id = @request.auth.id || (@request.auth.role = \"admin\" || @request.auth.role = \"moderator\")",
-    viewRule: "moderation_status = \"approved\" || specialist_profile_id.user_id = @request.auth.id || (@request.auth.role = \"admin\" || @request.auth.role = \"moderator\")",
-    createRule: "@request.body.specialist_profile_id.user_id = @request.auth.id",
-    updateRule: "specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\" || @request.auth.role = \"moderator\"",
-    deleteRule: "specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\"",
   })
+
+  // saved once first so the table exists before rules that traverse into
+  // specialist_profile_id.* are validated.
+  app.save(collection)
+
+  collection.listRule = "moderation_status = \"approved\" || specialist_profile_id.user_id = @request.auth.id || (@request.auth.role = \"admin\" || @request.auth.role = \"moderator\")"
+  collection.viewRule = "moderation_status = \"approved\" || specialist_profile_id.user_id = @request.auth.id || (@request.auth.role = \"admin\" || @request.auth.role = \"moderator\")"
+  collection.createRule = "@request.body.specialist_profile_id.user_id = @request.auth.id"
+  collection.updateRule = "specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\" || @request.auth.role = \"moderator\""
+  collection.deleteRule = "specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\""
 
   return app.save(collection)
 }, (app) => {

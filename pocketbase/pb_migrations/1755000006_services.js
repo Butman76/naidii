@@ -30,12 +30,17 @@ migrate((app) => {
     indexes: [
       "CREATE INDEX idx_services_profile ON services (specialist_profile_id)",
     ],
-    listRule: "active = true && specialist_profile_id.profile_status = \"published\" || specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\"",
-    viewRule: "active = true && specialist_profile_id.profile_status = \"published\" || specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\"",
-    createRule: "@request.body.specialist_profile_id.user_id = @request.auth.id",
-    updateRule: "specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\"",
-    deleteRule: "specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\"",
   })
+
+  // saved once first so the table exists before rules that traverse into
+  // specialist_profile_id.* are validated.
+  app.save(collection)
+
+  collection.listRule = "active = true && specialist_profile_id.profile_status = \"published\" || specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\""
+  collection.viewRule = "active = true && specialist_profile_id.profile_status = \"published\" || specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\""
+  collection.createRule = "@request.body.specialist_profile_id.user_id = @request.auth.id"
+  collection.updateRule = "specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\""
+  collection.deleteRule = "specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\""
 
   return app.save(collection)
 }, (app) => {

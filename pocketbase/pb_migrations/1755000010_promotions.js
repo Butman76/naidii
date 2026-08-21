@@ -56,12 +56,17 @@ migrate((app) => {
       "CREATE INDEX idx_promotions_status ON promotions (status)",
       "CREATE UNIQUE INDEX idx_promotions_position ON promotions (top_position) WHERE top_position IS NOT NULL AND status = 'active'",
     ],
-    listRule: "status = \"active\" || specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\"",
-    viewRule: "status = \"active\" || specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\"",
-    createRule: "@request.auth.role = \"admin\"",
-    updateRule: "@request.auth.role = \"admin\"",
-    deleteRule: "@request.auth.role = \"admin\"",
   })
+
+  // saved once first so the table exists before rules that traverse into
+  // specialist_profile_id.* are validated.
+  app.save(collection)
+
+  collection.listRule = "status = \"active\" || specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\""
+  collection.viewRule = "status = \"active\" || specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\""
+  collection.createRule = "@request.auth.role = \"admin\""
+  collection.updateRule = "@request.auth.role = \"admin\""
+  collection.deleteRule = "@request.auth.role = \"admin\""
 
   return app.save(collection)
 }, (app) => {

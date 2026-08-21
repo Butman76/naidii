@@ -37,12 +37,19 @@ migrate((app) => {
     indexes: [
       "CREATE UNIQUE INDEX idx_specialist_skills_pair ON specialist_skills (specialist_profile_id, skill_id)",
     ],
-    listRule: "",
-    viewRule: "",
-    createRule: "@request.body.specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\"",
-    updateRule: "specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\"",
-    deleteRule: "specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\"",
   })
+
+  // saved once first so the table exists, since the rules below traverse
+  // into the related specialist_profiles record (specialist_profile_id.*)
+  // and PocketBase can't validate that traversal against a table that
+  // doesn't exist yet.
+  app.save(collection)
+
+  collection.listRule = ""
+  collection.viewRule = ""
+  collection.createRule = "@request.body.specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\""
+  collection.updateRule = "specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\""
+  collection.deleteRule = "specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\""
 
   return app.save(collection)
 }, (app) => {

@@ -46,15 +46,12 @@ migrate((app) => {
     ],
   })
 
-  // saved once first so the table exists before rules that traverse into
-  // specialist_profile_id.* are validated.
-  app.save(collection)
-
-  collection.listRule = "status = \"approved\" || customer_id = @request.auth.id || specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\""
-  collection.viewRule = "status = \"approved\" || customer_id = @request.auth.id || specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\""
   collection.createRule = "@request.auth.id != \"\" && @request.body.customer_id = @request.auth.id"
   collection.updateRule = "@request.auth.role = \"admin\" || @request.auth.role = \"moderator\""
   collection.deleteRule = "@request.auth.role = \"admin\""
+  // listRule/viewRule traverse into the related specialist_profiles
+  // record; set later in 1755000015_relation_traversal_rules.js once this
+  // table is committed.
 
   return app.save(collection)
 }, (app) => {

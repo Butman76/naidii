@@ -39,17 +39,14 @@ migrate((app) => {
     ],
   })
 
-  // saved once first so the table exists, since the rules below traverse
-  // into the related specialist_profiles record (specialist_profile_id.*)
-  // and PocketBase can't validate that traversal against a table that
-  // doesn't exist yet.
-  app.save(collection)
-
   collection.listRule = ""
   collection.viewRule = ""
   collection.createRule = "@request.body.specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\""
-  collection.updateRule = "specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\""
-  collection.deleteRule = "specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\""
+  // updateRule/deleteRule traverse into the related specialist_profiles
+  // record (specialist_profile_id.user_id); PocketBase can't validate that
+  // join against a table that doesn't exist yet within the same migration
+  // transaction, so those two are set later in
+  // 1755000015_relation_traversal_rules.js once this table is committed.
 
   return app.save(collection)
 }, (app) => {

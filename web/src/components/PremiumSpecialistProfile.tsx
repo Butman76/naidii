@@ -53,27 +53,28 @@ export default function PremiumSpecialistProfile({
         <div className="absolute right-4 top-4 rounded-full bg-black/30 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm sm:right-8 sm:top-6">
           ★ Премиум-профиль
         </div>
-
-        {/* Логотип лежит поверх обложки, а не наполовину съезжает на белый
-            фон под ней, как обычный круглый аватар. */}
-        {premium.logoImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={withBasePath(premium.logoImageUrl)}
-            alt={specialist.name}
-            className="absolute bottom-4 left-4 h-24 w-24 rounded-2xl border-4 border-white object-cover shadow-xl sm:bottom-6 sm:left-8 sm:h-32 sm:w-32"
-          />
-        ) : (
-          <div className="absolute bottom-4 left-4 flex h-24 w-24 items-center justify-center rounded-2xl border-4 border-white bg-zinc-900 text-2xl font-semibold text-white shadow-xl sm:bottom-6 sm:left-8 sm:h-32 sm:w-32">
-            {specialist.avatarInitials}
-          </div>
-        )}
       </div>
 
       <div className="border-b border-zinc-200 bg-white">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-6 pb-8 pt-6 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0 flex-1">
+          <div className="flex flex-col gap-6 pb-8 sm:flex-row sm:items-end">
+            {/* Логотип наполовину лежит на обложке, наполовину — на белом
+                фоне под ней (как обычный аватар, только крупнее и квадратом
+                со скруглёнными углами вместо круга). */}
+            {premium.logoImageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={withBasePath(premium.logoImageUrl)}
+                alt={specialist.name}
+                className="-mt-14 h-28 w-28 shrink-0 rounded-3xl border-4 border-white object-cover shadow-xl sm:-mt-20 sm:h-40 sm:w-40"
+              />
+            ) : (
+              <div className="-mt-14 flex h-28 w-28 shrink-0 items-center justify-center rounded-3xl border-4 border-white bg-zinc-900 text-2xl font-semibold text-white shadow-xl sm:-mt-20 sm:h-40 sm:w-40">
+                {specialist.avatarInitials}
+              </div>
+            )}
+
+            <div className="min-w-0 flex-1 pt-4 sm:pt-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-2xl font-bold text-zinc-900 sm:text-3xl">
                   {specialist.name}
@@ -95,7 +96,7 @@ export default function PremiumSpecialistProfile({
               </p>
             </div>
 
-            <div className="flex shrink-0 flex-col items-start gap-3 sm:items-end">
+            <div className="flex shrink-0 flex-col items-start gap-3 pt-4 sm:items-end sm:pt-0">
               <p className="text-lg font-semibold text-zinc-900">
                 {specialist.priceFrom}
               </p>

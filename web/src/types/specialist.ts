@@ -12,6 +12,26 @@ export interface SpecialistReview {
   text: string;
 }
 
+export interface SpecialistTeamMember {
+  name: string;
+  role: string;
+  initials: string;
+}
+
+// Расширенное содержимое профиля для максимального тарифа — фактически
+// рекламный лендинг вместо обычной карточки (обложка, галерея, команда,
+// сертификаты). Блоки одинаковые у всех, оформление (coverGradient)
+// отличается. Присутствует только у специалистов на максимальном плане —
+// пока платежей и тарифов нет, отмечено вручную в моках.
+export interface SpecialistPremiumContent {
+  tagline: string;
+  coverGradient: string;
+  gallery: string[];
+  videoPitchLabel: string;
+  team: SpecialistTeamMember[];
+  certificates: string[];
+}
+
 export interface Specialist {
   id: string;
   slug: string;
@@ -31,4 +51,5 @@ export interface Specialist {
   avatarInitials: string;
   services: SpecialistService[];
   reviews: SpecialistReview[];
+  premium?: SpecialistPremiumContent;
 }

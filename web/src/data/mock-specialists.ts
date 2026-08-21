@@ -1,6 +1,7 @@
 import type {
   Specialist,
   SpecialistBadge,
+  SpecialistPremiumContent,
   SpecialistReview,
   SpecialistService,
 } from "@/types/specialist";
@@ -29,6 +30,7 @@ const TEMPLATES: Array<{
   location: string;
   services: SpecialistService[];
   reviews: SpecialistReview[];
+  premium?: SpecialistPremiumContent;
 }> = [
   {
     name: "Алексей Морозов",
@@ -199,6 +201,29 @@ const TEMPLATES: Array<{
         text: "Голосовой агент подтверждает заказы без участия операторов, качество речи не отличить от живого человека.",
       },
     ],
+    // Пример профиля на максимальном тарифе — расширенный лендинг вместо
+    // обычной карточки (обложка, галерея, команда, сертификаты).
+    premium: {
+      tagline: "Голосовые AI-агенты, которые звучат как живые операторы",
+      coverGradient: "bg-gradient-to-br from-violet-700 via-fuchsia-600 to-amber-500",
+      gallery: [
+        "Дашборд обзвона в реальном времени",
+        "Конструктор диалоговых сценариев",
+        "Аналитика звонков и конверсий",
+        "Интеграция с телефонией и CRM",
+      ],
+      videoPitchLabel: "Видео: как работает голосовой агент «Автоматики»",
+      team: [
+        { name: "Марк Соловьёв", role: "Основатель, AI-архитектор", initials: "МС" },
+        { name: "Полина Даль", role: "Голосовые интерфейсы", initials: "ПД" },
+        { name: "Роман Ким", role: "Интеграции с телефонией", initials: "РК" },
+      ],
+      certificates: [
+        "Партнёр OpenAI",
+        "Twilio Certified",
+        "Сертификат ISO 27001",
+      ],
+    },
   },
   {
     name: "Марина Ким",
@@ -397,6 +422,10 @@ function buildMockSpecialists(count: number): Specialist[] {
         .toUpperCase(),
       services: t.services,
       reviews: t.reviews,
+      // Только первый проход по шаблонам несёт premium-контент — иначе
+      // в каталоге появлялось бы несколько "одинаковых" премиум-студий
+      // на повторах цикла (specialist-15, -25, ...).
+      premium: i < TEMPLATES.length ? t.premium : undefined,
     };
   });
 }

@@ -9,24 +9,6 @@ migrate((app) => {
   const collection = new Collection({
     type: "base",
     name: "admin_logs",
-    fields: [
-      new Field({
-        name: "admin_id",
-        type: "relation",
-        required: true,
-        collectionId: users.id,
-        cascadeDelete: false,
-        minSelect: 1,
-        maxSelect: 1,
-      }),
-      new Field({ name: "action", type: "text", required: true, max: 150 }),
-      new Field({ name: "entity_type", type: "text", required: true, max: 100 }),
-      new Field({ name: "entity_id", type: "text", max: 100 }),
-      new Field({ name: "old_data", type: "json", maxSize: 2000000 }),
-      new Field({ name: "new_data", type: "json", maxSize: 2000000 }),
-      new Field({ name: "ip", type: "text", max: 64 }),
-      new Field({ name: "created", type: "autodate", onCreate: true }),
-    ],
     indexes: [
       "CREATE INDEX idx_admin_logs_admin ON admin_logs (admin_id)",
       "CREATE INDEX idx_admin_logs_entity ON admin_logs (entity_type, entity_id)",
@@ -37,6 +19,23 @@ migrate((app) => {
     updateRule: null,
     deleteRule: null,
   })
+
+  collection.fields.add(new Field({
+    name: "admin_id",
+    type: "relation",
+    required: true,
+    collectionId: users.id,
+    cascadeDelete: false,
+    minSelect: 1,
+    maxSelect: 1,
+  }))
+  collection.fields.add(new Field({ name: "action", type: "text", required: true, max: 150 }))
+  collection.fields.add(new Field({ name: "entity_type", type: "text", required: true, max: 100 }))
+  collection.fields.add(new Field({ name: "entity_id", type: "text", max: 100 }))
+  collection.fields.add(new Field({ name: "old_data", type: "json", maxSize: 2000000 }))
+  collection.fields.add(new Field({ name: "new_data", type: "json", maxSize: 2000000 }))
+  collection.fields.add(new Field({ name: "ip", type: "text", max: 64 }))
+  collection.fields.add(new Field({ name: "created", type: "autodate", onCreate: true }))
 
   return app.save(collection)
 }, (app) => {

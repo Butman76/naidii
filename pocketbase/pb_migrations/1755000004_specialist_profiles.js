@@ -7,55 +7,6 @@ migrate((app) => {
   const collection = new Collection({
     type: "base",
     name: "specialist_profiles",
-    fields: [
-      new Field({
-        name: "user_id",
-        type: "relation",
-        required: true,
-        collectionId: users.id,
-        cascadeDelete: true,
-        minSelect: 1,
-        maxSelect: 1,
-      }),
-      new Field({
-        name: "profile_type",
-        type: "select",
-        required: true,
-        values: ["individual", "ip", "self_employed", "studio"],
-        maxSelect: 1,
-      }),
-      new Field({ name: "public_name", type: "text", required: true, max: 150 }),
-      new Field({ name: "slug", type: "text", required: true, max: 150 }),
-      new Field({ name: "title", type: "text", max: 200 }),
-      new Field({ name: "short_description", type: "text", max: 300 }),
-      new Field({ name: "full_description", type: "editor" }),
-      new Field({ name: "city", type: "text", max: 150 }),
-      new Field({ name: "remote_work", type: "bool" }),
-      new Field({ name: "experience_years", type: "number", min: 0, max: 60, onlyInt: true }),
-      new Field({ name: "hourly_rate_from", type: "number", min: 0 }),
-      new Field({ name: "project_rate_from", type: "number", min: 0 }),
-      new Field({
-        name: "response_time",
-        type: "select",
-        values: ["within_hour", "within_day", "within_3days", "within_week"],
-        maxSelect: 1,
-      }),
-      new Field({
-        name: "profile_status",
-        type: "select",
-        required: true,
-        values: ["draft", "pending", "published", "needs_revision", "hidden", "blocked"],
-        maxSelect: 1,
-      }),
-      new Field({ name: "verified_status", type: "bool" }),
-      new Field({ name: "rating", type: "number", min: 0, max: 5 }),
-      new Field({ name: "reviews_count", type: "number", min: 0, onlyInt: true }),
-      new Field({ name: "views_count", type: "number", min: 0, onlyInt: true }),
-      new Field({ name: "leads_count", type: "number", min: 0, onlyInt: true }),
-      new Field({ name: "active_until", type: "date" }),
-      new Field({ name: "created", type: "autodate", onCreate: true }),
-      new Field({ name: "updated", type: "autodate", onCreate: true, onUpdate: true }),
-    ],
     indexes: [
       "CREATE UNIQUE INDEX idx_specialist_profiles_slug ON specialist_profiles (slug)",
       "CREATE INDEX idx_specialist_profiles_user ON specialist_profiles (user_id)",
@@ -73,6 +24,54 @@ migrate((app) => {
     updateRule: "user_id = @request.auth.id || @request.auth.role = \"admin\" || @request.auth.role = \"moderator\"",
     deleteRule: "@request.auth.role = \"admin\"",
   })
+
+  collection.fields.add(new Field({
+    name: "user_id",
+    type: "relation",
+    required: true,
+    collectionId: users.id,
+    cascadeDelete: true,
+    minSelect: 1,
+    maxSelect: 1,
+  }))
+  collection.fields.add(new Field({
+    name: "profile_type",
+    type: "select",
+    required: true,
+    values: ["individual", "ip", "self_employed", "studio"],
+    maxSelect: 1,
+  }))
+  collection.fields.add(new Field({ name: "public_name", type: "text", required: true, max: 150 }))
+  collection.fields.add(new Field({ name: "slug", type: "text", required: true, max: 150 }))
+  collection.fields.add(new Field({ name: "title", type: "text", max: 200 }))
+  collection.fields.add(new Field({ name: "short_description", type: "text", max: 300 }))
+  collection.fields.add(new Field({ name: "full_description", type: "editor" }))
+  collection.fields.add(new Field({ name: "city", type: "text", max: 150 }))
+  collection.fields.add(new Field({ name: "remote_work", type: "bool" }))
+  collection.fields.add(new Field({ name: "experience_years", type: "number", min: 0, max: 60, onlyInt: true }))
+  collection.fields.add(new Field({ name: "hourly_rate_from", type: "number", min: 0 }))
+  collection.fields.add(new Field({ name: "project_rate_from", type: "number", min: 0 }))
+  collection.fields.add(new Field({
+    name: "response_time",
+    type: "select",
+    values: ["within_hour", "within_day", "within_3days", "within_week"],
+    maxSelect: 1,
+  }))
+  collection.fields.add(new Field({
+    name: "profile_status",
+    type: "select",
+    required: true,
+    values: ["draft", "pending", "published", "needs_revision", "hidden", "blocked"],
+    maxSelect: 1,
+  }))
+  collection.fields.add(new Field({ name: "verified_status", type: "bool" }))
+  collection.fields.add(new Field({ name: "rating", type: "number", min: 0, max: 5 }))
+  collection.fields.add(new Field({ name: "reviews_count", type: "number", min: 0, onlyInt: true }))
+  collection.fields.add(new Field({ name: "views_count", type: "number", min: 0, onlyInt: true }))
+  collection.fields.add(new Field({ name: "leads_count", type: "number", min: 0, onlyInt: true }))
+  collection.fields.add(new Field({ name: "active_until", type: "date" }))
+  collection.fields.add(new Field({ name: "created", type: "autodate", onCreate: true }))
+  collection.fields.add(new Field({ name: "updated", type: "autodate", onCreate: true, onUpdate: true }))
 
   return app.save(collection)
 }, (app) => {

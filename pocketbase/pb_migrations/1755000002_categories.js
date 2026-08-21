@@ -7,26 +7,6 @@ migrate((app) => {
   const collection = new Collection({
     type: "base",
     name: "categories",
-    fields: [
-      new Field({ name: "name", type: "text", required: true, max: 150 }),
-      new Field({ name: "slug", type: "text", required: true, max: 150 }),
-      new Field({ name: "seo_title", type: "text", max: 200 }),
-      new Field({ name: "seo_description", type: "text", max: 500 }),
-      new Field({ name: "h1", type: "text", max: 200 }),
-      new Field({ name: "description", type: "editor" }),
-      new Field({ name: "faq", type: "json", maxSize: 200000 }),
-      new Field({
-        name: "icon",
-        type: "file",
-        maxSelect: 1,
-        maxSize: 2097152,
-        mimeTypes: ["image/jpeg", "image/png", "image/svg+xml", "image/webp"],
-      }),
-      new Field({ name: "sort_order", type: "number", onlyInt: true }),
-      new Field({ name: "active", type: "bool" }),
-      new Field({ name: "created", type: "autodate", onCreate: true }),
-      new Field({ name: "updated", type: "autodate", onCreate: true, onUpdate: true }),
-    ],
     indexes: [
       "CREATE UNIQUE INDEX idx_categories_slug ON categories (slug)",
     ],
@@ -36,6 +16,30 @@ migrate((app) => {
     updateRule: "@request.auth.id != \"\" && @request.auth.role = \"admin\"",
     deleteRule: "@request.auth.id != \"\" && @request.auth.role = \"admin\"",
   })
+
+  // Fields are added one by one via collection.fields.add() rather than
+  // passed as a "fields" array in the Collection constructor - the latter
+  // silently fails to persist them in this PocketBase version (it passes
+  // rule validation against the in-memory object but the columns never
+  // actually get written to the collection's schema in the database).
+  collection.fields.add(new Field({ name: "name", type: "text", required: true, max: 150 }))
+  collection.fields.add(new Field({ name: "slug", type: "text", required: true, max: 150 }))
+  collection.fields.add(new Field({ name: "seo_title", type: "text", max: 200 }))
+  collection.fields.add(new Field({ name: "seo_description", type: "text", max: 500 }))
+  collection.fields.add(new Field({ name: "h1", type: "text", max: 200 }))
+  collection.fields.add(new Field({ name: "description", type: "editor" }))
+  collection.fields.add(new Field({ name: "faq", type: "json", maxSize: 200000 }))
+  collection.fields.add(new Field({
+    name: "icon",
+    type: "file",
+    maxSelect: 1,
+    maxSize: 2097152,
+    mimeTypes: ["image/jpeg", "image/png", "image/svg+xml", "image/webp"],
+  }))
+  collection.fields.add(new Field({ name: "sort_order", type: "number", onlyInt: true }))
+  collection.fields.add(new Field({ name: "active", type: "bool" }))
+  collection.fields.add(new Field({ name: "created", type: "autodate", onCreate: true }))
+  collection.fields.add(new Field({ name: "updated", type: "autodate", onCreate: true, onUpdate: true }))
 
   return app.save(collection)
 }, (app) => {

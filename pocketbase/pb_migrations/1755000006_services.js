@@ -8,34 +8,33 @@ migrate((app) => {
   const collection = new Collection({
     type: "base",
     name: "services",
-    fields: [
-      new Field({
-        name: "specialist_profile_id",
-        type: "relation",
-        required: true,
-        collectionId: profiles.id,
-        cascadeDelete: true,
-        minSelect: 1,
-        maxSelect: 1,
-      }),
-      new Field({ name: "title", type: "text", required: true, max: 200 }),
-      new Field({ name: "description", type: "editor" }),
-      new Field({ name: "price_from", type: "number", min: 0 }),
-      new Field({ name: "duration_from", type: "text", max: 100 }),
-      new Field({ name: "category", type: "text", max: 150 }),
-      new Field({ name: "active", type: "bool" }),
-      new Field({ name: "created", type: "autodate", onCreate: true }),
-      new Field({ name: "updated", type: "autodate", onCreate: true, onUpdate: true }),
-    ],
     indexes: [
       "CREATE INDEX idx_services_profile ON services (specialist_profile_id)",
     ],
+    listRule: "active = true && specialist_profile_id.profile_status = \"published\" || specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\"",
+    viewRule: "active = true && specialist_profile_id.profile_status = \"published\" || specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\"",
+    createRule: "@request.body.specialist_profile_id.user_id = @request.auth.id",
+    updateRule: "specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\"",
+    deleteRule: "specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\"",
   })
 
-  collection.createRule = "@request.body.specialist_profile_id.user_id = @request.auth.id"
-  // listRule/viewRule/updateRule/deleteRule traverse into the related
-  // specialist_profiles record; set later in
-  // 1755000015_relation_traversal_rules.js once this table is committed.
+  collection.fields.add(new Field({
+    name: "specialist_profile_id",
+    type: "relation",
+    required: true,
+    collectionId: profiles.id,
+    cascadeDelete: true,
+    minSelect: 1,
+    maxSelect: 1,
+  }))
+  collection.fields.add(new Field({ name: "title", type: "text", required: true, max: 200 }))
+  collection.fields.add(new Field({ name: "description", type: "editor" }))
+  collection.fields.add(new Field({ name: "price_from", type: "number", min: 0 }))
+  collection.fields.add(new Field({ name: "duration_from", type: "text", max: 100 }))
+  collection.fields.add(new Field({ name: "category", type: "text", max: 150 }))
+  collection.fields.add(new Field({ name: "active", type: "bool" }))
+  collection.fields.add(new Field({ name: "created", type: "autodate", onCreate: true }))
+  collection.fields.add(new Field({ name: "updated", type: "autodate", onCreate: true, onUpdate: true }))
 
   return app.save(collection)
 }, (app) => {

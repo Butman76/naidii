@@ -8,43 +8,42 @@ migrate((app) => {
   const collection = new Collection({
     type: "base",
     name: "site_settings",
-    fields: [
-      new Field({ name: "project_name", type: "text", required: true, max: 150 }),
-      new Field({
-        name: "logo",
-        type: "file",
-        maxSelect: 1,
-        maxSize: 2097152,
-        mimeTypes: ["image/svg+xml", "image/png", "image/webp"],
-      }),
-      new Field({ name: "contact_email", type: "email" }),
-      new Field({ name: "telegram", type: "text", max: 100 }),
-      new Field({ name: "top_cards_limit", type: "number", required: true, min: 1, onlyInt: true }),
-      new Field({
-        name: "payment_mode",
-        type: "select",
-        required: true,
-        values: ["manual", "auto"],
-        maxSelect: 1,
-      }),
-      new Field({
-        name: "payment_provider",
-        type: "select",
-        required: true,
-        values: ["manual", "alfa", "yookassa", "cloudpayments", "tbank", "vtb"],
-        maxSelect: 1,
-      }),
-      new Field({ name: "manual_payment_details", type: "editor" }),
-      new Field({ name: "terms_url", type: "url" }),
-      new Field({ name: "privacy_url", type: "url" }),
-      new Field({ name: "updated", type: "autodate", onCreate: true, onUpdate: true }),
-    ],
     listRule: "",
     viewRule: "",
     createRule: "@request.auth.role = \"admin\"",
     updateRule: "@request.auth.role = \"admin\"",
     deleteRule: null,
   })
+
+  collection.fields.add(new Field({ name: "project_name", type: "text", required: true, max: 150 }))
+  collection.fields.add(new Field({
+    name: "logo",
+    type: "file",
+    maxSelect: 1,
+    maxSize: 2097152,
+    mimeTypes: ["image/svg+xml", "image/png", "image/webp"],
+  }))
+  collection.fields.add(new Field({ name: "contact_email", type: "email" }))
+  collection.fields.add(new Field({ name: "telegram", type: "text", max: 100 }))
+  collection.fields.add(new Field({ name: "top_cards_limit", type: "number", required: true, min: 1, onlyInt: true }))
+  collection.fields.add(new Field({
+    name: "payment_mode",
+    type: "select",
+    required: true,
+    values: ["manual", "auto"],
+    maxSelect: 1,
+  }))
+  collection.fields.add(new Field({
+    name: "payment_provider",
+    type: "select",
+    required: true,
+    values: ["manual", "alfa", "yookassa", "cloudpayments", "tbank", "vtb"],
+    maxSelect: 1,
+  }))
+  collection.fields.add(new Field({ name: "manual_payment_details", type: "editor" }))
+  collection.fields.add(new Field({ name: "terms_url", type: "url" }))
+  collection.fields.add(new Field({ name: "privacy_url", type: "url" }))
+  collection.fields.add(new Field({ name: "updated", type: "autodate", onCreate: true, onUpdate: true }))
 
   app.save(collection)
 

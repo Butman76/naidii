@@ -32,7 +32,7 @@ migrate((app) => {
     ],
     listRule: "active = true && specialist_profile_id.profile_status = \"published\" || specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\"",
     viewRule: "active = true && specialist_profile_id.profile_status = \"published\" || specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\"",
-    createRule: "specialist_profile_id.user_id = @request.auth.id",
+    createRule: "@request.body.specialist_profile_id.user_id = @request.auth.id",
     updateRule: "specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\"",
     deleteRule: "specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\"",
   })

@@ -39,7 +39,7 @@ migrate((app) => {
     ],
     listRule: "",
     viewRule: "",
-    createRule: "specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\"",
+    createRule: "@request.body.specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\"",
     updateRule: "specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\"",
     deleteRule: "specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\"",
   })

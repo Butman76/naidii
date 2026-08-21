@@ -89,7 +89,7 @@ migrate((app) => {
     ],
     listRule: "user_id = @request.auth.id || @request.auth.role = \"admin\"",
     viewRule: "user_id = @request.auth.id || @request.auth.role = \"admin\"",
-    createRule: "user_id = @request.auth.id",
+    createRule: "@request.body.user_id = @request.auth.id",
     // Amount/status fields must never be client-writable (that's how a
     // buyer could mark their own order "paid"). Only admins — or the
     // Alfa-Bank callback route running under a service account — may

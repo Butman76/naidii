@@ -50,7 +50,7 @@ migrate((app) => {
     ],
     listRule: "moderation_status = \"approved\" || specialist_profile_id.user_id = @request.auth.id || (@request.auth.role = \"admin\" || @request.auth.role = \"moderator\")",
     viewRule: "moderation_status = \"approved\" || specialist_profile_id.user_id = @request.auth.id || (@request.auth.role = \"admin\" || @request.auth.role = \"moderator\")",
-    createRule: "specialist_profile_id.user_id = @request.auth.id",
+    createRule: "@request.body.specialist_profile_id.user_id = @request.auth.id",
     updateRule: "specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\" || @request.auth.role = \"moderator\"",
     deleteRule: "specialist_profile_id.user_id = @request.auth.id || @request.auth.role = \"admin\"",
   })

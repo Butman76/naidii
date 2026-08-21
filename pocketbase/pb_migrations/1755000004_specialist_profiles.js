@@ -66,7 +66,7 @@ migrate((app) => {
     // moderation queues work.
     listRule: "profile_status = \"published\" || user_id = @request.auth.id || (@request.auth.role = \"admin\" || @request.auth.role = \"moderator\")",
     viewRule: "profile_status = \"published\" || user_id = @request.auth.id || (@request.auth.role = \"admin\" || @request.auth.role = \"moderator\")",
-    createRule: "@request.auth.id != \"\" && @request.auth.role = \"specialist\" && user_id = @request.auth.id",
+    createRule: "@request.auth.id != \"\" && @request.auth.role = \"specialist\" && @request.body.user_id = @request.auth.id",
     // Owner can edit their own content, but moderators/admins are the ones
     // who flip profile_status (approve/reject/hide) — enforced at the
     // application layer since PB rules can't restrict individual fields.

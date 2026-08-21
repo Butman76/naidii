@@ -1,5 +1,6 @@
 import type { Specialist } from "@/types/specialist";
 import { CATEGORIES } from "@/data/categories";
+import { withBasePath } from "@/lib/base-path";
 
 const BADGE_LABELS: Record<string, string> = {
   top: "Топ",
@@ -32,20 +33,47 @@ export default function PremiumSpecialistProfile({
 
   return (
     <>
-      <div className={`relative h-56 sm:h-72 ${premium.coverGradient}`}>
-        <div className="absolute right-4 top-4 rounded-full bg-black/20 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm sm:right-8 sm:top-6">
+      <div
+        className={`relative h-56 overflow-hidden sm:h-72 ${
+          premium.coverImageUrl ? "" : premium.coverGradient
+        }`}
+      >
+        {/* Static export with images.unoptimized: true - next/image adds
+            nothing here besides basePath handling that withBasePath already
+            covers, so plain <img> for both uploaded assets below. */}
+        {premium.coverImageUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={withBasePath(premium.coverImageUrl)}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        )}
+
+        <div className="absolute right-4 top-4 rounded-full bg-black/30 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm sm:right-8 sm:top-6">
           ★ Премиум-профиль
         </div>
+
+        {/* Логотип лежит поверх обложки, а не наполовину съезжает на белый
+            фон под ней, как обычный круглый аватар. */}
+        {premium.logoImageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={withBasePath(premium.logoImageUrl)}
+            alt={specialist.name}
+            className="absolute bottom-4 left-4 h-24 w-24 rounded-2xl border-4 border-white object-cover shadow-xl sm:bottom-6 sm:left-8 sm:h-32 sm:w-32"
+          />
+        ) : (
+          <div className="absolute bottom-4 left-4 flex h-24 w-24 items-center justify-center rounded-2xl border-4 border-white bg-zinc-900 text-2xl font-semibold text-white shadow-xl sm:bottom-6 sm:left-8 sm:h-32 sm:w-32">
+            {specialist.avatarInitials}
+          </div>
+        )}
       </div>
 
       <div className="border-b border-zinc-200 bg-white">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-6 pb-8 sm:flex-row sm:items-end">
-            <div className="-mt-12 flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-4 border-white bg-zinc-900 text-2xl font-semibold text-white shadow-lg sm:-mt-14 sm:h-28 sm:w-28">
-              {specialist.avatarInitials}
-            </div>
-
-            <div className="min-w-0 flex-1 pt-4 sm:pt-0">
+          <div className="flex flex-col gap-6 pb-8 pt-6 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-2xl font-bold text-zinc-900 sm:text-3xl">
                   {specialist.name}
@@ -67,7 +95,7 @@ export default function PremiumSpecialistProfile({
               </p>
             </div>
 
-            <div className="flex shrink-0 flex-col items-start gap-3 pt-4 sm:items-end sm:pt-0">
+            <div className="flex shrink-0 flex-col items-start gap-3 sm:items-end">
               <p className="text-lg font-semibold text-zinc-900">
                 {specialist.priceFrom}
               </p>

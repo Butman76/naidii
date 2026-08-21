@@ -206,6 +206,8 @@ const TEMPLATES: Array<{
     premium: {
       tagline: "Голосовые AI-агенты, которые звучат как живые операторы",
       coverGradient: "bg-gradient-to-br from-violet-700 via-fuchsia-600 to-amber-500",
+      coverImageUrl: "/premium/studio-avtomatika-cover.png",
+      logoImageUrl: "/premium/studio-avtomatika-logo.png",
       gallery: [
         "Дашборд обзвона в реальном времени",
         "Конструктор диалоговых сценариев",

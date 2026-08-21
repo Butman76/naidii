@@ -26,6 +26,11 @@ export interface SpecialistTeamMember {
 export interface SpecialistPremiumContent {
   tagline: string;
   coverGradient: string;
+  // Реальные загруженные изображения (когда есть) перекрывают coverGradient
+  // и инициалы — на максимальном тарифе студия может залить свою обложку
+  // и логотип вместо дефолтного оформления.
+  coverImageUrl?: string;
+  logoImageUrl?: string;
   gallery: string[];
   videoPitchLabel: string;
   team: SpecialistTeamMember[];

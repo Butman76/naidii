@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { Specialist } from "@/types/specialist";
 import {
   LEAD_STATUS_LABELS,
@@ -267,9 +268,12 @@ export default function SpecialistDashboard({
                   Профиль-лендинг вместо обычной карточки, приоритет в
                   каталоге и расширенная аналитика.
                 </p>
-                <button className="mt-3 rounded-full bg-zinc-900 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-zinc-700">
+                <Link
+                  href="/tariffs"
+                  className="mt-3 inline-block rounded-full bg-zinc-900 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-zinc-700"
+                >
                   Сравнить тарифы
-                </button>
+                </Link>
               </div>
             )}
           </div>

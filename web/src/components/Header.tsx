@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 const NAV_LINKS = [
+  { href: "/services", label: "Услуги" },
   { href: "/specialists", label: "Специалисты" },
   { href: "/categories", label: "Категории" },
   { href: "/cases", label: "Кейсы" },

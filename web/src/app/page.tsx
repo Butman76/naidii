@@ -1,6 +1,6 @@
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
-import TopSpecialists from "@/components/TopSpecialists";
+import TopServices from "@/components/TopServices";
 import Footer from "@/components/Footer";
 
 export default function Home() {
@@ -9,7 +9,7 @@ export default function Home() {
       <Header />
       <main className="flex-1 bg-zinc-50">
         <Hero />
-        <TopSpecialists />
+        <TopServices />
       </main>
       <Footer />
     </>

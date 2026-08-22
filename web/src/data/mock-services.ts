@@ -1,17 +1,16 @@
-import type { ServiceCard, ServiceCardTag } from "@/types/service-card";
+import type {
+  ResultType,
+  ServiceCardTag,
+  ServiceOffer,
+} from "@/types/service-card";
 
-// TODO: заменить на запрос к PocketBase (services, расширенная миграцией
-// 1755000016_service_cards_pivot.js) — см. pocketbase/README.md. Пока
-// PocketBase недоступен по интернету, каталог карточек услуг живёт на
-// этих данных.
-//
-// Источник контента — черновой список продаваемых продуктов по каждому
-// направлению из PIVOT_SERVICE_CARDS.md (раздел 5): решает проблему
-// "специалист не знает, что продавать", когда профиль сформулирован
-// слишком широко. Специалист прикреплён к направлению из
-// web/src/data/mock-specialists.ts (там же категория → 1 специалист).
+// TODO: заменить на запрос к PocketBase — см. pocketbase/README.md и
+// PIVOT_SERVICE_CARDS.md, раздел 6 ("следующие шаги") — модель ResultType/
+// ServiceOffer описана пока только на фронтенде, схема ещё не разъединена
+// на бэкенде так же. Источник контента — раздел 7 PIVOT_SERVICE_CARDS.md
+// (42 типа результата на 27 подкатегориях).
 
-interface ServiceProvider {
+interface Provider {
   slug: string;
   name: string;
   initials: string;
@@ -19,7 +18,7 @@ interface ServiceProvider {
   completedOrders: number;
 }
 
-const PROVIDERS: Record<string, ServiceProvider> = {
+const PROVIDERS: Record<string, Provider> = {
   "ai-agents": { slug: "specialist-1", name: "Алексей Морозов", initials: "АМ", rating: 4.9, completedOrders: 34 },
   rag: { slug: "specialist-2", name: "Студия NeuroWorks", initials: "СN", rating: 4.8, completedOrders: 21 },
   orchestration: { slug: "specialist-3", name: "Дмитрий Волков", initials: "ДВ", rating: 4.7, completedOrders: 45 },
@@ -31,408 +30,484 @@ const PROVIDERS: Record<string, ServiceProvider> = {
   "ai-analytics": { slug: "specialist-9", name: "Ольга Петрова", initials: "ОП", rating: 4.7, completedOrders: 23 },
 };
 
-interface RawService {
-  category: string;
-  title: string;
-  tagline: string;
-  scopeLabel: string;
+// Второй продавец на 2 типа результата — доказать, что модель "несколько
+// офферов на один тип" реально работает, без раздувания всех 42 сразу
+// (остальные легко доукомплектовать тем же способом позже). Объекты, а не
+// строковый ключ по слагу — слаг генерируется транслитерацией заголовка,
+// подбирать его вручную для ключа ненадёжно.
+const KIRILL_ORLOV: Provider = {
+  slug: "specialist-11",
+  name: "Кирилл Орлов",
+  initials: "КО",
+  rating: 4.6,
+  completedOrders: 9,
+};
+
+const ANNA_GUSEVA: Provider = {
+  slug: "specialist-12",
+  name: "Анна Гусева",
+  initials: "АГ",
+  rating: 4.5,
+  completedOrders: 12,
+};
+
+interface RawOffer {
   price: number;
   duration: string;
   revisions?: number;
   tags: ServiceCardTag[];
   promoted?: boolean;
+  tagline: string;
+  seller?: Provider; // если не задан — берём провайдера направления
 }
 
-const RAW_SERVICES: RawService[] = [
+interface RawResultType {
+  category: string;
+  subcategory: string;
+  title: string;
+  scopeLabel: string;
+  offers: RawOffer[];
+}
+
+const RAW_TYPES: RawResultType[] = [
   // AI-агенты
   {
     category: "ai-agents",
+    subcategory: "Продажи и заявки",
     title: "Продающий AI-агент для сайта/Telegram",
-    tagline: "Доводит клиента до сделки или передаёт менеджеру — без потерянных заявок ночью",
     scopeLabel: "1 сценарий воронки",
-    price: 60000,
-    duration: "от 2 недель",
-    revisions: 2,
-    tags: ["top", "has_examples"],
-    promoted: true,
+    offers: [
+      {
+        price: 60000,
+        duration: "от 2 недель",
+        revisions: 2,
+        tags: ["top", "has_examples"],
+        promoted: true,
+        tagline: "Доводит клиента до сделки или передаёт менеджеру — без потерянных заявок ночью",
+      },
+      {
+        price: 42000,
+        duration: "от 10 дней",
+        revisions: 1,
+        tags: ["online"],
+        tagline: "Тот же результат для небольшого бизнеса — без переплаты за корпоративный масштаб",
+        seller: KIRILL_ORLOV,
+      },
+    ],
   },
   {
     category: "ai-agents",
+    subcategory: "Продажи и заявки",
     title: "AI-агент квалификации лидов для CRM",
-    tagline: "Расставляет приоритеты сам — менеджер звонит сначала горячим",
     scopeLabel: "до 5 сценариев квалификации",
-    price: 45000,
-    duration: "от 10 дней",
-    revisions: 2,
-    tags: ["verified"],
+    offers: [{ price: 45000, duration: "от 10 дней", revisions: 2, tags: ["verified"], tagline: "Расставляет приоритеты сам — менеджер звонит сначала горячим" }],
   },
   {
     category: "ai-agents",
+    subcategory: "Поддержка клиентов",
+    title: "AI-агент поддержки 24/7 с эскалацией на человека",
+    scopeLabel: "до 10 типовых вопросов",
+    offers: [{ price: 50000, duration: "от 2 недель", revisions: 2, tags: ["guaranteed"], tagline: "Отвечает клиентам ночью и передаёт сложные случаи оператору утром" }],
+  },
+  {
+    category: "ai-agents",
+    subcategory: "Поддержка клиентов",
     title: "Аудит существующего AI-агента с планом доработки",
-    tagline: "Найду, где агент теряет клиентов, и что исправить в первую очередь",
     scopeLabel: "1 агент, письменный отчёт",
-    price: 20000,
-    duration: "от 3 дней",
-    tags: ["urgent", "online"],
+    offers: [{ price: 20000, duration: "от 3 дней", tags: ["urgent", "online"], tagline: "Найду, где агент теряет клиентов, и что исправить в первую очередь" }],
   },
   {
     category: "ai-agents",
+    subcategory: "HR и рекрутинг",
     title: "AI-агент для HR (первичный скрининг кандидатов)",
-    tagline: "Отсеивает нерелевантные отклики до собеседования с рекрутёром",
     scopeLabel: "до 3 вакансий",
-    price: 35000,
-    duration: "от 1 недели",
-    revisions: 1,
-    tags: ["online"],
+    offers: [{ price: 35000, duration: "от 1 недели", revisions: 1, tags: ["online"], tagline: "Отсеивает нерелевантные отклики до собеседования с рекрутёром" }],
+  },
+  {
+    category: "ai-agents",
+    subcategory: "HR и рекрутинг",
+    title: "AI-агент онбординга новых сотрудников",
+    scopeLabel: "1 сценарий адаптации",
+    offers: [{ price: 25000, duration: "от 1 недели", tags: ["online"], tagline: "Отвечает на типовые вопросы новичка вместо HR в первую неделю" }],
   },
 
   // RAG / базы знаний
   {
     category: "rag",
+    subcategory: "Корпоративные базы знаний",
     title: "База знаний с RAG-поиском по документам компании",
-    tagline: "Сотрудники получают ответ со ссылкой на регламент вместо похода к HR",
     scopeLabel: "до 500 документов",
-    price: 150000,
-    duration: "от 3 недель",
-    tags: ["top", "guaranteed"],
-    promoted: true,
+    offers: [{ price: 150000, duration: "от 3 недель", tags: ["top", "guaranteed"], promoted: true, tagline: "Сотрудники получают ответ со ссылкой на регламент вместо похода к HR" }],
   },
   {
     category: "rag",
-    title: "Интеграция RAG в существующего бота поддержки",
-    tagline: "Бот начинает отвечать по вашей базе знаний, а не общими фразами",
-    scopeLabel: "1 источник данных",
-    price: 70000,
-    duration: "от 1 недели",
-    revisions: 2,
-    tags: ["has_examples"],
-  },
-  {
-    category: "rag",
-    title: "RAG-консультант для юридической проверки договоров",
-    tagline: "Находит спорные пункты в типовых договорах за минуты, не часы",
-    scopeLabel: "до 50 шаблонов договоров",
-    price: 100000,
-    duration: "от 2 недель",
-    tags: ["verified"],
-  },
-  {
-    category: "rag",
+    subcategory: "Корпоративные базы знаний",
     title: "Обновление и переиндексация существующей RAG-базы",
-    tagline: "База отвечает по актуальным документам, а не по архиву годовой давности",
     scopeLabel: "до 1000 документов",
-    price: 25000,
-    duration: "от 5 дней",
-    tags: ["urgent", "online"],
+    offers: [{ price: 25000, duration: "от 5 дней", tags: ["urgent", "online"], tagline: "База отвечает по актуальным документам, а не по архиву годовой давности" }],
+  },
+  {
+    category: "rag",
+    subcategory: "RAG для ботов поддержки",
+    title: "Интеграция RAG в существующего бота поддержки",
+    scopeLabel: "1 источник данных",
+    offers: [{ price: 70000, duration: "от 1 недели", revisions: 2, tags: ["has_examples"], tagline: "Бот начинает отвечать по вашей базе знаний, а не общими фразами" }],
+  },
+  {
+    category: "rag",
+    subcategory: "RAG для ботов поддержки",
+    title: "RAG поверх базы FAQ и тикетов поддержки",
+    scopeLabel: "до 300 тикетов",
+    offers: [{ price: 55000, duration: "от 10 дней", tags: ["verified"], tagline: "Ответы строятся на реальной истории обращений, а не с нуля" }],
+  },
+  {
+    category: "rag",
+    subcategory: "Юридический AI-анализ",
+    title: "RAG-консультант для юридической проверки договоров",
+    scopeLabel: "до 50 шаблонов договоров",
+    offers: [{ price: 100000, duration: "от 2 недель", tags: ["verified"], tagline: "Находит спорные пункты в типовых договорах за минуты, не часы" }],
   },
 
   // No-code оркестрация
   {
     category: "orchestration",
+    subcategory: "Автоматизация процессов",
     title: "Сценарий автоматизации под конкретную задачу",
-    tagline: "Один сквозной процесс от заявки до отчёта — без ручного переноса данных",
     scopeLabel: "1 сквозной процесс",
-    price: 35000,
-    duration: "от 5 дней",
-    revisions: 2,
-    tags: ["top", "online"],
+    offers: [{ price: 35000, duration: "от 5 дней", revisions: 2, tags: ["top", "online"], tagline: "Один сквозной процесс от заявки до отчёта — без ручного переноса данных" }],
   },
   {
     category: "orchestration",
+    subcategory: "Автоматизация процессов",
+    title: "Автоматизация приёма и обработки заявок между сервисами",
+    scopeLabel: "1 воронка заявок",
+    offers: [{ price: 30000, duration: "от 5 дней", tags: ["online"], tagline: "Заявка сама попадает туда, где её обработают, без ручного переноса" }],
+  },
+  {
+    category: "orchestration",
+    subcategory: "Миграция между платформами",
     title: "Перенос workflow с Zapier на n8n (self-hosted)",
-    tagline: "Те же сценарии, но без ежемесячной платы за лимиты Zapier",
     scopeLabel: "до 10 сценариев",
-    price: 40000,
-    duration: "от 1 недели",
-    tags: ["has_examples"],
+    offers: [{ price: 40000, duration: "от 1 недели", tags: ["has_examples"], tagline: "Те же сценарии, но без ежемесячной платы за лимиты Zapier" }],
   },
   {
     category: "orchestration",
-    title: "Ежемесячное сопровождение и доработка сценариев",
-    tagline: "Сценарии не ломаются молча, когда сторонний сервис меняет API",
-    scopeLabel: "до 5 правок в месяц",
-    price: 15000,
-    duration: "постоянно",
-    tags: ["guaranteed", "online"],
+    subcategory: "Миграция между платформами",
+    title: "Аудит и оптимизация существующих сценариев",
+    scopeLabel: "до 10 сценариев, отчёт",
+    offers: [{ price: 20000, duration: "от 5 дней", tags: ["urgent"], tagline: "Покажу, какие сценарии дублируют друг друга и где что ломается" }],
   },
   {
     category: "orchestration",
+    subcategory: "Отчётность и таблицы",
     title: "Автоматизация отчётности в Google Sheets/таблицы",
-    tagline: "Таблица заполняется сама по расписанию — никто не забудет обновить",
     scopeLabel: "1 регулярный отчёт",
-    price: 20000,
-    duration: "от 3 дней",
-    tags: ["urgent"],
+    offers: [{ price: 20000, duration: "от 3 дней", tags: ["urgent"], tagline: "Таблица заполняется сама по расписанию — никто не забудет обновить" }],
+  },
+  {
+    category: "orchestration",
+    subcategory: "Отчётность и таблицы",
+    title: "Ежемесячное сопровождение и доработка сценариев",
+    scopeLabel: "до 5 правок в месяц",
+    offers: [{ price: 15000, duration: "постоянно", tags: ["guaranteed", "online"], tagline: "Сценарии не ломаются молча, когда сторонний сервис меняет API" }],
   },
 
   // Чат-боты
   {
     category: "chatbots",
+    subcategory: "Продающие боты",
     title: "Telegram-бот с AI-консультантом и оплатой",
-    tagline: "Ведёт диалог, оформляет заказ и принимает оплату без участия менеджера",
     scopeLabel: "1 сценарий продаж",
-    price: 45000,
-    duration: "от 10 дней",
-    revisions: 2,
-    tags: ["top", "has_examples"],
-    promoted: true,
+    offers: [
+      {
+        price: 45000,
+        duration: "от 10 дней",
+        revisions: 2,
+        tags: ["top", "has_examples"],
+        promoted: true,
+        tagline: "Ведёт диалог, оформляет заказ и принимает оплату без участия менеджера",
+      },
+      {
+        price: 38000,
+        duration: "от 8 дней",
+        tags: ["online"],
+        tagline: "Быстрый запуск по готовым шаблонам сценариев — без потери качества диалога",
+        seller: ANNA_GUSEVA,
+      },
+    ],
   },
   {
     category: "chatbots",
-    title: "Перенос Telegram-бота на WhatsApp",
-    tagline: "Та же логика бота, но там, где сидит международная аудитория",
-    scopeLabel: "1 бот",
-    price: 25000,
-    duration: "от 5 дней",
-    tags: ["online"],
-  },
-  {
-    category: "chatbots",
-    title: "Бот записи на услуги с напоминаниями",
-    tagline: "Клиент сам выбирает время, бот сам напоминает — меньше неявок",
-    scopeLabel: "до 3 типов услуг",
-    price: 30000,
-    duration: "от 1 недели",
-    revisions: 1,
-    tags: ["verified"],
-  },
-  {
-    category: "chatbots",
+    subcategory: "Продающие боты",
     title: "Аудит конверсии существующего бота",
-    tagline: "Покажу, на каком шаге сценария клиенты уходят, и почему",
     scopeLabel: "1 бот, отчёт с рекомендациями",
-    price: 15000,
-    duration: "от 3 дней",
-    tags: ["urgent", "online"],
+    offers: [{ price: 15000, duration: "от 3 дней", tags: ["urgent", "online"], tagline: "Покажу, на каком шаге сценария клиенты уходят, и почему" }],
+  },
+  {
+    category: "chatbots",
+    subcategory: "Запись и бронирование",
+    title: "Бот записи на услуги с напоминаниями",
+    scopeLabel: "до 3 типов услуг",
+    offers: [{ price: 30000, duration: "от 1 недели", revisions: 1, tags: ["verified"], tagline: "Клиент сам выбирает время, бот сам напоминает — меньше неявок" }],
+  },
+  {
+    category: "chatbots",
+    subcategory: "Поддержка в мессенджерах",
+    title: "Перенос Telegram-бота на WhatsApp",
+    scopeLabel: "1 бот",
+    offers: [{ price: 25000, duration: "от 5 дней", tags: ["online"], tagline: "Та же логика бота, но там, где сидит международная аудитория" }],
+  },
+  {
+    category: "chatbots",
+    subcategory: "Поддержка в мессенджерах",
+    title: "Бот поддержки клиентов с эскалацией на оператора",
+    scopeLabel: "до 10 типовых вопросов",
+    offers: [{ price: 35000, duration: "от 10 дней", tags: ["guaranteed"], tagline: "Отвечает на типовые вопросы сам, сложные передаёт живому оператору" }],
   },
 
   // Голосовые AI-агенты
   {
     category: "voice-ai",
+    subcategory: "Приём звонков",
     title: "Голосовой агент для приёма входящих заявок",
-    tagline: "Принимает звонки 24/7 голосом, который не отличить от живого оператора",
     scopeLabel: "1 сценарий, интеграция с телефонией",
-    price: 120000,
-    duration: "от 3 недель",
-    tags: ["top", "guaranteed"],
-    promoted: true,
+    offers: [{ price: 120000, duration: "от 3 недель", tags: ["top", "guaranteed"], promoted: true, tagline: "Принимает звонки 24/7 голосом, который не отличить от живого оператора" }],
   },
   {
     category: "voice-ai",
-    title: "Обзвон базы с AI-скриптом (подтверждение записи)",
-    tagline: "Тысяча звонков за ночь вместо недели работы колл-центра",
-    scopeLabel: "до 1000 контактов/мес",
-    price: 80000,
-    duration: "от 2 недель",
-    tags: ["has_examples"],
-  },
-  {
-    category: "voice-ai",
-    title: "Голосовой агент-ресепшн (переадресация по отделам)",
-    tagline: "Понимает запрос звонящего и сам соединяет с нужным отделом",
-    scopeLabel: "до 5 направлений",
-    price: 90000,
-    duration: "от 2 недель",
-    tags: ["verified"],
-  },
-  {
-    category: "voice-ai",
+    subcategory: "Приём звонков",
     title: "Замена IVR-меню на голосового агента",
-    tagline: "Клиент говорит запрос своими словами вместо «нажмите 1»",
     scopeLabel: "1 линия",
-    price: 60000,
-    duration: "от 10 дней",
-    tags: ["online"],
+    offers: [{ price: 60000, duration: "от 10 дней", tags: ["online"], tagline: "Клиент говорит запрос своими словами вместо «нажмите 1»" }],
+  },
+  {
+    category: "voice-ai",
+    subcategory: "Исходящий обзвон",
+    title: "Обзвон базы с AI-скриптом (подтверждение записи)",
+    scopeLabel: "до 1000 контактов/мес",
+    offers: [{ price: 80000, duration: "от 2 недель", tags: ["has_examples"], tagline: "Тысяча звонков за ночь вместо недели работы колл-центра" }],
+  },
+  {
+    category: "voice-ai",
+    subcategory: "IVR и ресепшн",
+    title: "Голосовой агент-ресепшн (переадресация по отделам)",
+    scopeLabel: "до 5 направлений",
+    offers: [{ price: 90000, duration: "от 2 недель", tags: ["verified"], tagline: "Понимает запрос звонящего и сам соединяет с нужным отделом" }],
   },
 
   // AI-видео и контент
   {
     category: "ai-video",
+    subcategory: "Рекламные ролики",
     title: "Рекламный ролик с AI-аватаром",
-    tagline: "Готовое видео без съёмочной группы и актёра на камеру",
     scopeLabel: "1 ролик до 60 секунд",
-    price: 15000,
-    duration: "от 3 дней",
-    revisions: 2,
-    tags: ["urgent", "has_examples"],
+    offers: [{ price: 15000, duration: "от 3 дней", revisions: 2, tags: ["urgent", "has_examples"], tagline: "Готовое видео без съёмочной группы и актёра на камеру" }],
   },
   {
     category: "ai-video",
+    subcategory: "Shorts/Reels",
     title: "Пакет из 10 Shorts/Reels с AI-монтажом",
-    tagline: "Месяц контента для соцсетей за одну съёмку сырого материала",
     scopeLabel: "до 10 роликов",
-    price: 35000,
-    duration: "от 1 недели",
-    tags: ["top"],
-    promoted: true,
+    offers: [{ price: 35000, duration: "от 1 недели", tags: ["top"], promoted: true, tagline: "Месяц контента для соцсетей за одну съёмку сырого материала" }],
   },
   {
     category: "ai-video",
+    subcategory: "Озвучка и локализация",
     title: "Озвучка и локализация видео на 3 языка",
-    tagline: "Один ролик заговорит на нужных рынках без студии озвучки",
     scopeLabel: "1 ролик, 3 языка",
-    price: 12000,
-    duration: "от 3 дней",
-    tags: ["online"],
+    offers: [{ price: 12000, duration: "от 3 дней", tags: ["online"], tagline: "Один ролик заговорит на нужных рынках без студии озвучки" }],
   },
   {
     category: "ai-video",
+    subcategory: "Обучающее видео",
     title: "Обучающее видео с AI-диктором из текста сценария",
-    tagline: "Из готового текста — видеоурок без записи голоса преподавателя",
     scopeLabel: "до 10 минут",
-    price: 25000,
-    duration: "от 5 дней",
-    revisions: 1,
-    tags: ["verified"],
+    offers: [{ price: 25000, duration: "от 5 дней", revisions: 1, tags: ["verified"], tagline: "Из готового текста — видеоурок без записи голоса преподавателя" }],
   },
 
   // AI над CRM / учётными системами
   {
     category: "crm-ai",
+    subcategory: "Скоринг лидов",
     title: "AI-скоринг лидов в amoCRM/Битрикс24",
-    tagline: "Менеджер видит, кому звонить в первую очередь, без гадания",
     scopeLabel: "1 воронка",
-    price: 50000,
-    duration: "от 2 недель",
-    tags: ["top"],
-    promoted: true,
+    offers: [{ price: 50000, duration: "от 2 недель", tags: ["top"], promoted: true, tagline: "Менеджер видит, кому звонить в первую очередь, без гадания" }],
   },
   {
     category: "crm-ai",
+    subcategory: "Автозаполнение данных",
     title: "Автозаполнение карточек сделок из переписки",
-    tagline: "Данные из чата попадают в CRM сами — никто не забудет их внести",
     scopeLabel: "1 канал (почта/мессенджер)",
-    price: 40000,
-    duration: "от 10 дней",
-    tags: ["has_examples"],
+    offers: [{ price: 40000, duration: "от 10 дней", tags: ["has_examples"], tagline: "Данные из чата попадают в CRM сами — никто не забудет их внести" }],
   },
   {
     category: "crm-ai",
-    title: "AI-напоминания менеджерам о просроченных задачах",
-    tagline: "Сделки перестают зависать без ответа клиенту неделями",
-    scopeLabel: "1 CRM, до 5 триггеров",
-    price: 25000,
-    duration: "от 1 недели",
-    tags: ["online"],
-  },
-  {
-    category: "crm-ai",
+    subcategory: "Автозаполнение данных",
     title: "Интеграция AI-суммаризации звонков в CRM",
-    tagline: "Краткое содержание звонка появляется в карточке сделки само",
     scopeLabel: "1 источник звонков",
-    price: 45000,
-    duration: "от 10 дней",
-    tags: ["verified"],
+    offers: [{ price: 45000, duration: "от 10 дней", tags: ["verified"], tagline: "Краткое содержание звонка появляется в карточке сделки само" }],
+  },
+  {
+    category: "crm-ai",
+    subcategory: "Напоминания и уведомления",
+    title: "AI-напоминания менеджерам о просроченных задачах",
+    scopeLabel: "1 CRM, до 5 триггеров",
+    offers: [{ price: 25000, duration: "от 1 недели", tags: ["online"], tagline: "Сделки перестают зависать без ответа клиенту неделями" }],
   },
 
   // Промпт-инжиниринг / файнтюнинг
   {
     category: "prompt-engineering",
+    subcategory: "Промпт-инжиниринг",
     title: "Оптимизация промптов существующего AI-продукта",
-    tagline: "Те же вопросы — точнее ответы, без переписывания продукта с нуля",
     scopeLabel: "до 10 сценариев",
-    price: 30000,
-    duration: "от 1 недели",
-    tags: ["urgent"],
+    offers: [{ price: 30000, duration: "от 1 недели", tags: ["urgent"], tagline: "Те же вопросы — точнее ответы, без переписывания продукта с нуля" }],
   },
   {
     category: "prompt-engineering",
+    subcategory: "Файнтюнинг",
     title: "Файнтюнинг модели под узкую задачу",
-    tagline: "Модель, дообученная именно на ваших данных и терминах",
     scopeLabel: "1 датасет, 1 модель",
-    price: 80000,
-    duration: "от 2 недель",
-    tags: ["top", "guaranteed"],
-    promoted: true,
+    offers: [{ price: 80000, duration: "от 2 недель", tags: ["top", "guaranteed"], promoted: true, tagline: "Модель, дообученная именно на ваших данных и терминах" }],
   },
   {
     category: "prompt-engineering",
-    title: "Снижение стоимости AI-продукта (переход на меньшую модель)",
-    tagline: "То же качество ответов, но счёт за API заметно меньше",
-    scopeLabel: "1 продукт, отчёт по экономии",
-    price: 40000,
-    duration: "от 10 дней",
-    tags: ["verified"],
-  },
-  {
-    category: "prompt-engineering",
+    subcategory: "Файнтюнинг",
     title: "Сбор и разметка датасета для файнтюнинга",
-    tagline: "Готовый датасет под задачу, если своих примеров пока нет",
     scopeLabel: "до 500 примеров",
-    price: 35000,
-    duration: "от 1 недели",
-    tags: ["online"],
+    offers: [{ price: 35000, duration: "от 1 недели", tags: ["online"], tagline: "Готовый датасет под задачу, если своих примеров пока нет" }],
+  },
+  {
+    category: "prompt-engineering",
+    subcategory: "Оптимизация расходов на AI",
+    title: "Снижение стоимости AI-продукта (переход на меньшую модель)",
+    scopeLabel: "1 продукт, отчёт по экономии",
+    offers: [{ price: 40000, duration: "от 10 дней", tags: ["verified"], tagline: "То же качество ответов, но счёт за API заметно меньше" }],
   },
 
   // AI-аналитика и отчётность
   {
     category: "ai-analytics",
+    subcategory: "AI-дашборды",
     title: "Дашборд с AI-инсайтами по продажам",
-    tagline: "Дашборд сам подсвечивает аномалии, а не просто рисует графики",
     scopeLabel: "до 3 источников данных",
-    price: 60000,
-    duration: "от 2 недель",
-    tags: ["top", "has_examples"],
-    promoted: true,
+    offers: [{ price: 60000, duration: "от 2 недель", tags: ["top", "has_examples"], promoted: true, tagline: "Дашборд сам подсвечивает аномалии, а не просто рисует графики" }],
   },
   {
     category: "ai-analytics",
+    subcategory: "Отчёты на естественном языке",
     title: "AI-отчёт «спроси на языке» поверх существующих таблиц",
-    tagline: "Руководитель спрашивает «почему упали продажи» и получает ответ",
     scopeLabel: "1 набор данных",
-    price: 45000,
-    duration: "от 10 дней",
-    tags: ["verified"],
+    offers: [{ price: 45000, duration: "от 10 дней", tags: ["verified"], tagline: "Руководитель спрашивает «почему упали продажи» и получает ответ" }],
   },
   {
     category: "ai-analytics",
-    title: "Поиск аномалий в данных с AI-алертами",
-    tagline: "Узнаёте о проблеме в тот же день, а не в конце месяца из отчёта",
-    scopeLabel: "1 метрика, ежедневный мониторинг",
-    price: 35000,
-    duration: "от 1 недели",
-    tags: ["guaranteed"],
-  },
-  {
-    category: "ai-analytics",
+    subcategory: "Отчёты на естественном языке",
     title: "Автоматический еженедельный AI-отчёт руководителю",
-    tagline: "Отчёт приходит сам по понедельникам — никто его не забывает собрать",
     scopeLabel: "1 отчёт",
-    price: 20000,
-    duration: "от 5 дней",
-    tags: ["online"],
+    offers: [{ price: 20000, duration: "от 5 дней", tags: ["online"], tagline: "Отчёт приходит сам по понедельникам — никто его не забывает собрать" }],
+  },
+  {
+    category: "ai-analytics",
+    subcategory: "Мониторинг и алерты",
+    title: "Поиск аномалий в данных с AI-алертами",
+    scopeLabel: "1 метрика, ежедневный мониторинг",
+    offers: [{ price: 35000, duration: "от 1 недели", tags: ["guaranteed"], tagline: "Узнаёте о проблеме в тот же день, а не в конце месяца из отчёта" }],
   },
 ];
 
-export const mockServices: ServiceCard[] = RAW_SERVICES.map((raw, index) => {
-  const provider = PROVIDERS[raw.category];
+function slugify(category: string, subcategory: string, title: string): string {
+  const base = `${category}-${subcategory}-${title}`
+    .toLowerCase()
+    .replace(/[«»]/g, "")
+    .replace(/[^a-zа-яё0-9\s-]/gi, "")
+    .trim();
+  // Транслитерация упрощённая — этого достаточно для уникальных читаемых
+  // слагов на моках, не для продакшен-транслитерации кириллицы.
+  const translitMap: Record<string, string> = {
+    а: "a", б: "b", в: "v", г: "g", д: "d", е: "e", ё: "e", ж: "zh", з: "z",
+    и: "i", й: "y", к: "k", л: "l", м: "m", н: "n", о: "o", п: "p", р: "r",
+    с: "s", т: "t", у: "u", ф: "f", х: "h", ц: "c", ч: "ch", ш: "sh", щ: "sch",
+    ъ: "", ы: "y", ь: "", э: "e", ю: "yu", я: "ya",
+  };
+  const translit = base
+    .split("")
+    .map((ch) => translitMap[ch] ?? ch)
+    .join("");
+  return translit.replace(/\s+/g, "-").replace(/-+/g, "-").slice(0, 60);
+}
+
+export const mockResultTypes: ResultType[] = RAW_TYPES.map((raw) => ({
+  id: slugify(raw.category, raw.subcategory, raw.title),
+  slug: slugify(raw.category, raw.subcategory, raw.title),
+  categorySlug: raw.category,
+  subcategory: raw.subcategory,
+  title: raw.title,
+  scopeLabel: raw.scopeLabel,
+}));
+
+export const mockServiceOffers: ServiceOffer[] = RAW_TYPES.flatMap((raw) => {
+  const resultTypeSlug = slugify(raw.category, raw.subcategory, raw.title);
+  const defaultProvider = PROVIDERS[raw.category];
+  return raw.offers.map((offer, i) => {
+    const provider = offer.seller ?? defaultProvider;
+    return {
+      id: `${resultTypeSlug}-offer-${i + 1}`,
+      resultTypeSlug,
+      tagline: offer.tagline,
+      priceType: "from" as const,
+      priceValue: offer.price,
+      durationFrom: offer.duration,
+      scopeLabel: raw.scopeLabel,
+      revisionsIncluded: offer.revisions,
+      tags: offer.tags,
+      promoted: offer.promoted,
+      specialistSlug: provider.slug,
+      specialistName: provider.name,
+      specialistAvatarInitials: provider.initials,
+      specialistRating: provider.rating,
+      specialistCompletedOrders: provider.completedOrders,
+    };
+  });
+});
+
+export interface ResultTypeSummary extends ResultType {
+  offersCount: number;
+  minPrice: number;
+  bestRating: number;
+  hasPromoted: boolean;
+}
+
+export function getOffersForType(resultTypeSlug: string): ServiceOffer[] {
+  return mockServiceOffers
+    .filter((o) => o.resultTypeSlug === resultTypeSlug)
+    .sort((a, b) => {
+      if (Boolean(b.promoted) !== Boolean(a.promoted)) {
+        return Number(Boolean(b.promoted)) - Number(Boolean(a.promoted));
+      }
+      return b.specialistRating - a.specialistRating;
+    });
+}
+
+export const mockResultTypeSummaries: ResultTypeSummary[] = mockResultTypes.map((type) => {
+  const offers = getOffersForType(type.slug);
   return {
-    id: `service-${index + 1}`,
-    slug: `service-${index + 1}`,
-    categorySlug: raw.category,
-    title: raw.title,
-    tagline: raw.tagline,
-    priceType: "from",
-    priceValue: raw.price,
-    durationFrom: raw.duration,
-    scopeLabel: raw.scopeLabel,
-    revisionsIncluded: raw.revisions,
-    tags: raw.tags,
-    promoted: raw.promoted,
-    specialistSlug: provider.slug,
-    specialistName: provider.name,
-    specialistAvatarInitials: provider.initials,
-    specialistRating: provider.rating,
-    specialistCompletedOrders: provider.completedOrders,
+    ...type,
+    offersCount: offers.length,
+    minPrice: Math.min(...offers.map((o) => o.priceValue)),
+    bestRating: Math.max(...offers.map((o) => o.specialistRating)),
+    hasPromoted: offers.some((o) => o.promoted),
   };
 });
 
-// Топ карточек для главной — продвигаемые вперёд, затем добор органикой,
-// как и было устроено для специалистов в §4.4/§8.3 ТЗ (тот же принцип,
-// применённый теперь к карточкам услуг, а не профилям).
-export const mockTopServices: ServiceCard[] = [...mockServices].sort((a, b) => {
-  if (Boolean(b.promoted) !== Boolean(a.promoted)) {
-    return Number(Boolean(b.promoted)) - Number(Boolean(a.promoted));
+// Топ плашек для главной — продвигаемые вперёд, затем по рейтингу лучшего
+// предложения (тот же принцип, что раньше применялся к профилям, теперь —
+// к типам результата, см. ТЗ §4.4/§8.3 и PIVOT_SERVICE_CARDS.md).
+export const mockTopResultTypes: ResultTypeSummary[] = [...mockResultTypeSummaries].sort(
+  (a, b) => {
+    if (b.hasPromoted !== a.hasPromoted) {
+      return Number(b.hasPromoted) - Number(a.hasPromoted);
+    }
+    return b.bestRating - a.bestRating;
   }
-  return b.specialistRating - a.specialistRating;
-});
+);

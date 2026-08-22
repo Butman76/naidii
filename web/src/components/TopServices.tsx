@@ -1,13 +1,13 @@
 import Link from "next/link";
-import ServiceCardTile from "./ServiceCardTile";
-import { mockTopServices } from "@/data/mock-services";
+import ResultTypePlate from "./ResultTypePlate";
+import { mockTopResultTypes } from "@/data/mock-services";
 
-// Главный объект первого экрана каталога — теперь карточка услуги, а не
-// профиль специалиста (см. PIVOT_SERVICE_CARDS.md). Сетка и принцип
+// Главный объект первого экрана каталога — теперь плашка типа результата,
+// а не профиль специалиста (см. PIVOT_SERVICE_CARDS.md). Сетка и принцип
 // добора (продвигаемые + органика) — тот же, что раньше был у Топ-20
-// специалистов (ТЗ §4.4/§8.3), просто применён к другому объекту.
+// специалистов (ТЗ §4.4/§8.3), применён к другому объекту.
 export default function TopServices() {
-  const top = mockTopServices.slice(0, 20);
+  const top = mockTopResultTypes.slice(0, 20);
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -22,8 +22,8 @@ export default function TopServices() {
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-4 min-[640px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-        {top.map((service) => (
-          <ServiceCardTile key={service.id} service={service} />
+        {top.map((type) => (
+          <ResultTypePlate key={type.id} type={type} />
         ))}
       </div>
 

@@ -1,6 +1,19 @@
-// Карточка услуги — теперь главный объект каталога (см.
-// PIVOT_SERVICE_CARDS.md). Поля соответствуют разделу 2 правки ТЗ и полям,
-// добавленным в pocketbase/pb_migrations/1755000016_service_cards_pivot.js.
+// Карточка услуги — главный объект каталога (см. PIVOT_SERVICE_CARDS.md).
+// Модель на два уровня, разделы 1/6 правки ТЗ:
+//
+// - ResultType — «Тип результата», сама плашка (обложка, название,
+//   подкатегория). Одна и та же плашка для всех специалистов, которые его
+//   предлагают — как «Telegram Звёзды» у Playerok, а не отдельная карточка
+//   на каждого продавца.
+// - ServiceOffer — конкретное предложение специалиста ПО этому типу: цена,
+//   срок, свои метки. Несколько офферов могут ссылаться на один и тот же
+//   ResultType (сравнение цены/срока/исполнителя), либо всего один.
+//
+// Поля соответствуют pocketbase/pb_migrations/1755000016_service_cards_pivot.js
+// — при переносе на бэкенд ResultType, скорее всего, живёт в отдельной
+// коллекции (или в services без specialist_profile_id), а ServiceOffer —
+// в services с обязательным specialist_profile_id и ссылкой на ResultType.
+// Это ещё не реализовано на бэкенде, см. STATUS.md.
 
 export type ServiceCardTag =
   | "urgent"
@@ -21,11 +34,18 @@ export const SERVICE_TAG_LABELS: Record<ServiceCardTag, string> = {
 
 export type ServicePriceType = "fixed" | "from";
 
-export interface ServiceCard {
+export interface ResultType {
   id: string;
   slug: string;
   categorySlug: string;
+  subcategory: string;
   title: string;
+  scopeLabel: string;
+}
+
+export interface ServiceOffer {
+  id: string;
+  resultTypeSlug: string;
   tagline: string;
   priceType: ServicePriceType;
   priceValue: number;
@@ -41,7 +61,7 @@ export interface ServiceCard {
   specialistCompletedOrders: number;
 }
 
-export function formatServicePrice(card: ServiceCard): string {
-  const amount = card.priceValue.toLocaleString("ru-RU");
-  return card.priceType === "fixed" ? `${amount} ₽` : `от ${amount} ₽`;
+export function formatPrice(priceType: ServicePriceType, priceValue: number): string {
+  const amount = priceValue.toLocaleString("ru-RU");
+  return priceType === "fixed" ? `${amount} ₽` : `от ${amount} ₽`;
 }

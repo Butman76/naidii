@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import ServiceCardTile from "./ServiceCardTile";
-import { mockServices } from "@/data/mock-services";
+import ResultTypePlate from "./ResultTypePlate";
+import { mockResultTypeSummaries, getOffersForType } from "@/data/mock-services";
 import { CATEGORIES } from "@/data/categories";
 import { SERVICE_TAG_LABELS, type ServiceCardTag } from "@/types/service-card";
 
@@ -31,28 +31,31 @@ export default function ServicesCatalog() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
 
-    const list = mockServices.filter((s) => {
-      if (activeCategory && s.categorySlug !== activeCategory) return false;
-      if (activeTags.length > 0 && !activeTags.every((t) => s.tags.includes(t)))
+    const list = mockResultTypeSummaries.filter((type) => {
+      if (activeCategory && type.categorySlug !== activeCategory) return false;
+      const offers = getOffersForType(type.slug);
+      if (
+        activeTags.length > 0 &&
+        !activeTags.every((t) => offers.some((o) => o.tags.includes(t)))
+      )
         return false;
       if (!q) return true;
-      const haystack = [s.title, s.tagline, s.specialistName]
+      const haystack = [type.title, type.subcategory, ...offers.map((o) => o.specialistName)]
         .join(" ")
         .toLowerCase();
       return haystack.includes(q);
     });
 
     return [...list].sort((a, b) => {
-      if (sortBy === "priceAsc") return a.priceValue - b.priceValue;
-      if (sortBy === "rating")
-        return b.specialistRating - a.specialistRating;
-      // relevance: продвигаемые сначала, дальше по рейтингу исполнителя —
-      // упрощённая версия формулы ранжирования из раздела 6 правки ТЗ
-      // (полнота карточки, конверсия и т.д. пока не считаем на моках).
-      if (Boolean(b.promoted) !== Boolean(a.promoted)) {
-        return Number(Boolean(b.promoted)) - Number(Boolean(a.promoted));
+      if (sortBy === "priceAsc") return a.minPrice - b.minPrice;
+      if (sortBy === "rating") return b.bestRating - a.bestRating;
+      // relevance: продвигаемые сначала, дальше по рейтингу — упрощённая
+      // версия формулы ранжирования из раздела 6 правки ТЗ (полнота
+      // карточки, конверсия и т.д. пока не считаем на моках).
+      if (b.hasPromoted !== a.hasPromoted) {
+        return Number(b.hasPromoted) - Number(a.hasPromoted);
       }
-      return b.specialistRating - a.specialistRating;
+      return b.bestRating - a.bestRating;
     });
   }, [query, activeCategory, activeTags, sortBy]);
 
@@ -134,8 +137,8 @@ export default function ServicesCatalog() {
 
       {filtered.length > 0 ? (
         <div className="mt-4 grid grid-cols-1 gap-4 min-[640px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {filtered.map((service) => (
-            <ServiceCardTile key={service.id} service={service} />
+          {filtered.map((type) => (
+            <ResultTypePlate key={type.id} type={type} />
           ))}
         </div>
       ) : (

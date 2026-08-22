@@ -7,6 +7,7 @@ import ServiceOfferRow from "@/components/ServiceOfferRow";
 import { getCategoryStyle } from "@/data/category-style";
 import { CATEGORIES } from "@/data/categories";
 import { mockResultTypes, getOffersForType } from "@/data/mock-services";
+import { withBasePath } from "@/lib/base-path";
 
 function getResultType(slug: string) {
   return mockResultTypes.find((t) => t.slug === slug);
@@ -49,9 +50,23 @@ export default async function ResultTypePage({
       <Header />
       <main className="flex-1 bg-zinc-50">
         <div
-          className={`relative overflow-hidden bg-gradient-to-br text-white ${style.gradient}`}
+          className={`relative overflow-hidden text-white ${
+            type.coverImageUrl ? "bg-zinc-900" : `bg-gradient-to-br ${style.gradient}`
+          }`}
         >
-          <div className="pointer-events-none absolute -right-10 -top-16 h-56 w-56 rounded-full bg-white/15 blur-3xl" />
+          {type.coverImageUrl ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element -- static export, no image optimizer */}
+              <img
+                src={withBasePath(type.coverImageUrl)}
+                alt=""
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-black/10" />
+            </>
+          ) : (
+            <div className="pointer-events-none absolute -right-10 -top-16 h-56 w-56 rounded-full bg-white/15 blur-3xl" />
+          )}
           <div className="relative mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
             <p className="text-sm">
               <Link href="/services" className="hover:underline">
@@ -60,7 +75,9 @@ export default async function ResultTypePage({
               / {categoryName} / {type.subcategory}
             </p>
             <div className="mt-3 flex items-center gap-3">
-              <span className="text-5xl drop-shadow-md">{style.icon}</span>
+              {!type.coverImageUrl && (
+                <span className="text-5xl drop-shadow-md">{style.icon}</span>
+              )}
               <div>
                 <h1 className="text-2xl font-bold sm:text-3xl">{type.title}</h1>
                 <p className="mt-1 text-sm text-white/80">{type.scopeLabel}</p>

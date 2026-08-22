@@ -6,3 +6,7 @@ out/
 .env.*.local
 *.log
 pb_data/
+
+# Личный рабочий файл пользователя, не для репозитория
+COVER_ART_CHECKLIST.docx
+~$*.docx

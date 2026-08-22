@@ -41,6 +41,10 @@ export interface ResultType {
   subcategory: string;
   title: string;
   scopeLabel: string;
+  // Путь к настоящей обложке (web/public/covers/{slug}.png), когда она уже
+  // сгенерирована — см. cover-manifest.ts. Пока не задана — плашка
+  // показывает CSS-градиент направления + эмодзи-иконку вместо неё.
+  coverImageUrl?: string;
 }
 
 export interface ServiceOffer {

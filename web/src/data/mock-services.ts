@@ -3,6 +3,7 @@ import type {
   ServiceCardTag,
   ServiceOffer,
 } from "@/types/service-card";
+import { getCoverImagePath } from "./cover-manifest";
 
 // TODO: заменить на запрос к PocketBase — см. pocketbase/README.md и
 // PIVOT_SERVICE_CARDS.md, раздел 6 ("следующие шаги") — модель ResultType/
@@ -437,14 +438,18 @@ function slugify(category: string, subcategory: string, title: string): string {
   return translit.replace(/\s+/g, "-").replace(/-+/g, "-").slice(0, 60);
 }
 
-export const mockResultTypes: ResultType[] = RAW_TYPES.map((raw) => ({
-  id: slugify(raw.category, raw.subcategory, raw.title),
-  slug: slugify(raw.category, raw.subcategory, raw.title),
-  categorySlug: raw.category,
-  subcategory: raw.subcategory,
-  title: raw.title,
-  scopeLabel: raw.scopeLabel,
-}));
+export const mockResultTypes: ResultType[] = RAW_TYPES.map((raw) => {
+  const slug = slugify(raw.category, raw.subcategory, raw.title);
+  return {
+    id: slug,
+    slug,
+    categorySlug: raw.category,
+    subcategory: raw.subcategory,
+    title: raw.title,
+    scopeLabel: raw.scopeLabel,
+    coverImageUrl: getCoverImagePath(slug),
+  };
+});
 
 export const mockServiceOffers: ServiceOffer[] = RAW_TYPES.flatMap((raw) => {
   const resultTypeSlug = slugify(raw.category, raw.subcategory, raw.title);

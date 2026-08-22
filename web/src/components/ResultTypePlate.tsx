@@ -3,6 +3,7 @@ import type { ResultTypeSummary } from "@/data/mock-services";
 import { formatPrice } from "@/types/service-card";
 import { getCategoryStyle } from "@/data/category-style";
 import { CATEGORIES } from "@/data/categories";
+import { withBasePath } from "@/lib/base-path";
 
 // Плашка типа результата — главный объект каталога (см.
 // PIVOT_SERVICE_CARDS.md, раздел 6). Одна плашка на всех специалистов,
@@ -13,6 +14,7 @@ export default function ResultTypePlate({ type }: { type: ResultTypeSummary }) {
   const style = getCategoryStyle(type.categorySlug);
   const categoryName =
     CATEGORIES.find((c) => c.slug === type.categorySlug)?.name ?? "Другое";
+  const hasCover = Boolean(type.coverImageUrl);
 
   return (
     <Link
@@ -26,10 +28,26 @@ export default function ResultTypePlate({ type }: { type: ResultTypeSummary }) {
 
       <div className="px-3 pt-2">
         <div
-          className={`relative aspect-[4/3] overflow-hidden rounded-xl bg-gradient-to-br text-white ${style.gradient}`}
+          className={`relative aspect-[4/3] overflow-hidden rounded-xl text-white ${
+            hasCover ? "bg-zinc-900" : `bg-gradient-to-br ${style.gradient}`
+          }`}
         >
-          <div className="pointer-events-none absolute -right-6 -top-8 h-28 w-28 rounded-full bg-white/20 blur-2xl" />
-          <div className="pointer-events-none absolute -bottom-10 -left-6 h-32 w-32 rounded-full bg-black/20 blur-2xl" />
+          {hasCover ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element -- static export, no image optimizer */}
+              <img
+                src={withBasePath(type.coverImageUrl!)}
+                alt=""
+                className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-black/10" />
+            </>
+          ) : (
+            <>
+              <div className="pointer-events-none absolute -right-6 -top-8 h-28 w-28 rounded-full bg-white/20 blur-2xl" />
+              <div className="pointer-events-none absolute -bottom-10 -left-6 h-32 w-32 rounded-full bg-black/20 blur-2xl" />
+            </>
+          )}
 
           <div className="relative flex h-full flex-col justify-between p-3">
             <div className="flex items-start justify-between gap-2">
@@ -45,9 +63,11 @@ export default function ResultTypePlate({ type }: { type: ResultTypeSummary }) {
               </span>
             </div>
 
-            <span className="self-center text-6xl leading-none drop-shadow-md">
-              {style.icon}
-            </span>
+            {!hasCover && (
+              <span className="self-center text-6xl leading-none drop-shadow-md">
+                {style.icon}
+              </span>
+            )}
 
             <span className="self-start rounded-full bg-black/25 px-2 py-0.5 text-[11px] font-medium backdrop-blur-sm">
               {type.scopeLabel}

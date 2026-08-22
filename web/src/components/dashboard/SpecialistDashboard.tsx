@@ -51,8 +51,11 @@ export default function SpecialistDashboard({
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-800">
-        Демо-режим: вы вошли как «{specialist.name}». Реальной авторизации
-        пока нет — эти данные показывают, как будет выглядеть кабинет.
+        Демо-режим: вы вошли как «{specialist.name}» (роль «специалист»).
+        Реальной авторизации пока нет.{" "}
+        <Link href="/dashboard/customer" className="font-medium underline">
+          Посмотреть кабинет заказчика →
+        </Link>
       </div>
 
       <div className="mt-6 flex items-center gap-3">

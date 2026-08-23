@@ -7,6 +7,8 @@
 export const BANNER_MANIFEST: ReadonlySet<string> = new Set([
   "ai-agents",
   "rag",
+  "orchestration",
+  "chatbots",
 ]);
 
 export function getBannerImagePath(categorySlug: string): string | undefined {

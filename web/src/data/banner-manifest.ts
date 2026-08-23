@@ -3,7 +3,10 @@
 // по мере добавления — та же схема, что и cover-manifest.ts для обложек
 // карточек услуг, и по той же причине (карусель — клиентский компонент,
 // без доступа к fs на билде).
-export const BANNER_MANIFEST: ReadonlySet<string> = new Set([]);
+export const BANNER_MANIFEST: ReadonlySet<string> = new Set([
+  "ai-agents",
+  "rag",
+]);
 
 export function getBannerImagePath(categorySlug: string): string | undefined {
   return BANNER_MANIFEST.has(categorySlug)

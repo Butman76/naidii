@@ -36,11 +36,14 @@ export default function HeroCarousel() {
       >
         {/* Фиксированная высота, заметно ниже прежней (2:1 от полной ширины
             контейнера на десктопе — это ~640px, реально пол-экрана).
-            Сейчас — тонкая полоса-баннер на любом экране. Возросшая при
-            этом ширина-к-высоте (на десктопе больше исходных 2:1 у части
-            баннеров) компенсируется object-top ниже — обрезка идёт снизу,
-            не сверху, так что голова не должна теряться, даже когда кадр
-            обрезается сильнее, чем раньше. */}
+            Сейчас — тонкая полоса-баннер на любом экране, но из-за этого
+            обрезка object-cover стала жёстче, чем раньше. Пробовали
+            смещать её к верху (object-top) — помогало картинкам, где
+            человек в верхней части кадра, но резало лицо там, где
+            генератор сам разместил его ниже (у каждого источника
+            по-своему). Смещения нет — обрезка по центру, а компоновку
+            (чтобы лицо не резалось) нужно закладывать заранее в самой
+            картинке, см. BANNER_PROMPTS.md. */}
         <div className="relative h-40 overflow-hidden rounded-2xl sm:h-48 md:h-56 lg:h-64">
           {HERO_BANNER_SLIDES.map((slide, i) => {
             const style = getCategoryStyle(slide.categorySlug);
@@ -69,7 +72,7 @@ export default function HeroCarousel() {
                     <img
                       src={withBasePath(bannerUrl)}
                       alt=""
-                      className="absolute inset-0 h-full w-full object-cover object-top"
+                      className="absolute inset-0 h-full w-full object-cover"
                     />
                   ) : (
                     <>

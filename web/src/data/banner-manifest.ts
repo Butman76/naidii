@@ -8,7 +8,10 @@ export const BANNER_MANIFEST: ReadonlySet<string> = new Set([
   "ai-agents",
   "rag",
   "orchestration",
-  "chatbots",
+  // chatbots: временно снят (2026-08-23) — файл, который сюда положили,
+  // на самом деле оказался для orchestration (перепутали при сохранении).
+  // Ждём отдельную картинку под чат-боты — до тех пор показывается
+  // градиент направления.
 ]);
 
 export function getBannerImagePath(categorySlug: string): string | undefined {

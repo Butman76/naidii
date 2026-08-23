@@ -27,6 +27,14 @@ export const COVER_MANIFEST: ReadonlySet<string> = new Set([
   "chatbots-zapis-i-bronirovanie-bot-zapisi-na-uslugi-s-napomin",
   "chatbots-podderzhka-v-messendzherah-perenos-telegram-bota-na",
   "chatbots-podderzhka-v-messendzherah-bot-podderzhki-klientov-",
+  "voice-ai-priem-zvonkov-golosovoy-agent-dlya-priema-vhodyasch",
+  "voice-ai-priem-zvonkov-zamena-ivr-menyu-na-golosovogo-agenta",
+  "voice-ai-ishodyaschiy-obzvon-obzvon-bazy-s-ai-skriptom-podtv",
+  "voice-ai-ivr-i-resepshn-golosovoy-agent-resepshn-pereadresac",
+  "ai-video-reklamnye-roliki-reklamnyy-rolik-s-ai-avatarom",
+  "ai-video-shortsreels-paket-iz-10-shortsreels-s-ai-montazhom",
+  "ai-video-ozvuchka-i-lokalizaciya-ozvuchka-i-lokalizaciya-vid",
+  "ai-video-obuchayuschee-video-obuchayuschee-video-s-ai-diktor",
 ]);
 
 export function getCoverImagePath(slug: string): string | undefined {

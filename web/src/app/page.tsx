@@ -1,5 +1,5 @@
 import Header from "@/components/Header";
-import Hero from "@/components/Hero";
+import HeroCarousel from "@/components/HeroCarousel";
 import DirectionsStrip from "@/components/DirectionsStrip";
 import TrustStats from "@/components/TrustStats";
 import TopServices from "@/components/TopServices";
@@ -10,7 +10,7 @@ export default function Home() {
     <>
       <Header />
       <main className="flex-1 bg-zinc-50">
-        <Hero />
+        <HeroCarousel />
         <DirectionsStrip />
         <TrustStats />
         <TopServices />

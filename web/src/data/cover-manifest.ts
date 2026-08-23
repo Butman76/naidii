@@ -22,6 +22,11 @@ export const COVER_MANIFEST: ReadonlySet<string> = new Set([
   "orchestration-migraciya-mezhdu-platformami-audit-i-optimizac",
   "orchestration-otchetnost-i-tablicy-avtomatizaciya-otchetnost",
   "orchestration-otchetnost-i-tablicy-ezhemesyachnoe-soprovozhd",
+  "chatbots-prodayuschie-boty-telegram-bot-s-ai-konsultantom-i-",
+  "chatbots-prodayuschie-boty-audit-konversii-suschestvuyuscheg",
+  "chatbots-zapis-i-bronirovanie-bot-zapisi-na-uslugi-s-napomin",
+  "chatbots-podderzhka-v-messendzherah-perenos-telegram-bota-na",
+  "chatbots-podderzhka-v-messendzherah-bot-podderzhki-klientov-",
 ]);
 
 export function getCoverImagePath(slug: string): string | undefined {

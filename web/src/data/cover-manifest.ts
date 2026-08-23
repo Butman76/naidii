@@ -11,6 +11,11 @@ export const COVER_MANIFEST: ReadonlySet<string> = new Set([
   "ai-agents-podderzhka-klientov-audit-suschestvuyuschego-ai-ag",
   "ai-agents-hr-i-rekruting-ai-agent-dlya-hr-pervichnyy-skrinin",
   "ai-agents-hr-i-rekruting-ai-agent-onbordinga-novyh-sotrudnik",
+  "rag-korporativnye-bazy-znaniy-baza-znaniy-s-rag-poiskom-po-d",
+  "rag-korporativnye-bazy-znaniy-obnovlenie-i-pereindeksaciya-s",
+  "rag-rag-dlya-botov-podderzhki-integraciya-rag-v-suschestvuyu",
+  "rag-rag-dlya-botov-podderzhki-rag-poverh-bazy-faq-i-tiketov-",
+  "rag-yuridicheskiy-ai-analiz-rag-konsultant-dlya-yuridichesko",
 ]);
 
 export function getCoverImagePath(slug: string): string | undefined {

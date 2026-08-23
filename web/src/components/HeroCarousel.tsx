@@ -34,12 +34,14 @@ export default function HeroCarousel() {
         onMouseEnter={() => (paused.current = true)}
         onMouseLeave={() => (paused.current = false)}
       >
-        {/* Фиксированное соотношение сторон 2:1, а не "плавающая" высота по
-            брейкпоинтам — раньше на широком экране блок мог растянуться
-            заметно шире, чем исходник (2172x724 = 3:1 у части баннеров,
-            1664x928 = 1.79:1 у других), из-за чего object-cover обрезал
-            голову человека на кадрах, снятых не под ту же пропорцию. */}
-        <div className="relative aspect-[2/1] overflow-hidden rounded-2xl">
+        {/* Фиксированная высота, заметно ниже прежней (2:1 от полной ширины
+            контейнера на десктопе — это ~640px, реально пол-экрана).
+            Сейчас — тонкая полоса-баннер на любом экране. Возросшая при
+            этом ширина-к-высоте (на десктопе больше исходных 2:1 у части
+            баннеров) компенсируется object-top ниже — обрезка идёт снизу,
+            не сверху, так что голова не должна теряться, даже когда кадр
+            обрезается сильнее, чем раньше. */}
+        <div className="relative h-40 overflow-hidden rounded-2xl sm:h-48 md:h-56 lg:h-64">
           {HERO_BANNER_SLIDES.map((slide, i) => {
             const style = getCategoryStyle(slide.categorySlug);
             const bannerUrl = getBannerImagePath(slide.categorySlug);
@@ -67,7 +69,7 @@ export default function HeroCarousel() {
                     <img
                       src={withBasePath(bannerUrl)}
                       alt=""
-                      className="absolute inset-0 h-full w-full object-cover"
+                      className="absolute inset-0 h-full w-full object-cover object-top"
                     />
                   ) : (
                     <>
@@ -79,14 +81,14 @@ export default function HeroCarousel() {
                   )}
                   <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
 
-                  <div className="relative flex flex-col gap-2 p-6 sm:p-10">
-                    <span className="w-fit rounded-full bg-white/20 px-3 py-1 text-xs font-medium backdrop-blur-sm">
+                  <div className="relative flex flex-col gap-1 p-3 sm:gap-1.5 sm:p-5 md:p-6">
+                    <span className="w-fit rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-medium backdrop-blur-sm sm:text-xs">
                       {categoryName}
                     </span>
-                    <h2 className="font-[family-name:var(--font-display)] max-w-lg text-2xl font-bold leading-tight sm:text-4xl">
+                    <h2 className="font-[family-name:var(--font-display)] max-w-lg text-base font-bold leading-tight sm:text-xl md:text-2xl">
                       {slide.title}
                     </h2>
-                    <p className="max-w-md text-sm text-white/85 sm:text-base">
+                    <p className="hidden max-w-md text-xs text-white/85 sm:block sm:text-sm">
                       {slide.subtitle}
                     </p>
                   </div>

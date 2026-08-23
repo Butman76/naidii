@@ -19,7 +19,7 @@ export default function ResultTypePlate({ type }: { type: ResultTypeSummary }) {
   return (
     <Link
       href={`/services/${type.slug}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white transition-shadow hover:shadow-lg"
+      className="plate-3d group flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white"
     >
       <div className="flex items-center gap-1.5 px-3 pt-3 text-[11px] font-medium text-zinc-500">
         <span>{style.icon}</span>

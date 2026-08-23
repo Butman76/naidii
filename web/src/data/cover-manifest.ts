@@ -16,6 +16,12 @@ export const COVER_MANIFEST: ReadonlySet<string> = new Set([
   "rag-rag-dlya-botov-podderzhki-integraciya-rag-v-suschestvuyu",
   "rag-rag-dlya-botov-podderzhki-rag-poverh-bazy-faq-i-tiketov-",
   "rag-yuridicheskiy-ai-analiz-rag-konsultant-dlya-yuridichesko",
+  "orchestration-avtomatizaciya-processov-scenariy-avtomatizaci",
+  "orchestration-avtomatizaciya-processov-avtomatizaciya-priema",
+  "orchestration-migraciya-mezhdu-platformami-perenos-workflow-",
+  "orchestration-migraciya-mezhdu-platformami-audit-i-optimizac",
+  "orchestration-otchetnost-i-tablicy-avtomatizaciya-otchetnost",
+  "orchestration-otchetnost-i-tablicy-ezhemesyachnoe-soprovozhd",
 ]);
 
 export function getCoverImagePath(slug: string): string | undefined {

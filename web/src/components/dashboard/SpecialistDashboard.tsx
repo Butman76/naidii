@@ -1,8 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { Specialist } from "@/types/specialist";
+import type { ServiceOffer } from "@/types/service-card";
+import { formatPrice, SERVICE_TAG_LABELS } from "@/types/service-card";
+import { mockResultTypes, mockServiceOffers } from "@/data/mock-services";
+import ServiceCreationForm from "./ServiceCreationForm";
 import {
   LEAD_STATUS_LABELS,
   LEAD_STATUS_STYLES,
@@ -47,6 +51,22 @@ export default function SpecialistDashboard({
 }) {
   const [tab, setTab] = useState<Tab>("overview");
   const isPremium = Boolean(specialist.premium);
+
+  const [pendingOffers, setPendingOffers] = useState<ServiceOffer[]>([]);
+  const [showCreationForm, setShowCreationForm] = useState(false);
+
+  const publishedOffers = useMemo(
+    () => mockServiceOffers.filter((o) => o.specialistSlug === specialist.slug),
+    [specialist.slug]
+  );
+  const totalOfferCount = publishedOffers.length + pendingOffers.length;
+
+  function resultTypeTitle(resultTypeSlug: string) {
+    return (
+      mockResultTypes.find((t) => t.slug === resultTypeSlug)?.title ??
+      "Своё направление (на модерации)"
+    );
+  }
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
@@ -116,7 +136,7 @@ export default function SpecialistDashboard({
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-zinc-600">
-                    Услуги ({specialist.services.length})
+                    Услуги ({totalOfferCount})
                   </span>
                   <span className="text-emerald-600">Готово</span>
                 </div>
@@ -175,27 +195,74 @@ export default function SpecialistDashboard({
 
         {tab === "services" && (
           <div className="flex flex-col gap-4">
-            {specialist.services.map((service) => (
+            {publishedOffers.map((offer) => (
               <div
-                key={service.title}
+                key={offer.id}
                 className="flex items-center justify-between rounded-2xl border border-zinc-200 bg-white p-4"
               >
-                <div>
-                  <p className="text-sm font-medium text-zinc-900">
-                    {service.title}
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-zinc-900">
+                    {resultTypeTitle(offer.resultTypeSlug)}
                   </p>
                   <p className="mt-1 text-xs text-zinc-500">
-                    {service.priceFrom} · {service.durationFrom}
+                    {formatPrice(offer.priceType, offer.priceValue)} ·{" "}
+                    {offer.durationFrom}
                   </p>
+                  {offer.tags.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {offer.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="rounded-md bg-zinc-50 px-1.5 py-0.5 text-[10px] text-zinc-500 ring-1 ring-inset ring-zinc-200"
+                        >
+                          {SERVICE_TAG_LABELS[tag]}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <button className="rounded-full border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50">
-                  Изменить
-                </button>
+                <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-800">
+                  Опубликовано
+                </span>
               </div>
             ))}
-            <button className="rounded-2xl border border-dashed border-zinc-300 p-4 text-sm text-zinc-500 transition-colors hover:border-zinc-400 hover:text-zinc-700">
-              + Добавить услугу
-            </button>
+
+            {pendingOffers.map((offer) => (
+              <div
+                key={offer.id}
+                className="flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 p-4"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-zinc-900">
+                    {resultTypeTitle(offer.resultTypeSlug)}
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-500">
+                    {formatPrice(offer.priceType, offer.priceValue)} ·{" "}
+                    {offer.durationFrom}
+                  </p>
+                </div>
+                <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+                  На модерации
+                </span>
+              </div>
+            ))}
+
+            {showCreationForm ? (
+              <ServiceCreationForm
+                specialist={specialist}
+                onCreated={(offer) =>
+                  setPendingOffers((prev) => [offer, ...prev])
+                }
+                onCancel={() => setShowCreationForm(false)}
+              />
+            ) : (
+              <button
+                onClick={() => setShowCreationForm(true)}
+                className="rounded-2xl border border-dashed border-zinc-300 p-4 text-sm text-zinc-500 transition-colors hover:border-zinc-400 hover:text-zinc-700"
+              >
+                + Добавить услугу
+              </button>
+            )}
           </div>
         )}
 

@@ -10,7 +10,7 @@ const EXAMPLE_QUERIES = [
   "Создать базу знаний с RAG",
 ];
 
-const HEADLINE = "Найдите результат, а не профиль";
+const HEADLINE = "AI-автоматизация с понятной ценой и сроком";
 
 function AnimatedHeadline({ text }: { text: string }) {
   // Сквозной индекс буквы (для равномерной задержки анимации по всему
@@ -26,16 +26,19 @@ function AnimatedHeadline({ text }: { text: string }) {
   return (
     <>
       {wordsWithOffsets.map(({ word, startIndex }, wordIndex) => (
-        <span key={wordIndex} className="mr-[0.28em] inline-block last:mr-0">
-          {word.split("").map((char, charIndex) => (
-            <span
-              key={charIndex}
-              className="letter-in"
-              style={{ animationDelay: `${(startIndex + charIndex) * 0.035}s` }}
-            >
-              {char}
-            </span>
-          ))}
+        <span key={wordIndex}>
+          {wordIndex > 0 && " "}
+          <span className="inline-block">
+            {word.split("").map((char, charIndex) => (
+              <span
+                key={charIndex}
+                className="letter-in"
+                style={{ animationDelay: `${(startIndex + charIndex) * 0.035}s` }}
+              >
+                {char}
+              </span>
+            ))}
+          </span>
         </span>
       ))}
     </>
@@ -57,9 +60,9 @@ export default function Hero() {
           </span>
         </h1>
         <p className="mx-auto mt-4 max-w-2xl text-lg text-zinc-600">
-          Конкретный результат, цена и срок — сразу на карточке. AI-агенты,
-          нейрокодинг, Telegram-боты, CRM-интеграции, n8n, Make, RAG и
-          автоматизация процессов.
+          Цена, срок и результат видны сразу на карточке услуги. AI-агенты,
+          чат-боты, RAG, интеграции с CRM, n8n и другая автоматизация
+          процессов.
         </p>
 
         <form className="mx-auto mt-8 flex max-w-xl flex-col gap-3 sm:flex-row">

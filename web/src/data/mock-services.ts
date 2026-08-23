@@ -145,21 +145,21 @@ const RAW_TYPES: RawResultType[] = [
     subcategory: "Корпоративные базы знаний",
     title: "Обновление и переиндексация существующей RAG-базы",
     scopeLabel: "до 1000 документов",
-    offers: [{ price: 25000, duration: "от 5 дней", tags: ["urgent", "online"], tagline: "База отвечает по актуальным документам, а не по архиву годовой давности" }],
+    offers: [{ price: 25000, duration: "от 5 дней", tags: ["urgent", "online"], tagline: "Обновляю базу перед переиндексацией — ответы строятся на актуальных документах" }],
   },
   {
     category: "rag",
     subcategory: "RAG для ботов поддержки",
     title: "Интеграция RAG в существующего бота поддержки",
     scopeLabel: "1 источник данных",
-    offers: [{ price: 70000, duration: "от 1 недели", revisions: 2, tags: ["has_examples"], tagline: "Бот начинает отвечать по вашей базе знаний, а не общими фразами" }],
+    offers: [{ price: 70000, duration: "от 1 недели", revisions: 2, tags: ["has_examples"], tagline: "Бот отвечает предметно, опираясь на вашу базу знаний" }],
   },
   {
     category: "rag",
     subcategory: "RAG для ботов поддержки",
     title: "RAG поверх базы FAQ и тикетов поддержки",
     scopeLabel: "до 300 тикетов",
-    offers: [{ price: 55000, duration: "от 10 дней", tags: ["verified"], tagline: "Ответы строятся на реальной истории обращений, а не с нуля" }],
+    offers: [{ price: 55000, duration: "от 10 дней", tags: ["verified"], tagline: "Ответы строятся на реальной истории обращений в поддержку" }],
   },
   {
     category: "rag",
@@ -392,7 +392,7 @@ const RAW_TYPES: RawResultType[] = [
     subcategory: "AI-дашборды",
     title: "Дашборд с AI-инсайтами по продажам",
     scopeLabel: "до 3 источников данных",
-    offers: [{ price: 60000, duration: "от 2 недель", tags: ["top", "has_examples"], promoted: true, tagline: "Дашборд сам подсвечивает аномалии, а не просто рисует графики" }],
+    offers: [{ price: 60000, duration: "от 2 недель", tags: ["top", "has_examples"], promoted: true, tagline: "Дашборд сам подсвечивает аномалии в продажах" }],
   },
   {
     category: "ai-analytics",
@@ -413,7 +413,7 @@ const RAW_TYPES: RawResultType[] = [
     subcategory: "Мониторинг и алерты",
     title: "Поиск аномалий в данных с AI-алертами",
     scopeLabel: "1 метрика, ежедневный мониторинг",
-    offers: [{ price: 35000, duration: "от 1 недели", tags: ["guaranteed"], tagline: "Узнаёте о проблеме в тот же день, а не в конце месяца из отчёта" }],
+    offers: [{ price: 35000, duration: "от 1 недели", tags: ["guaranteed"], tagline: "Узнаёте о проблеме в тот же день, как только она появилась" }],
   },
 ];
 

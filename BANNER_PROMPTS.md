@@ -83,9 +83,29 @@ An extremely wide panoramic advertising banner for an AI business automation ser
 An extremely wide panoramic advertising banner for an AI knowledge-search service, cinematic ultra-wide composition — about three times wider than it is tall, like a horizontal banner strip, not a normal photo. A confident professional in a modern office reaches toward a glowing abstract stack of holographic panel shapes hovering in the air in front of them — plain glowing rectangular shapes with soft blank light lines suggesting a document silhouette, no readable content on them, one panel glows brighter with a beam of light pinpointing it like a search highlight. Abstract glowing particles and light streaks float around the scene with no accompanying words or labels of any kind. Dynamic composition, dramatic professional lighting with lens flare, glossy modern tech-corporate photography style. Color grading: vivid saturated emerald green to teal gradient lighting throughout the scene. Keep the subject and the glowing panels compact within the middle horizontal band of the frame, with open space or soft blurred bokeh filling the area above and below — compose it as an already-wide banner strip, not a square or portrait photo. Absolutely no text, no letters, no words, no numbers, no chat bubbles, no UI mockups, no screens with content, no logos, no watermarks. Ultra vibrant, punchy, premium advertising quality, photorealistic, highly detailed.
 ```
 
-## Остальные 7 направлений
+### 3. No-code оркестрация
+Файл: `banner-orchestration.png`
+```
+An extremely wide panoramic advertising banner for a no-code business process automation service, cinematic ultra-wide composition — about three times wider than it is tall, like a horizontal banner strip, not a normal photo. A confident business professional stands in a modern bright office, smiling, looking at a glowing web of abstract connected orbs floating beside them — simple glowing circles linked by flowing light-stream lines, like an abstract network diagram, no icons, no logos, no readable content on any node. A single soft light particle travels along one connecting stream from one orb to another, suggesting automatic data flow between them. Dynamic composition, dramatic professional lighting with lens flare, glossy modern tech-corporate photography style. Color grading: vivid saturated indigo to blue gradient lighting throughout the scene. Keep the subject and the glowing network compact within the middle horizontal band of the frame, with open window light or soft blurred bokeh filling the space above and below them — compose it as an already-wide banner strip, not a square or portrait photo. Absolutely no text, no letters, no words, no numbers, no chat bubbles, no UI mockups, no screens with content, no app logos, no watermarks. Ultra vibrant, punchy, premium advertising quality, photorealistic, highly detailed.
+```
 
-Сделаем следующим шагом, тем же способом — по паре этих двух посмотрим,
-насколько стиль ложится на карусель (яркость, читаемость текста поверх
-картинки, обрезка сверху/снизу), и если нужно — подправим формулировку
-стиля перед тем как писать оставшиеся промпты.
+### 4. Чат-боты / мессенджеры
+Файл: `banner-chatbots.png`
+```
+An extremely wide panoramic advertising banner for an AI chatbot and messenger automation service, cinematic ultra-wide composition — about three times wider than it is tall, like a horizontal banner strip, not a normal photo. A confident professional smiles while holding a smartphone, looking toward a glowing abstract paper-plane-shaped light trail swooping past them, representing an instant message being sent, with soft glowing particles trailing behind it. A simple smooth rounded glowing shape floats nearby suggesting a friendly presence, completely blank and abstract with no text, symbols, or icons on it. Dynamic composition, dramatic professional lighting with lens flare, glossy modern tech-corporate photography style. Color grading: vivid saturated sky blue to deep blue gradient lighting throughout the scene. Keep the subject and the glowing shapes compact within the middle horizontal band of the frame, with open window light or soft blurred bokeh filling the space above and below them — compose it as an already-wide banner strip, not a square or portrait photo. Absolutely no text, no letters, no words, no numbers, no readable chat bubbles or speech bubbles with content, no UI mockups, no screens with content, no app logos, no watermarks. Ultra vibrant, punchy, premium advertising quality, photorealistic, highly detailed.
+```
+
+## Остальные 5 направлений
+
+Сделаем следующим шагом, тем же способом — посмотрим, насколько стиль
+ложится на карусель (яркость, читаемость текста поверх картинки, обрезка
+сверху/снизу), и если нужно — подправим формулировку стиля перед тем как
+писать оставшиеся промпты.
+
+Отдельно на будущее: AI-агенты, No-code оркестрация и Чат-боты у нас все
+трое в сине-голубой гамме (как и на обложках карточек услуг — та же
+проблема уже отмечена в `COVER_ART_PROMPTS.md`). На баннерах это может
+быть заметнее, т.к. они крупнее и мелькают в одной карусели подряд — если
+после генерации все три будут визуально сливаться, возможно, стоит сменить
+оттенок оркестрации или чат-ботов на что-то более контрастное, отступив от
+точного совпадения с обложками карточек.

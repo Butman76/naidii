@@ -34,7 +34,12 @@ export default function HeroCarousel() {
         onMouseEnter={() => (paused.current = true)}
         onMouseLeave={() => (paused.current = false)}
       >
-        <div className="relative h-64 overflow-hidden rounded-2xl sm:h-80 md:h-[420px]">
+        {/* Фиксированное соотношение сторон 2:1, а не "плавающая" высота по
+            брейкпоинтам — раньше на широком экране блок мог растянуться
+            заметно шире, чем исходник (2172x724 = 3:1 у части баннеров,
+            1664x928 = 1.79:1 у других), из-за чего object-cover обрезал
+            голову человека на кадрах, снятых не под ту же пропорцию. */}
+        <div className="relative aspect-[2/1] overflow-hidden rounded-2xl">
           {HERO_BANNER_SLIDES.map((slide, i) => {
             const style = getCategoryStyle(slide.categorySlug);
             const bannerUrl = getBannerImagePath(slide.categorySlug);

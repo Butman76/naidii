@@ -35,6 +35,18 @@ export const COVER_MANIFEST: ReadonlySet<string> = new Set([
   "ai-video-shortsreels-paket-iz-10-shortsreels-s-ai-montazhom",
   "ai-video-ozvuchka-i-lokalizaciya-ozvuchka-i-lokalizaciya-vid",
   "ai-video-obuchayuschee-video-obuchayuschee-video-s-ai-diktor",
+  "crm-ai-skoring-lidov-ai-skoring-lidov-v-amocrmbitriks24",
+  "crm-ai-avtozapolnenie-dannyh-avtozapolnenie-kartochek-sdelok",
+  "crm-ai-avtozapolnenie-dannyh-integraciya-ai-summarizacii-zvo",
+  "crm-ai-napominaniya-i-uvedomleniya-ai-napominaniya-menedzher",
+  "prompt-engineering-prompt-inzhiniring-optimizaciya-promptov-",
+  "prompt-engineering-fayntyuning-fayntyuning-modeli-pod-uzkuyu",
+  "prompt-engineering-fayntyuning-sbor-i-razmetka-dataseta-dlya",
+  "prompt-engineering-optimizaciya-rashodov-na-ai-snizhenie-sto",
+  "ai-analytics-ai-dashbordy-dashbord-s-ai-insaytami-po-prodazh",
+  "ai-analytics-otchety-na-estestvennom-yazyke-ai-otchet-sprosi",
+  "ai-analytics-otchety-na-estestvennom-yazyke-avtomaticheskiy-",
+  "ai-analytics-monitoring-i-alerty-poisk-anomaliy-v-dannyh-s-a",
 ]);
 
 export function getCoverImagePath(slug: string): string | undefined {

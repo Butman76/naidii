@@ -1,19 +1,29 @@
 import type { NextConfig } from "next";
 
+// Два режима сборки:
+// - STATIC_EXPORT=true (GitHub Actions, .github/workflows/deploy-web.yml) —
+//   статический экспорт для временной витрины на GitHub Pages, без
+//   сервера, basePath = /naidii.
+// - без STATIC_EXPORT (по умолчанию, `npm run build` на VPS) — обычная
+//   Next.js-сборка с сервером (SSR, API-роуты) для реального домена
+//   naidii.ru, basePath пустой.
+const isStaticExport = process.env.STATIC_EXPORT === "true";
+
 const nextConfig: NextConfig = {
-  output: "export",
-  basePath: process.env.PAGES_BASE_PATH,
+  ...(isStaticExport ? { output: "export" as const } : {}),
+  basePath: isStaticExport ? process.env.PAGES_BASE_PATH : undefined,
   // basePath isn't auto-applied to <img>/next-image src (only to next/link
   // and framework-managed assets like the favicon) - see
   // node_modules/next/dist/docs/.../basePath.md. Mirror it into a
   // NEXT_PUBLIC_ var so components can prefix their own asset URLs.
   env: {
-    NEXT_PUBLIC_BASE_PATH: process.env.PAGES_BASE_PATH ?? "",
+    NEXT_PUBLIC_BASE_PATH: isStaticExport ? process.env.PAGES_BASE_PATH ?? "" : "",
   },
   images: {
-    // Static export can't use the default Next.js image optimizer (it
-    // needs a running server); revisit once the site is hosted on the
-    // Timeweb server with a real Node process instead of GitHub Pages.
+    // Статический экспорт не может использовать штатный оптимизатор
+    // изображений Next.js (нужен работающий сервер) - на VPS, где сервер
+    // есть, можно было бы включить оптимизацию, но обложки уже приходят
+    // как готовые PNG фиксированного размера, так что смысла пока нет.
     unoptimized: true,
   },
 };

@@ -1,19 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import type { Specialist } from "@/types/specialist";
 import type { ServiceOffer } from "@/types/service-card";
 import { formatPrice, SERVICE_TAG_LABELS } from "@/types/service-card";
-import { mockResultTypes, mockServiceOffers } from "@/data/mock-services";
 import ServiceCreationForm from "./ServiceCreationForm";
-import {
-  LEAD_STATUS_LABELS,
-  LEAD_STATUS_STYLES,
-  mockDashboardCases,
-  mockDashboardLeads,
-  mockDashboardStats,
-} from "@/data/dashboard-mock";
+import { LEAD_STATUS_LABELS, LEAD_STATUS_STYLES } from "@/data/dashboard-mock";
+import type { SpecialistDashboardData } from "@/lib/dashboard";
 
 type Tab = "overview" | "profile" | "services" | "leads" | "reviews" | "plan";
 
@@ -26,57 +19,33 @@ const TABS: Array<{ id: Tab; label: string }> = [
   { id: "plan", label: "Тариф" },
 ];
 
-function StatCard({
-  label,
-  value,
-  change,
-}: {
-  label: string;
-  value: string | number;
-  change?: string;
-}) {
+function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="rounded-2xl border border-zinc-200 bg-white p-4">
       <p className="text-xs text-zinc-500">{label}</p>
       <p className="mt-1 text-2xl font-bold text-zinc-900">{value}</p>
-      {change && <p className="mt-1 text-xs text-emerald-600">{change}</p>}
     </div>
   );
 }
 
-export default function SpecialistDashboard({
-  specialist,
-}: {
-  specialist: Specialist;
-}) {
+export default function SpecialistDashboard({ data }: { data: SpecialistDashboardData }) {
+  const { specialist, profileStatus, viewsCount, leadsCount, offers, leads, cases } = data;
   const [tab, setTab] = useState<Tab>("overview");
   const isPremium = Boolean(specialist.premium);
 
   const [pendingOffers, setPendingOffers] = useState<ServiceOffer[]>([]);
   const [showCreationForm, setShowCreationForm] = useState(false);
 
-  const publishedOffers = useMemo(
-    () => mockServiceOffers.filter((o) => o.specialistSlug === specialist.slug),
-    [specialist.slug]
-  );
-  const totalOfferCount = publishedOffers.length + pendingOffers.length;
-
-  function resultTypeTitle(resultTypeSlug: string) {
-    return (
-      mockResultTypes.find((t) => t.slug === resultTypeSlug)?.title ??
-      "Своё направление (на модерации)"
-    );
-  }
+  const totalOfferCount = offers.length + pendingOffers.length;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-800">
-        Демо-режим: вы вошли как «{specialist.name}» (роль «специалист»).
-        Реальной авторизации пока нет.{" "}
-        <Link href="/dashboard/customer" className="font-medium underline">
-          Посмотреть кабинет заказчика →
-        </Link>
-      </div>
+      {profileStatus === "pending" && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Ваш профиль на модерации — станет виден в каталоге, когда его
+          проверит команда площадки.
+        </div>
+      )}
 
       <div className="mt-6 flex items-center gap-3">
         <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-lg font-semibold text-white">
@@ -86,7 +55,9 @@ export default function SpecialistDashboard({
           <h1 className="text-xl font-bold text-zinc-900">
             {specialist.name}
           </h1>
-          <p className="text-sm text-zinc-500">{specialist.title}</p>
+          <p className="text-sm text-zinc-500">
+            {specialist.title || "Заголовок профиля ещё не заполнен"}
+          </p>
         </div>
       </div>
 
@@ -111,16 +82,8 @@ export default function SpecialistDashboard({
         {tab === "overview" && (
           <div className="flex flex-col gap-6">
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <StatCard
-                label="Просмотры профиля"
-                value={mockDashboardStats.profileViews}
-                change={mockDashboardStats.profileViewsChange}
-              />
-              <StatCard
-                label="Заявки за месяц"
-                value={mockDashboardStats.leadsThisMonth}
-                change={mockDashboardStats.leadsChange}
-              />
+              <StatCard label="Просмотры профиля" value={viewsCount} />
+              <StatCard label="Заявок всего" value={leadsCount} />
               <StatCard label="Рейтинг" value={`★ ${specialist.rating.toFixed(1)}`} />
               <StatCard label="Отзывов" value={specialist.reviewsCount} />
             </div>
@@ -132,17 +95,31 @@ export default function SpecialistDashboard({
               <div className="mt-3 flex flex-col gap-2 text-sm">
                 <div className="flex items-center justify-between">
                   <span className="text-zinc-600">Описание и навыки</span>
-                  <span className="text-emerald-600">Готово</span>
+                  <span
+                    className={
+                      specialist.shortDescription
+                        ? "text-emerald-600"
+                        : "text-amber-600"
+                    }
+                  >
+                    {specialist.shortDescription ? "Готово" : "Пока не заполнено"}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-zinc-600">
                     Услуги ({totalOfferCount})
                   </span>
-                  <span className="text-emerald-600">Готово</span>
+                  <span
+                    className={
+                      totalOfferCount > 0 ? "text-emerald-600" : "text-amber-600"
+                    }
+                  >
+                    {totalOfferCount > 0 ? "Готово" : "Добавьте хотя бы одну"}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-zinc-600">
-                    Кейсы ({mockDashboardCases.length})
+                    Кейсы ({cases.length})
                   </span>
                   <span className="text-amber-600">
                     Добавьте ещё для полноты
@@ -166,27 +143,37 @@ export default function SpecialistDashboard({
             <dl className="mt-4 flex flex-col gap-3 text-sm">
               <div>
                 <dt className="text-xs text-zinc-500">Заголовок</dt>
-                <dd className="text-zinc-900">{specialist.title}</dd>
+                <dd className="text-zinc-900">
+                  {specialist.title || "—"}
+                </dd>
               </div>
               <div>
                 <dt className="text-xs text-zinc-500">Краткое описание</dt>
-                <dd className="text-zinc-900">{specialist.shortDescription}</dd>
+                <dd className="text-zinc-900">
+                  {specialist.shortDescription || "—"}
+                </dd>
               </div>
               <div>
                 <dt className="text-xs text-zinc-500">Полное описание</dt>
-                <dd className="text-zinc-600">{specialist.fullDescription}</dd>
+                <dd className="text-zinc-600">
+                  {specialist.fullDescription || "—"}
+                </dd>
               </div>
               <div>
                 <dt className="text-xs text-zinc-500">Навыки</dt>
                 <dd className="mt-1 flex flex-wrap gap-1">
-                  {specialist.skills.map((skill) => (
-                    <span
-                      key={skill}
-                      className="rounded-md bg-zinc-50 px-2 py-0.5 text-xs text-zinc-500 ring-1 ring-inset ring-zinc-200"
-                    >
-                      {skill}
-                    </span>
-                  ))}
+                  {specialist.skills.length > 0 ? (
+                    specialist.skills.map((skill) => (
+                      <span
+                        key={skill}
+                        className="rounded-md bg-zinc-50 px-2 py-0.5 text-xs text-zinc-500 ring-1 ring-inset ring-zinc-200"
+                      >
+                        {skill}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-zinc-400">—</span>
+                  )}
                 </dd>
               </div>
             </dl>
@@ -195,14 +182,14 @@ export default function SpecialistDashboard({
 
         {tab === "services" && (
           <div className="flex flex-col gap-4">
-            {publishedOffers.map((offer) => (
+            {offers.map((offer) => (
               <div
                 key={offer.id}
                 className="flex items-center justify-between rounded-2xl border border-zinc-200 bg-white p-4"
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-zinc-900">
-                    {resultTypeTitle(offer.resultTypeSlug)}
+                    {offer.resultTypeTitle}
                   </p>
                   <p className="mt-1 text-xs text-zinc-500">
                     {formatPrice(offer.priceType, offer.priceValue)} ·{" "}
@@ -234,7 +221,7 @@ export default function SpecialistDashboard({
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-zinc-900">
-                    {resultTypeTitle(offer.resultTypeSlug)}
+                    {offer.resultTypeSlug}
                   </p>
                   <p className="mt-1 text-xs text-zinc-500">
                     {formatPrice(offer.priceType, offer.priceValue)} ·{" "}
@@ -242,10 +229,14 @@ export default function SpecialistDashboard({
                   </p>
                 </div>
                 <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
-                  На модерации
+                  На модерации (черновик — пока не отправлено)
                 </span>
               </div>
             ))}
+
+            {offers.length === 0 && pendingOffers.length === 0 && !showCreationForm && (
+              <p className="text-sm text-zinc-500">У вас пока нет ни одной услуги.</p>
+            )}
 
             {showCreationForm ? (
               <ServiceCreationForm
@@ -268,7 +259,10 @@ export default function SpecialistDashboard({
 
         {tab === "leads" && (
           <div className="flex flex-col gap-3">
-            {mockDashboardLeads.map((lead) => (
+            {leads.length === 0 && (
+              <p className="text-sm text-zinc-500">У вас пока нет заявок.</p>
+            )}
+            {leads.map((lead) => (
               <div
                 key={lead.id}
                 className="rounded-2xl border border-zinc-200 bg-white p-4"
@@ -292,9 +286,12 @@ export default function SpecialistDashboard({
 
         {tab === "reviews" && (
           <div className="flex flex-col gap-3">
-            {specialist.reviews.map((review) => (
+            {specialist.reviews.length === 0 && (
+              <p className="text-sm text-zinc-500">Отзывов пока нет.</p>
+            )}
+            {specialist.reviews.map((review, i) => (
               <div
-                key={review.author}
+                key={i}
                 className="rounded-2xl border border-zinc-200 bg-white p-4"
               >
                 <div className="flex items-center justify-between gap-2">

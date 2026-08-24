@@ -2,13 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { Specialist } from "@/types/specialist";
 import {
   CUSTOMER_LEAD_STATUS_LABELS,
   CUSTOMER_LEAD_STATUS_STYLES,
-  mockCustomerLeads,
-  mockCustomerReviews,
-  mockCustomerStats,
+  type CustomerLead,
+  type CustomerReview,
 } from "@/data/customer-dashboard-mock";
 
 type Tab = "overview" | "leads" | "reviews" | "favorites";
@@ -31,24 +29,21 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
 
 export default function CustomerDashboard({
   customerName,
-  favorites,
+  leads,
+  reviews,
 }: {
   customerName: string;
-  favorites: Specialist[];
+  leads: CustomerLead[];
+  reviews: CustomerReview[];
 }) {
   const [tab, setTab] = useState<Tab>("overview");
+  const activeLeads = leads.filter(
+    (l) => l.status !== "closed" && l.status !== "spam"
+  ).length;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-800">
-        Демо-режим: вы вошли как «{customerName}» (роль «заказчик»).
-        Реальной авторизации пока нет.{" "}
-        <Link href="/dashboard" className="font-medium underline">
-          Посмотреть кабинет специалиста →
-        </Link>
-      </div>
-
-      <h1 className="mt-6 text-xl font-bold text-zinc-900">{customerName}</h1>
+      <h1 className="text-xl font-bold text-zinc-900">{customerName}</h1>
       <p className="text-sm text-zinc-500">Личный кабинет заказчика</p>
 
       <div className="mt-6 flex gap-1 overflow-x-auto border-b border-zinc-200">
@@ -71,15 +66,18 @@ export default function CustomerDashboard({
       <div className="mt-6">
         {tab === "overview" && (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-            <StatCard label="Активных заявок" value={mockCustomerStats.activeLeads} />
-            <StatCard label="Всего заявок" value={mockCustomerStats.totalLeads} />
-            <StatCard label="В избранном" value={mockCustomerStats.favoritesCount} />
+            <StatCard label="Активных заявок" value={activeLeads} />
+            <StatCard label="Всего заявок" value={leads.length} />
+            <StatCard label="Отзывов оставлено" value={reviews.length} />
           </div>
         )}
 
         {tab === "leads" && (
           <div className="flex flex-col gap-3">
-            {mockCustomerLeads.map((lead) => (
+            {leads.length === 0 && (
+              <p className="text-sm text-zinc-500">Вы ещё не отправляли заявок.</p>
+            )}
+            {leads.map((lead) => (
               <div
                 key={lead.id}
                 className="rounded-2xl border border-zinc-200 bg-white p-4"
@@ -106,8 +104,8 @@ export default function CustomerDashboard({
 
         {tab === "reviews" && (
           <div className="flex flex-col gap-3">
-            {mockCustomerReviews.length > 0 ? (
-              mockCustomerReviews.map((review) => (
+            {reviews.length > 0 ? (
+              reviews.map((review) => (
                 <div
                   key={review.id}
                   className="rounded-2xl border border-zinc-200 bg-white p-4"
@@ -137,33 +135,10 @@ export default function CustomerDashboard({
         )}
 
         {tab === "favorites" && (
-          <div>
-            <p className="mb-4 text-xs text-zinc-500">
-              Избранное пока не подключено к бэкенду (роадмап, Этап 3) — ниже
-              визуальный пример того, как это будет выглядеть.
-            </p>
-            <div className="grid grid-cols-1 gap-4 min-[640px]:grid-cols-2 md:grid-cols-3">
-              {favorites.map((specialist) => (
-                <Link
-                  key={specialist.id}
-                  href={`/specialist/${specialist.slug}`}
-                  className="flex items-center gap-3 rounded-2xl border border-zinc-200 bg-white p-4 transition-shadow hover:shadow-md"
-                >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-sm font-semibold text-white">
-                    {specialist.avatarInitials}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-zinc-900">
-                      {specialist.name}
-                    </p>
-                    <p className="truncate text-xs text-zinc-500">
-                      {specialist.title}
-                    </p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
+          <p className="text-sm text-zinc-500">
+            Избранное пока не подключено к бэкенду — эта функция появится
+            позже.
+          </p>
         )}
       </div>
     </div>

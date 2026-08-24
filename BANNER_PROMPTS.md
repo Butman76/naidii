@@ -189,6 +189,14 @@ teal → emerald-lime. Тоже уложено в 480 символов.
 Ultra-wide ad banner (2.5:1) for an AI analytics service. No people. A glowing line rises diagonally like an upward trend arrow, linking a few pulsing data-point nodes, brightest at the top. Soft particles, lens flare, glossy tech style. Color: teal to bright emerald-lime gradient. Centered in the middle band, blurred bokeh above/below. No text, letters, logos, UI screens, chat bubbles, watermarks, people. Photorealistic, vibrant, premium.
 ```
 
+**Вариант v2b — мультяшный (2026-08-24, пробуем ради интереса):** та же
+концепция (диагональная линия тренда с узлами), но не фотореалистичный
+glossy-стиль, а плоская мультяшная векторная иллюстрация — если понравится
+больше, можно в этом же стиле пересобрать и остальные 8. Тоже 480 символов.
+```
+Ultra-wide banner (2.5:1) in flat cartoon vector style for an AI analytics service. No people. A bold cheerful diagonal trend line rises across the frame, linking a few round glowing dot nodes, biggest dot brightest at the top. Bright flat shapes, soft cel-shading, bouncy energy. Color: teal to bright emerald-lime gradient background. Centered in the middle band. No text, letters, logos, UI screens, chat bubbles, watermarks, people. Vibrant, playful, premium.
+```
+
 Все 9 направлений теперь имеют промпт. Дальше — только ждём картинки и
 подключаем через `banner-manifest.ts`, тем же способом, что и раньше.
 

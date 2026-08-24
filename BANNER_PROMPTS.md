@@ -159,12 +159,28 @@ An extremely wide panoramic advertising banner for an AI video generation and co
 An extremely wide panoramic advertising banner for an AI-powered CRM and sales automation service, cinematic wide composition — about twice to two and a half times wider than it is tall, like a horizontal banner strip, not a normal photo. No people in the frame. A glowing abstract stack of card-like shapes hovers in a softly lit modern office environment, simple glowing rounded rectangles slightly fanned out like deal cards, one card glowing brighter than the rest as if just prioritized, soft light connecting lines linking the cards. Soft glowing particles drift around it. Dynamic composition, dramatic lighting with lens flare, glossy modern tech-corporate photography style. Color grading: vivid saturated amber-orange to golden-yellow gradient lighting throughout the scene. Keep the glowing cards compact within the middle horizontal band of the frame, with open window light or soft blurred bokeh filling the space above and below — compose it as an already-wide banner strip, not a square or portrait photo. Absolutely no text, no letters, no words, no numbers, no chat bubbles, no speech bubbles, no UI mockups, no screens with content, no app logos, no watermarks, no people, no human figures. Ultra vibrant, punchy, premium advertising quality, photorealistic, highly detailed.
 ```
 
-## Остальные 2 направления
+### 8. Промпт-инжиниринг
+Файл: `banner-prompt-engineering.png`
 
-Сделаем следующим шагом, тем же способом — посмотрим, насколько стиль
-ложится на карусель (яркость, читаемость текста поверх картинки, обрезка
-сверху/снизу), и если нужно — подправим формулировку стиля перед тем как
-писать оставшиеся промпты.
+Без человека, та же схема. Цвет — deep purple → electric magenta, тот
+же, что и на обложках карточек этого направления. Правка 2026-08-24:
+сокращено до 480 символов (ограничение генератора на длину промпта) —
+поэтому короче предыдущих, но смысл и все запреты сохранены.
+```
+Ultra-wide ad banner (2.5:1) for AI prompt-engineering and fine-tuning. No people. A glowing abstract equalizer of vertical light sliders floats in a softly lit office, one slider glowing brighter. Soft particles, lens flare, glossy tech style. Color: deep purple to electric magenta gradient. Centered in the middle band, blurred bokeh above/below. No text, letters, logos, UI screens, chat bubbles, watermarks, people. Photorealistic, vibrant, premium.
+```
+
+### 9. AI-аналитика
+Файл: `banner-ai-analytics.png`
+
+Без человека, та же схема. Цвет — teal → emerald-lime, тот же, что и на
+обложках карточек этого направления. Тоже сокращено до 480 символов.
+```
+Ultra-wide ad banner (2.5:1) for an AI analytics and reporting service. No people. Glowing abstract bar-chart columns of light float in a softly lit office, uneven heights, one column pulsing brighter as if just updated. Soft particles, lens flare, glossy tech style. Color: vivid teal to bright emerald-lime gradient. Centered in the middle band, blurred bokeh above/below. No text, letters, logos, UI screens, chat bubbles, watermarks, people. Photorealistic, vibrant, premium.
+```
+
+Все 9 направлений теперь имеют промпт. Дальше — только ждём картинки и
+подключаем через `banner-manifest.ts`, тем же способом, что и раньше.
 
 Отдельно на будущее: AI-агенты, No-code оркестрация и Чат-боты у нас все
 трое в сине-голубой гамме (как и на обложках карточек услуг — та же

@@ -2,9 +2,9 @@
 
 import { useMemo, useState } from "react";
 import ResultTypePlate from "./ResultTypePlate";
-import { mockResultTypeSummaries, getOffersForType } from "@/data/mock-services";
 import { CATEGORIES } from "@/data/categories";
-import { SERVICE_TAG_LABELS, type ServiceCardTag } from "@/types/service-card";
+import { SERVICE_TAG_LABELS, type ServiceCardTag, type ServiceOffer } from "@/types/service-card";
+import type { ResultTypeSummary } from "@/data/mock-services";
 
 type SortOption = "relevance" | "priceAsc" | "rating";
 
@@ -16,7 +16,13 @@ const SORT_LABELS: Record<SortOption, string> = {
 
 const ALL_TAGS = Object.keys(SERVICE_TAG_LABELS) as ServiceCardTag[];
 
-export default function ServicesCatalog() {
+export default function ServicesCatalog({
+  resultTypes,
+  offers,
+}: {
+  resultTypes: ResultTypeSummary[];
+  offers: ServiceOffer[];
+}) {
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeTags, setActiveTags] = useState<ServiceCardTag[]>([]);
@@ -28,19 +34,29 @@ export default function ServicesCatalog() {
     );
   }
 
+  const offersByType = useMemo(() => {
+    const map = new Map<string, ServiceOffer[]>();
+    for (const o of offers) {
+      const list = map.get(o.resultTypeSlug) ?? [];
+      list.push(o);
+      map.set(o.resultTypeSlug, list);
+    }
+    return map;
+  }, [offers]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
 
-    const list = mockResultTypeSummaries.filter((type) => {
+    const list = resultTypes.filter((type) => {
       if (activeCategory && type.categorySlug !== activeCategory) return false;
-      const offers = getOffersForType(type.slug);
+      const typeOffers = offersByType.get(type.slug) ?? [];
       if (
         activeTags.length > 0 &&
-        !activeTags.every((t) => offers.some((o) => o.tags.includes(t)))
+        !activeTags.every((t) => typeOffers.some((o) => o.tags.includes(t)))
       )
         return false;
       if (!q) return true;
-      const haystack = [type.title, type.subcategory, ...offers.map((o) => o.specialistName)]
+      const haystack = [type.title, type.subcategory, ...typeOffers.map((o) => o.specialistName)]
         .join(" ")
         .toLowerCase();
       return haystack.includes(q);
@@ -51,13 +67,13 @@ export default function ServicesCatalog() {
       if (sortBy === "rating") return b.bestRating - a.bestRating;
       // relevance: продвигаемые сначала, дальше по рейтингу — упрощённая
       // версия формулы ранжирования из раздела 6 правки ТЗ (полнота
-      // карточки, конверсия и т.д. пока не считаем на моках).
+      // карточки, конверсия и т.д. пока не считаем).
       if (b.hasPromoted !== a.hasPromoted) {
         return Number(b.hasPromoted) - Number(a.hasPromoted);
       }
       return b.bestRating - a.bestRating;
     });
-  }, [query, activeCategory, activeTags, sortBy]);
+  }, [query, activeCategory, activeTags, sortBy, resultTypes, offersByType]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

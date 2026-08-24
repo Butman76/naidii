@@ -651,7 +651,7 @@ migrate((app) => {
       response_time: "within_hour",
       profile_status: "published",
       verified_status: true,
-      rating: 4.6,
+      rating: 4.9,
       reviews_count: 6,
       completed_orders_count: 34,
     })
@@ -686,7 +686,7 @@ migrate((app) => {
       response_time: "within_day",
       profile_status: "published",
       verified_status: true,
-      rating: 4.699999999999999,
+      rating: 4.8,
       reviews_count: 8,
       completed_orders_count: 21,
     })
@@ -721,7 +721,7 @@ migrate((app) => {
       response_time: "within_day",
       profile_status: "published",
       verified_status: true,
-      rating: 4.8,
+      rating: 4.7,
       reviews_count: 10,
       completed_orders_count: 45,
     })
@@ -756,7 +756,7 @@ migrate((app) => {
       response_time: "within_hour",
       profile_status: "published",
       verified_status: true,
-      rating: 4.8999999999999995,
+      rating: 4.9,
       reviews_count: 12,
       completed_orders_count: 38,
     })
@@ -791,7 +791,7 @@ migrate((app) => {
       response_time: "within_day",
       profile_status: "published",
       verified_status: true,
-      rating: 4.6,
+      rating: 5,
       reviews_count: 14,
       completed_orders_count: 27,
     })
@@ -826,7 +826,7 @@ migrate((app) => {
       response_time: "within_hour",
       profile_status: "published",
       verified_status: true,
-      rating: 4.699999999999999,
+      rating: 4.8,
       reviews_count: 16,
       completed_orders_count: 19,
     })
@@ -861,7 +861,7 @@ migrate((app) => {
       response_time: "within_day",
       profile_status: "published",
       verified_status: true,
-      rating: 4.8,
+      rating: 4.6,
       reviews_count: 18,
       completed_orders_count: 29,
     })
@@ -896,7 +896,7 @@ migrate((app) => {
       response_time: "within_day",
       profile_status: "published",
       verified_status: true,
-      rating: 4.8999999999999995,
+      rating: 4.9,
       reviews_count: 20,
       completed_orders_count: 16,
     })
@@ -931,7 +931,7 @@ migrate((app) => {
       response_time: "within_day",
       profile_status: "published",
       verified_status: true,
-      rating: 4.6,
+      rating: 4.7,
       reviews_count: 22,
       completed_orders_count: 23,
     })
@@ -966,7 +966,7 @@ migrate((app) => {
       response_time: "within_day",
       profile_status: "published",
       verified_status: true,
-      rating: 4.8,
+      rating: 4.6,
       reviews_count: 26,
       completed_orders_count: 9,
     })
@@ -1001,7 +1001,7 @@ migrate((app) => {
       response_time: "within_hour",
       profile_status: "published",
       verified_status: true,
-      rating: 4.8999999999999995,
+      rating: 4.5,
       reviews_count: 28,
       completed_orders_count: 12,
     })

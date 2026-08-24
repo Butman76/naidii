@@ -6,15 +6,17 @@ import Footer from "@/components/Footer";
 import ServiceOfferRow from "@/components/ServiceOfferRow";
 import { getCategoryStyle } from "@/data/category-style";
 import { CATEGORIES } from "@/data/categories";
-import { mockResultTypes, getOffersForType } from "@/data/mock-services";
+import { fetchCatalogData, getOffersForType } from "@/lib/catalog";
 import { withBasePath } from "@/lib/base-path";
 
-function getResultType(slug: string) {
-  return mockResultTypes.find((t) => t.slug === slug);
-}
-
-export function generateStaticParams() {
-  return mockResultTypes.map((t) => ({ slug: t.slug }));
+// Живые данные из PocketBase. generateStaticParams всё ещё нужен для
+// статической сборки GitHub Pages (STATIC_EXPORT=true) - он выполняется
+// на этапе сборки, когда у GitHub Actions есть доступ в интернет, так что
+// оба режима сборки (SSR на VPS и статический экспорт) используют один и
+// тот же живой источник данных, просто в разное время (запрос/сборка).
+export async function generateStaticParams() {
+  const { resultTypes } = await fetchCatalogData();
+  return resultTypes.map((t) => ({ slug: t.slug }));
 }
 
 export async function generateMetadata({
@@ -23,7 +25,8 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const type = getResultType(slug);
+  const { resultTypes } = await fetchCatalogData();
+  const type = resultTypes.find((t) => t.slug === slug);
   if (!type) return {};
   return {
     title: `${type.title} — специалисты | НайдИИ`,
@@ -37,10 +40,11 @@ export default async function ResultTypePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const type = getResultType(slug);
+  const { resultTypes, offers } = await fetchCatalogData();
+  const type = resultTypes.find((t) => t.slug === slug);
   if (!type) notFound();
 
-  const offers = getOffersForType(slug);
+  const typeOffers = getOffersForType(offers, slug);
   const style = getCategoryStyle(type.categorySlug);
   const categoryName =
     CATEGORIES.find((c) => c.slug === type.categorySlug)?.name ?? "Другое";
@@ -56,7 +60,7 @@ export default async function ResultTypePage({
         >
           {type.coverImageUrl ? (
             <>
-              {/* eslint-disable-next-line @next/next/no-img-element -- static export, no image optimizer */}
+              {/* eslint-disable-next-line @next/next/no-img-element -- статический экспорт, без оптимизатора изображений */}
               <img
                 src={withBasePath(type.coverImageUrl)}
                 alt=""
@@ -92,7 +96,7 @@ export default async function ResultTypePage({
               Предложения специалистов
             </h2>
             <p className="text-sm text-zinc-500">
-              {offers.length === 1 ? "1 исполнитель" : `${offers.length} исполнителя`}
+              {typeOffers.length === 1 ? "1 исполнитель" : `${typeOffers.length} исполнителя`}
             </p>
           </div>
           <p className="mt-1 text-sm text-zinc-500">
@@ -101,7 +105,7 @@ export default async function ResultTypePage({
           </p>
 
           <div className="mt-6 flex flex-col gap-3">
-            {offers.map((offer) => (
+            {typeOffers.map((offer) => (
               <ServiceOfferRow key={offer.id} offer={offer} />
             ))}
           </div>

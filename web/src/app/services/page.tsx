@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ServicesCatalog from "@/components/ServicesCatalog";
+import { fetchCatalogData, summarizeResultTypes } from "@/lib/catalog";
 
 export const metadata: Metadata = {
   title: "Каталог услуг по автоматизации и AI — НайдИИ",
@@ -9,7 +10,10 @@ export const metadata: Metadata = {
     "Готовые услуги от специалистов по автоматизации и AI: конкретный результат, срок и цена — от AI-агентов до RAG-баз знаний. Закажите без долгого выбора исполнителя.",
 };
 
-export default function ServicesPage() {
+export default async function ServicesPage() {
+  const { resultTypes, offers } = await fetchCatalogData();
+  const summaries = summarizeResultTypes(resultTypes, offers);
+
   return (
     <>
       <Header />
@@ -20,12 +24,13 @@ export default function ServicesPage() {
               Каталог услуг
             </h1>
             <p className="mt-2 text-sm text-zinc-500">
-              Цена, срок и результат — прямо на карточке услуги. Профиль
-              исполнителя открывается по ссылке с неё.
+              Конкретный результат, срок и цена — а не просто список
+              специалистов. Профиль исполнителя доступен по ссылке с
+              карточки.
             </p>
           </div>
         </div>
-        <ServicesCatalog />
+        <ServicesCatalog resultTypes={summaries} offers={offers} />
       </main>
       <Footer />
     </>

@@ -1,22 +1,23 @@
 import Link from "next/link";
 import ResultTypePlate from "./ResultTypePlate";
-import { mockTopResultTypes } from "@/data/mock-services";
+import { fetchCatalogData, summarizeResultTypes, sortByPromotedThenRating } from "@/lib/catalog";
 
-// Главный объект первого экрана каталога — теперь плашка типа результата,
-// а не профиль специалиста (см. PIVOT_SERVICE_CARDS.md). Сетка и принцип
-// добора (продвигаемые + органика) — тот же, что раньше был у Топ-20
-// специалистов (ТЗ §4.4/§8.3), применён к другому объекту.
-export default function TopServices() {
-  const top = mockTopResultTypes.slice(0, 20);
+// Главный объект первого экрана каталога — плашка типа результата, а не
+// профиль специалиста (см. PIVOT_SERVICE_CARDS.md). Живые данные из
+// PocketBase с 2026-08-24 — раньше был mockTopResultTypes.
+export default async function TopServices() {
+  const { resultTypes, offers } = await fetchCatalogData();
+  const top = sortByPromotedThenRating(summarizeResultTypes(resultTypes, offers)).slice(0, 20);
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       <div className="text-center">
-        <h2 className="font-[family-name:var(--font-display)] text-2xl font-bold text-zinc-900 sm:text-3xl">
+        <h2 className="text-2xl font-bold text-zinc-900 sm:text-3xl">
           Популярные услуги НайдИИ
         </h2>
         <p className="mt-2 text-sm text-zinc-500">
-          Цена, срок и результат видны сразу — выбирайте подходящую услугу.
+          Конкретный результат, срок и цена — выбирайте услугу, а не
+          выбирайте среди профилей.
         </p>
       </div>
 

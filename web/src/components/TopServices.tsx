@@ -12,12 +12,11 @@ export default function TopServices() {
   return (
     <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-zinc-900 sm:text-3xl">
+        <h2 className="font-[family-name:var(--font-display)] text-2xl font-bold text-zinc-900 sm:text-3xl">
           Популярные услуги НайдИИ
         </h2>
         <p className="mt-2 text-sm text-zinc-500">
-          Конкретный результат, срок и цена — выбирайте услугу, а не
-          выбирайте среди профилей.
+          Цена, срок и результат видны сразу — выбирайте подходящую услугу.
         </p>
       </div>
 

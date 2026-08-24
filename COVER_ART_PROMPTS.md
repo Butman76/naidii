@@ -40,6 +40,15 @@
    в интерфейсе накладываются бейджи (цена, срок, «Продвигается»), задний план не должен быть
    перегружен деталями в углах.
 
+## Известная проблема: цвета направлений пересекаются (открыто, 2026-08-23)
+
+Замечено при генерации 4-й группы: **AI-агенты** («vibrant blue to cyan»), **No-code оркестрация**
+(«indigo to blue») и **Чат-боты** («sky blue to blue») — все три в синей гамме, на витрине рядом друг с
+другом плохо различимы на глаз. Картинки уже сгенерированы и подключены (см. `cover-manifest.ts`), но
+возможно понадобится переделать промпты для одного-двух из этих трёх направлений на более контрастный
+цвет, когда все 42 будут готовы и станет видно всю сетку целиком — не бросать генерацию сейчас, но не
+забыть свериться на глаз в конце.
+
 ## 42 промпта
 
 ### AI-агенты (vibrant blue to cyan gradient)
@@ -234,81 +243,81 @@ a soundwave icon with three small flag-shaped speech bubbles arranged around it.
 a play button on a glowing screen with a simple avatar face and a subtitle line beneath it. Style: modern flat vector illustration, bold simple rounded shapes, smooth fuchsia to pink gradient background with soft ambient glow, minimal clean composition, generous empty margin on all sides for UI overlay text, single clear central subject, subtle glowing particle accents, no text, no letters, no logos, no watermarks, no photorealistic rendering, simple friendly silhouettes only (no detailed human faces), vibrant saturated colors, soft drop shadow, consistent icon-style illustration for a tech marketplace brand, square-ish composition. --ar 4:3 --style raw
 ```
 
-### AI над CRM / учётными системами (amber to yellow gradient)
+### AI над CRM / учётными системами (vivid amber-orange to golden-yellow gradient — переписано 2026-08-23, ярче)
 
 **AI-скоринг лидов в amoCRM/Битрикс24** **[продвигается]**
 Файл: `crm-ai-skoring-lidov-ai-skoring-lidov-v-amocrmbitriks24.png`
 ```
-a stack of glowing contact cards with a ranking arrow and a star on the top card. Style: modern flat vector illustration, bold simple rounded shapes, smooth amber to yellow gradient background with soft ambient glow, minimal clean composition, generous empty margin on all sides for UI overlay text, single clear central subject, subtle glowing particle accents, no text, no letters, no logos, no watermarks, no photorealistic rendering, simple friendly silhouettes only (no detailed human faces), vibrant saturated colors, soft drop shadow, consistent icon-style illustration for a tech marketplace brand, square-ish composition. --ar 4:3 --style raw
+a stack of glowing contact cards with a ranking arrow and a star on the top card. Style: modern flat vector illustration, bold simple rounded shapes, highly saturated vivid amber-orange to golden-yellow gradient background, punchy poster-bright colors, strong vibrant contrast, glowing neon-bright accents, energetic and eye-catching, NOT muted, NOT pastel, NOT washed-out, NOT dull, minimal clean composition, generous empty margin on all sides for UI overlay text, single clear central subject, bright glowing particle accents, no text, no letters, no logos, no watermarks, no photorealistic rendering, simple friendly silhouettes only (no detailed human faces), bold saturated colors, strong drop shadow, consistent icon-style illustration for a tech marketplace brand, square-ish composition. --ar 4:3 --style raw
 ```
 
 **Автозаполнение карточек сделок из переписки**
 Файл: `crm-ai-avtozapolnenie-dannyh-avtozapolnenie-kartochek-sdelok.png`
 ```
-a chat bubble flowing into a glowing contact card, fields filling in automatically with sparkle accents. Style: modern flat vector illustration, bold simple rounded shapes, smooth amber to yellow gradient background with soft ambient glow, minimal clean composition, generous empty margin on all sides for UI overlay text, single clear central subject, subtle glowing particle accents, no text, no letters, no logos, no watermarks, no photorealistic rendering, simple friendly silhouettes only (no detailed human faces), vibrant saturated colors, soft drop shadow, consistent icon-style illustration for a tech marketplace brand, square-ish composition. --ar 4:3 --style raw
+a chat bubble flowing into a glowing contact card, fields filling in automatically with sparkle accents. Style: modern flat vector illustration, bold simple rounded shapes, highly saturated vivid amber-orange to golden-yellow gradient background, punchy poster-bright colors, strong vibrant contrast, glowing neon-bright accents, energetic and eye-catching, NOT muted, NOT pastel, NOT washed-out, NOT dull, minimal clean composition, generous empty margin on all sides for UI overlay text, single clear central subject, bright glowing particle accents, no text, no letters, no logos, no watermarks, no photorealistic rendering, simple friendly silhouettes only (no detailed human faces), bold saturated colors, strong drop shadow, consistent icon-style illustration for a tech marketplace brand, square-ish composition. --ar 4:3 --style raw
 ```
 
 **Интеграция AI-суммаризации звонков в CRM**
 Файл: `crm-ai-avtozapolnenie-dannyh-integraciya-ai-summarizacii-zvo.png`
 ```
-a phone icon with a soundwave flowing into a glowing summary card with a few text lines. Style: modern flat vector illustration, bold simple rounded shapes, smooth amber to yellow gradient background with soft ambient glow, minimal clean composition, generous empty margin on all sides for UI overlay text, single clear central subject, subtle glowing particle accents, no text, no letters, no logos, no watermarks, no photorealistic rendering, simple friendly silhouettes only (no detailed human faces), vibrant saturated colors, soft drop shadow, consistent icon-style illustration for a tech marketplace brand, square-ish composition. --ar 4:3 --style raw
+a phone icon with a soundwave flowing into a glowing summary card with a few text lines. Style: modern flat vector illustration, bold simple rounded shapes, highly saturated vivid amber-orange to golden-yellow gradient background, punchy poster-bright colors, strong vibrant contrast, glowing neon-bright accents, energetic and eye-catching, NOT muted, NOT pastel, NOT washed-out, NOT dull, minimal clean composition, generous empty margin on all sides for UI overlay text, single clear central subject, bright glowing particle accents, no text, no letters, no logos, no watermarks, no photorealistic rendering, simple friendly silhouettes only (no detailed human faces), bold saturated colors, strong drop shadow, consistent icon-style illustration for a tech marketplace brand, square-ish composition. --ar 4:3 --style raw
 ```
 
 **AI-напоминания менеджерам о просроченных задачах**
 Файл: `crm-ai-napominaniya-i-uvedomleniya-ai-napominaniya-menedzher.png`
 ```
-a glowing bell icon beside a small overdue task card and a clock. Style: modern flat vector illustration, bold simple rounded shapes, smooth amber to yellow gradient background with soft ambient glow, minimal clean composition, generous empty margin on all sides for UI overlay text, single clear central subject, subtle glowing particle accents, no text, no letters, no logos, no watermarks, no photorealistic rendering, simple friendly silhouettes only (no detailed human faces), vibrant saturated colors, soft drop shadow, consistent icon-style illustration for a tech marketplace brand, square-ish composition. --ar 4:3 --style raw
+a glowing bell icon beside a small overdue task card and a clock. Style: modern flat vector illustration, bold simple rounded shapes, highly saturated vivid amber-orange to golden-yellow gradient background, punchy poster-bright colors, strong vibrant contrast, glowing neon-bright accents, energetic and eye-catching, NOT muted, NOT pastel, NOT washed-out, NOT dull, minimal clean composition, generous empty margin on all sides for UI overlay text, single clear central subject, bright glowing particle accents, no text, no letters, no logos, no watermarks, no photorealistic rendering, simple friendly silhouettes only (no detailed human faces), bold saturated colors, strong drop shadow, consistent icon-style illustration for a tech marketplace brand, square-ish composition. --ar 4:3 --style raw
 ```
 
-### Промпт-инжиниринг / файнтюнинг (purple to violet gradient)
+### Промпт-инжиниринг / файнтюнинг (vivid deep purple to electric magenta gradient — переписано 2026-08-23, ярче)
 
 **Оптимизация промптов существующего AI-продукта**
 Файл: `prompt-engineering-prompt-inzhiniring-optimizaciya-promptov-.png`
 ```
-glowing text lines being refined by a small sparkle wand, a before/after arrow. Style: modern flat vector illustration, bold simple rounded shapes, smooth purple to violet gradient background with soft ambient glow, minimal clean composition, generous empty margin on all sides for UI overlay text, single clear central subject, subtle glowing particle accents, no text, no letters, no logos, no watermarks, no photorealistic rendering, simple friendly silhouettes only (no detailed human faces), vibrant saturated colors, soft drop shadow, consistent icon-style illustration for a tech marketplace brand, square-ish composition. --ar 4:3 --style raw
+glowing text lines being refined by a small sparkle wand, a before/after arrow. Style: modern flat vector illustration, bold simple rounded shapes, highly saturated vivid deep purple to electric magenta gradient background, punchy poster-bright colors, strong vibrant contrast, glowing neon-bright accents, energetic and eye-catching, NOT muted, NOT pastel, NOT washed-out, NOT dull, minimal clean composition, generous empty margin on all sides for UI overlay text, single clear central subject, bright glowing particle accents, no text, no letters, no logos, no watermarks, no photorealistic rendering, simple friendly silhouettes only (no detailed human faces), bold saturated colors, strong drop shadow, consistent icon-style illustration for a tech marketplace brand, square-ish composition. --ar 4:3 --style raw
 ```
 
 **Файнтюнинг модели под узкую задачу** **[продвигается]**
 Файл: `prompt-engineering-fayntyuning-fayntyuning-modeli-pod-uzkuyu.png`
 ```
-a neural network node diagram glowing brighter, small sliders being adjusted beside it. Style: modern flat vector illustration, bold simple rounded shapes, smooth purple to violet gradient background with soft ambient glow, minimal clean composition, generous empty margin on all sides for UI overlay text, single clear central subject, subtle glowing particle accents, no text, no letters, no logos, no watermarks, no photorealistic rendering, simple friendly silhouettes only (no detailed human faces), vibrant saturated colors, soft drop shadow, consistent icon-style illustration for a tech marketplace brand, square-ish composition. --ar 4:3 --style raw
+a neural network node diagram glowing brighter, small sliders being adjusted beside it. Style: modern flat vector illustration, bold simple rounded shapes, highly saturated vivid deep purple to electric magenta gradient background, punchy poster-bright colors, strong vibrant contrast, glowing neon-bright accents, energetic and eye-catching, NOT muted, NOT pastel, NOT washed-out, NOT dull, minimal clean composition, generous empty margin on all sides for UI overlay text, single clear central subject, bright glowing particle accents, no text, no letters, no logos, no watermarks, no photorealistic rendering, simple friendly silhouettes only (no detailed human faces), bold saturated colors, strong drop shadow, consistent icon-style illustration for a tech marketplace brand, square-ish composition. --ar 4:3 --style raw
 ```
 
 **Сбор и разметка датасета для файнтюнинга**
 Файл: `prompt-engineering-fayntyuning-sbor-i-razmetka-dataseta-dlya.png`
 ```
-a stack of small data cards being tagged with glowing labels, a few checkmarks. Style: modern flat vector illustration, bold simple rounded shapes, smooth purple to violet gradient background with soft ambient glow, minimal clean composition, generous empty margin on all sides for UI overlay text, single clear central subject, subtle glowing particle accents, no text, no letters, no logos, no watermarks, no photorealistic rendering, simple friendly silhouettes only (no detailed human faces), vibrant saturated colors, soft drop shadow, consistent icon-style illustration for a tech marketplace brand, square-ish composition. --ar 4:3 --style raw
+a stack of small data cards being tagged with glowing labels, a few checkmarks. Style: modern flat vector illustration, bold simple rounded shapes, highly saturated vivid deep purple to electric magenta gradient background, punchy poster-bright colors, strong vibrant contrast, glowing neon-bright accents, energetic and eye-catching, NOT muted, NOT pastel, NOT washed-out, NOT dull, minimal clean composition, generous empty margin on all sides for UI overlay text, single clear central subject, bright glowing particle accents, no text, no letters, no logos, no watermarks, no photorealistic rendering, simple friendly silhouettes only (no detailed human faces), bold saturated colors, strong drop shadow, consistent icon-style illustration for a tech marketplace brand, square-ish composition. --ar 4:3 --style raw
 ```
 
 **Снижение стоимости AI-продукта (переход на меньшую модель)**
 Файл: `prompt-engineering-optimizaciya-rashodov-na-ai-snizhenie-sto.png`
 ```
-a glowing coin icon shrinking with a downward arrow, next to a small neural network diagram. Style: modern flat vector illustration, bold simple rounded shapes, smooth purple to violet gradient background with soft ambient glow, minimal clean composition, generous empty margin on all sides for UI overlay text, single clear central subject, subtle glowing particle accents, no text, no letters, no logos, no watermarks, no photorealistic rendering, simple friendly silhouettes only (no detailed human faces), vibrant saturated colors, soft drop shadow, consistent icon-style illustration for a tech marketplace brand, square-ish composition. --ar 4:3 --style raw
+a glowing coin icon shrinking with a downward arrow, next to a small neural network diagram. Style: modern flat vector illustration, bold simple rounded shapes, highly saturated vivid deep purple to electric magenta gradient background, punchy poster-bright colors, strong vibrant contrast, glowing neon-bright accents, energetic and eye-catching, NOT muted, NOT pastel, NOT washed-out, NOT dull, minimal clean composition, generous empty margin on all sides for UI overlay text, single clear central subject, bright glowing particle accents, no text, no letters, no logos, no watermarks, no photorealistic rendering, simple friendly silhouettes only (no detailed human faces), bold saturated colors, strong drop shadow, consistent icon-style illustration for a tech marketplace brand, square-ish composition. --ar 4:3 --style raw
 ```
 
-### AI-аналитика и отчётность (teal to emerald gradient)
+### AI-аналитика и отчётность (vivid teal to bright emerald-lime gradient — переписано 2026-08-23, ярче)
 
 **Дашборд с AI-инсайтами по продажам** **[продвигается]**
 Файл: `ai-analytics-ai-dashbordy-dashbord-s-ai-insaytami-po-prodazh.png`
 ```
-a glowing bar chart dashboard with a sparkle highlighting one rising bar. Style: modern flat vector illustration, bold simple rounded shapes, smooth teal to emerald gradient background with soft ambient glow, minimal clean composition, generous empty margin on all sides for UI overlay text, single clear central subject, subtle glowing particle accents, no text, no letters, no logos, no watermarks, no photorealistic rendering, simple friendly silhouettes only (no detailed human faces), vibrant saturated colors, soft drop shadow, consistent icon-style illustration for a tech marketplace brand, square-ish composition. --ar 4:3 --style raw
+a glowing bar chart dashboard with a sparkle highlighting one rising bar. Style: modern flat vector illustration, bold simple rounded shapes, highly saturated vivid teal to bright emerald-lime gradient background, punchy poster-bright colors, strong vibrant contrast, glowing neon-bright accents, energetic and eye-catching, NOT muted, NOT pastel, NOT washed-out, NOT dull, minimal clean composition, generous empty margin on all sides for UI overlay text, single clear central subject, bright glowing particle accents, no text, no letters, no logos, no watermarks, no photorealistic rendering, simple friendly silhouettes only (no detailed human faces), bold saturated colors, strong drop shadow, consistent icon-style illustration for a tech marketplace brand, square-ish composition. --ar 4:3 --style raw
 ```
 
 **AI-отчёт «спроси на языке» поверх существующих таблиц**
 Файл: `ai-analytics-otchety-na-estestvennom-yazyke-ai-otchet-sprosi.png`
 ```
-a chat bubble with a question mark connected to a glowing bar chart. Style: modern flat vector illustration, bold simple rounded shapes, smooth teal to emerald gradient background with soft ambient glow, minimal clean composition, generous empty margin on all sides for UI overlay text, single clear central subject, subtle glowing particle accents, no text, no letters, no logos, no watermarks, no photorealistic rendering, simple friendly silhouettes only (no detailed human faces), vibrant saturated colors, soft drop shadow, consistent icon-style illustration for a tech marketplace brand, square-ish composition. --ar 4:3 --style raw
+a chat bubble with a question mark connected to a glowing bar chart. Style: modern flat vector illustration, bold simple rounded shapes, highly saturated vivid teal to bright emerald-lime gradient background, punchy poster-bright colors, strong vibrant contrast, glowing neon-bright accents, energetic and eye-catching, NOT muted, NOT pastel, NOT washed-out, NOT dull, minimal clean composition, generous empty margin on all sides for UI overlay text, single clear central subject, bright glowing particle accents, no text, no letters, no logos, no watermarks, no photorealistic rendering, simple friendly silhouettes only (no detailed human faces), bold saturated colors, strong drop shadow, consistent icon-style illustration for a tech marketplace brand, square-ish composition. --ar 4:3 --style raw
 ```
 
 **Автоматический еженедельный AI-отчёт руководителю**
 Файл: `ai-analytics-otchety-na-estestvennom-yazyke-avtomaticheskiy-.png`
 ```
-a glowing calendar icon with a document sliding out of it, a checkmark nearby. Style: modern flat vector illustration, bold simple rounded shapes, smooth teal to emerald gradient background with soft ambient glow, minimal clean composition, generous empty margin on all sides for UI overlay text, single clear central subject, subtle glowing particle accents, no text, no letters, no logos, no watermarks, no photorealistic rendering, simple friendly silhouettes only (no detailed human faces), vibrant saturated colors, soft drop shadow, consistent icon-style illustration for a tech marketplace brand, square-ish composition. --ar 4:3 --style raw
+a glowing calendar icon with a document sliding out of it, a checkmark nearby. Style: modern flat vector illustration, bold simple rounded shapes, highly saturated vivid teal to bright emerald-lime gradient background, punchy poster-bright colors, strong vibrant contrast, glowing neon-bright accents, energetic and eye-catching, NOT muted, NOT pastel, NOT washed-out, NOT dull, minimal clean composition, generous empty margin on all sides for UI overlay text, single clear central subject, bright glowing particle accents, no text, no letters, no logos, no watermarks, no photorealistic rendering, simple friendly silhouettes only (no detailed human faces), bold saturated colors, strong drop shadow, consistent icon-style illustration for a tech marketplace brand, square-ish composition. --ar 4:3 --style raw
 ```
 
 **Поиск аномалий в данных с AI-алертами**
 Файл: `ai-analytics-monitoring-i-alerty-poisk-anomaliy-v-dannyh-s-a.png`
 ```
-a glowing line chart with one spike highlighted in a warning color, a small bell alert icon. Style: modern flat vector illustration, bold simple rounded shapes, smooth teal to emerald gradient background with soft ambient glow, minimal clean composition, generous empty margin on all sides for UI overlay text, single clear central subject, subtle glowing particle accents, no text, no letters, no logos, no watermarks, no photorealistic rendering, simple friendly silhouettes only (no detailed human faces), vibrant saturated colors, soft drop shadow, consistent icon-style illustration for a tech marketplace brand, square-ish composition. --ar 4:3 --style raw
+a glowing line chart with one spike highlighted in a warning color, a small bell alert icon. Style: modern flat vector illustration, bold simple rounded shapes, highly saturated vivid teal to bright emerald-lime gradient background, punchy poster-bright colors, strong vibrant contrast, glowing neon-bright accents, energetic and eye-catching, NOT muted, NOT pastel, NOT washed-out, NOT dull, minimal clean composition, generous empty margin on all sides for UI overlay text, single clear central subject, bright glowing particle accents, no text, no letters, no logos, no watermarks, no photorealistic rendering, simple friendly silhouettes only (no detailed human faces), bold saturated colors, strong drop shadow, consistent icon-style illustration for a tech marketplace brand, square-ish composition. --ar 4:3 --style raw
 ```
 

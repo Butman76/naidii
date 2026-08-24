@@ -141,7 +141,25 @@ rose pink → orange, что и на обложках карточек этог�
 An extremely wide panoramic advertising banner for an AI voice agent and phone call automation service, cinematic wide composition — about twice to two and a half times wider than it is tall, like a horizontal banner strip, not a normal photo. No people in the frame. A glowing abstract phone handset silhouette floats in a softly lit modern office environment, surrounded by concentric glowing soundwave rings radiating outward from it, as if it is actively speaking. Soft glowing particles drift around it. Dynamic composition, dramatic lighting with lens flare, glossy modern tech-corporate photography style. Color grading: vivid saturated rose pink to orange gradient lighting throughout the scene. Keep the glowing handset and soundwave rings compact within the middle horizontal band of the frame, with open window light or soft blurred bokeh filling the space above and below — compose it as an already-wide banner strip, not a square or portrait photo. Absolutely no text, no letters, no words, no numbers, no chat bubbles, no speech bubbles, no UI mockups, no screens with content, no app logos, no watermarks, no people, no human figures. Ultra vibrant, punchy, premium advertising quality, photorealistic, highly detailed.
 ```
 
-## Остальные 4 направления
+### 6. AI-видео и контент
+Файл: `banner-ai-video.png`
+
+Без человека, та же схема. Цвет — fuchsia → pink, тот же, что и на
+обложках карточек этого направления в `COVER_ART_PROMPTS.md`.
+```
+An extremely wide panoramic advertising banner for an AI video generation and content creation service, cinematic wide composition — about twice to two and a half times wider than it is tall, like a horizontal banner strip, not a normal photo. No people in the frame. A glowing abstract film frame / clapperboard-like shape hovers in a softly lit modern office environment, with a ribbon of glowing film-strip light trailing and curving away from it like motion, softly pulsing. Soft glowing particles drift around it. Dynamic composition, dramatic lighting with lens flare, glossy modern tech-corporate photography style. Color grading: vivid saturated fuchsia to pink gradient lighting throughout the scene. Keep the glowing shape and light ribbon compact within the middle horizontal band of the frame, with open window light or soft blurred bokeh filling the space above and below — compose it as an already-wide banner strip, not a square or portrait photo. Absolutely no text, no letters, no words, no numbers, no chat bubbles, no speech bubbles, no UI mockups, no screens with content, no app logos, no watermarks, no people, no human figures. Ultra vibrant, punchy, premium advertising quality, photorealistic, highly detailed.
+```
+
+### 7. CRM + AI
+Файл: `banner-crm-ai.png`
+
+Без человека, та же схема. Цвет — amber-orange → golden-yellow, тот же,
+что и на обложках карточек этого направления в `COVER_ART_PROMPTS.md`.
+```
+An extremely wide panoramic advertising banner for an AI-powered CRM and sales automation service, cinematic wide composition — about twice to two and a half times wider than it is tall, like a horizontal banner strip, not a normal photo. No people in the frame. A glowing abstract stack of card-like shapes hovers in a softly lit modern office environment, simple glowing rounded rectangles slightly fanned out like deal cards, one card glowing brighter than the rest as if just prioritized, soft light connecting lines linking the cards. Soft glowing particles drift around it. Dynamic composition, dramatic lighting with lens flare, glossy modern tech-corporate photography style. Color grading: vivid saturated amber-orange to golden-yellow gradient lighting throughout the scene. Keep the glowing cards compact within the middle horizontal band of the frame, with open window light or soft blurred bokeh filling the space above and below — compose it as an already-wide banner strip, not a square or portrait photo. Absolutely no text, no letters, no words, no numbers, no chat bubbles, no speech bubbles, no UI mockups, no screens with content, no app logos, no watermarks, no people, no human figures. Ultra vibrant, punchy, premium advertising quality, photorealistic, highly detailed.
+```
+
+## Остальные 2 направления
 
 Сделаем следующим шагом, тем же способом — посмотрим, насколько стиль
 ложится на карусель (яркость, читаемость текста поверх картинки, обрезка

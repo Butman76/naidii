@@ -2,14 +2,17 @@ import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SpecialistsCatalog from "@/components/SpecialistsCatalog";
+import { fetchSpecialists } from "@/lib/specialists";
 
 export const metadata: Metadata = {
   title: "Специалисты по автоматизации и AI — НайдИИ",
   description:
-    "Каталог AI-интеграторов, нейрокодировщиков и специалистов по автоматизации бизнеса. Фильтры по навыкам, удалённой работе и сортировка по рейтингу и цене.",
+    "Каталог AI-интеграторов, нейрокодировщиков и специалистов по автоматизации бизнеса. Фильтры по направлению и удалённой работе, сортировка по рейтингу и цене.",
 };
 
-export default function SpecialistsPage() {
+export default async function SpecialistsPage() {
+  const specialists = await fetchSpecialists();
+
   return (
     <>
       <Header />
@@ -25,7 +28,7 @@ export default function SpecialistsPage() {
             </p>
           </div>
         </div>
-        <SpecialistsCatalog />
+        <SpecialistsCatalog specialists={specialists} />
       </main>
       <Footer />
     </>

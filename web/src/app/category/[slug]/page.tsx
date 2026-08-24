@@ -5,7 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SpecialistCard from "@/components/SpecialistCard";
 import { CATEGORIES } from "@/data/categories";
-import { mockSpecialists } from "@/data/mock-specialists";
+import { fetchSpecialists } from "@/lib/specialists";
 
 function getCategory(slug: string) {
   return CATEGORIES.find((c) => c.slug === slug);
@@ -38,7 +38,8 @@ export default async function CategoryPage({
   const category = getCategory(slug);
   if (!category) notFound();
 
-  const specialists = mockSpecialists.filter((s) => s.category === slug);
+  const allSpecialists = await fetchSpecialists();
+  const specialists = allSpecialists.filter((s) => s.category === slug);
 
   return (
     <>

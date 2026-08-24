@@ -4,14 +4,13 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import StandardSpecialistProfile from "@/components/StandardSpecialistProfile";
 import PremiumSpecialistProfile from "@/components/PremiumSpecialistProfile";
-import { mockSpecialists } from "@/data/mock-specialists";
+import { fetchSpecialists } from "@/lib/specialists";
 
-function getSpecialist(slug: string) {
-  return mockSpecialists.find((s) => s.slug === slug);
-}
-
-export function generateStaticParams() {
-  return mockSpecialists.map((s) => ({ slug: s.slug }));
+// generateStaticParams тоже на живых данных - см. web/src/lib/specialists.ts
+// и STATUS.md (переход с моков на живые данные, 2026-08-24).
+export async function generateStaticParams() {
+  const specialists = await fetchSpecialists();
+  return specialists.map((s) => ({ slug: s.slug }));
 }
 
 export async function generateMetadata({
@@ -20,7 +19,8 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const specialist = getSpecialist(slug);
+  const specialists = await fetchSpecialists();
+  const specialist = specialists.find((s) => s.slug === slug);
   if (!specialist) return {};
   return {
     title: `${specialist.name} — ${specialist.title} — НайдИИ`,
@@ -34,7 +34,8 @@ export default async function SpecialistProfilePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const specialist = getSpecialist(slug);
+  const specialists = await fetchSpecialists();
+  const specialist = specialists.find((s) => s.slug === slug);
   if (!specialist) notFound();
 
   return (

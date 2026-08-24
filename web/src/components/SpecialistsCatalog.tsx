@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import SpecialistCard from "./SpecialistCard";
-import { mockSpecialists } from "@/data/mock-specialists";
 import { CATEGORIES } from "@/data/categories";
+import type { Specialist } from "@/types/specialist";
 
 type SortOption = "rating" | "priceAsc" | "reviews";
 
@@ -18,44 +18,22 @@ function parsePriceFrom(priceFrom: string): number {
   return digits ? Number(digits) : Infinity;
 }
 
-export default function SpecialistsCatalog() {
+export default function SpecialistsCatalog({
+  specialists,
+}: {
+  specialists: Specialist[];
+}) {
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [remoteOnly, setRemoteOnly] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("rating");
-
-  function selectCategory(slug: string | null) {
-    setActiveCategory(slug);
-    setSelectedSkills([]);
-  }
-
-  const availableSkills = useMemo(() => {
-    const pool = activeCategory
-      ? mockSpecialists.filter((s) => s.category === activeCategory)
-      : mockSpecialists;
-    return Array.from(new Set(pool.flatMap((s) => s.skills))).sort();
-  }, [activeCategory]);
-
-  function toggleSkill(skill: string) {
-    setSelectedSkills((prev) =>
-      prev.includes(skill)
-        ? prev.filter((s) => s !== skill)
-        : [...prev, skill]
-    );
-  }
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
 
-    const list = mockSpecialists.filter((s) => {
+    const list = specialists.filter((s) => {
       if (activeCategory && s.category !== activeCategory) return false;
       if (remoteOnly && !s.location.includes("Удалённо")) return false;
-      if (
-        selectedSkills.length > 0 &&
-        !selectedSkills.every((skill) => s.skills.includes(skill))
-      )
-        return false;
       if (!q) return true;
       const haystack = [s.name, s.title, s.shortDescription, ...s.skills]
         .join(" ")
@@ -69,7 +47,7 @@ export default function SpecialistsCatalog() {
       if (sortBy === "reviews") return b.reviewsCount - a.reviewsCount;
       return b.rating - a.rating;
     });
-  }, [query, activeCategory, selectedSkills, remoteOnly, sortBy]);
+  }, [query, activeCategory, remoteOnly, sortBy, specialists]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -78,7 +56,7 @@ export default function SpecialistsCatalog() {
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Поиск по имени, навыку или описанию"
+          placeholder="Поиск по имени или описанию"
           className="w-full rounded-full border border-zinc-300 px-5 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-900 focus:outline-none sm:max-w-sm"
         />
 
@@ -110,7 +88,7 @@ export default function SpecialistsCatalog() {
       <div className="mt-6 flex flex-wrap gap-2">
         <button
           type="button"
-          onClick={() => selectCategory(null)}
+          onClick={() => setActiveCategory(null)}
           className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
             activeCategory === null
               ? "border-zinc-900 bg-zinc-900 text-white"
@@ -123,7 +101,7 @@ export default function SpecialistsCatalog() {
           <button
             key={category.slug}
             type="button"
-            onClick={() => selectCategory(category.slug)}
+            onClick={() => setActiveCategory(category.slug)}
             className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
               activeCategory === category.slug
                 ? "border-zinc-900 bg-zinc-900 text-white"
@@ -133,26 +111,6 @@ export default function SpecialistsCatalog() {
             {category.name}
           </button>
         ))}
-      </div>
-
-      <div className="mt-3 flex flex-wrap gap-2">
-        {availableSkills.map((skill) => {
-          const active = selectedSkills.includes(skill);
-          return (
-            <button
-              key={skill}
-              type="button"
-              onClick={() => toggleSkill(skill)}
-              className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-                active
-                  ? "border-zinc-900 bg-zinc-900 text-white"
-                  : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-400"
-              }`}
-            >
-              {skill}
-            </button>
-          );
-        })}
       </div>
 
       <p className="mt-6 text-sm text-zinc-500">

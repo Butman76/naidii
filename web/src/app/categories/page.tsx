@@ -3,7 +3,7 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { CATEGORIES } from "@/data/categories";
-import { mockSpecialists } from "@/data/mock-specialists";
+import { fetchSpecialists } from "@/lib/specialists";
 
 export const metadata: Metadata = {
   title: "Категории специалистов по AI и автоматизации — НайдИИ",
@@ -11,7 +11,8 @@ export const metadata: Metadata = {
     "Все направления площадки: AI-агенты, RAG, no-code оркестрация, чат-боты, голосовые агенты, AI-видео, CRM-AI, промпт-инжиниринг, аналитика и другое.",
 };
 
-export default function CategoriesPage() {
+export default async function CategoriesPage() {
+  const specialists = await fetchSpecialists();
   return (
     <>
       <Header />
@@ -31,7 +32,7 @@ export default function CategoriesPage() {
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {CATEGORIES.map((category) => {
-              const count = mockSpecialists.filter(
+              const count = specialists.filter(
                 (s) => s.category === category.slug
               ).length;
               return (

@@ -131,7 +131,17 @@ An extremely wide panoramic advertising banner for an AI chatbot and messenger a
 докадровкой до ~3:1 остаётся актуальным (просто без шага «держать лицо
 по центру» — тут держать по центру нужно саму светящуюся сцену).
 
-## Остальные 5 направлений
+### 5. Голосовые агенты
+Файл: `banner-voice-ai.png`
+
+Без человека, по той же схеме, что оркестрация и чат-боты. Цвет — тот же
+rose pink → orange, что и на обложках карточек этого направления в
+`COVER_ART_PROMPTS.md`.
+```
+An extremely wide panoramic advertising banner for an AI voice agent and phone call automation service, cinematic wide composition — about twice to two and a half times wider than it is tall, like a horizontal banner strip, not a normal photo. No people in the frame. A glowing abstract phone handset silhouette floats in a softly lit modern office environment, surrounded by concentric glowing soundwave rings radiating outward from it, as if it is actively speaking. Soft glowing particles drift around it. Dynamic composition, dramatic lighting with lens flare, glossy modern tech-corporate photography style. Color grading: vivid saturated rose pink to orange gradient lighting throughout the scene. Keep the glowing handset and soundwave rings compact within the middle horizontal band of the frame, with open window light or soft blurred bokeh filling the space above and below — compose it as an already-wide banner strip, not a square or portrait photo. Absolutely no text, no letters, no words, no numbers, no chat bubbles, no speech bubbles, no UI mockups, no screens with content, no app logos, no watermarks, no people, no human figures. Ultra vibrant, punchy, premium advertising quality, photorealistic, highly detailed.
+```
+
+## Остальные 4 направления
 
 Сделаем следующим шагом, тем же способом — посмотрим, насколько стиль
 ложится на карусель (яркость, читаемость текста поверх картинки, обрезка

@@ -177,13 +177,16 @@ An extremely wide panoramic advertising banner for an AI-powered CRM and sales a
 Ultra-wide ad banner (2.5:1) for AI prompt-engineering and fine-tuning. No people. A glowing abstract equalizer of vertical light sliders floats in a softly lit office, one slider glowing brighter. Soft particles, lens flare, glossy tech style. Color: deep purple to electric magenta gradient. Centered in the middle band, blurred bokeh above/below. No text, letters, logos, UI screens, chat bubbles, watermarks, people. Photorealistic, vibrant, premium.
 ```
 
-### 9. AI-аналитика
+### 9. AI-аналитика (v2 — другая концепция)
 Файл: `banner-ai-analytics.png`
 
-Без человека, та же схема. Цвет — teal → emerald-lime, тот же, что и на
-обложках карточек этого направления. Тоже сокращено до 480 символов.
+Правка 2026-08-24: первая версия (столбики графика) вышла слишком
+похожей на промпт-инжиниринг (тоже вертикальные светящиеся полоски,
+просто другого цвета) — сменили силуэт на диагональную растущую линию
+тренда с узлами-точками, чтобы формы явно отличались. Цвет — тот же
+teal → emerald-lime. Тоже уложено в 480 символов.
 ```
-Ultra-wide ad banner (2.5:1) for an AI analytics and reporting service. No people. Glowing abstract bar-chart columns of light float in a softly lit office, uneven heights, one column pulsing brighter as if just updated. Soft particles, lens flare, glossy tech style. Color: vivid teal to bright emerald-lime gradient. Centered in the middle band, blurred bokeh above/below. No text, letters, logos, UI screens, chat bubbles, watermarks, people. Photorealistic, vibrant, premium.
+Ultra-wide ad banner (2.5:1) for an AI analytics service. No people. A glowing line rises diagonally like an upward trend arrow, linking a few pulsing data-point nodes, brightest at the top. Soft particles, lens flare, glossy tech style. Color: teal to bright emerald-lime gradient. Centered in the middle band, blurred bokeh above/below. No text, letters, logos, UI screens, chat bubbles, watermarks, people. Photorealistic, vibrant, premium.
 ```
 
 Все 9 направлений теперь имеют промпт. Дальше — только ждём картинки и

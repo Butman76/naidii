@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import CustomerDashboard from "@/components/dashboard/CustomerDashboard";
+import RequireAuth from "@/components/RequireAuth";
+import CustomerDashboardClient from "@/components/dashboard/CustomerDashboardClient";
 import { mockSpecialists } from "@/data/mock-specialists";
 import { mockCustomerFavoriteSlugs } from "@/data/customer-dashboard-mock";
 
@@ -10,6 +11,8 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+// Кабинет теперь требует настоящего входа как заказчик (RequireAuth), но
+// содержимое внутри пока всё ещё демо-мокап (см. STATUS.md).
 export default function CustomerDashboardPage() {
   const favorites = mockCustomerFavoriteSlugs
     .map((slug) => mockSpecialists.find((s) => s.slug === slug))
@@ -19,7 +22,9 @@ export default function CustomerDashboardPage() {
     <>
       <Header />
       <main className="flex-1 bg-zinc-50">
-        <CustomerDashboard customerName="Мария Кузнецова" favorites={favorites} />
+        <RequireAuth role="customer">
+          <CustomerDashboardClient favorites={favorites} />
+        </RequireAuth>
       </main>
       <Footer />
     </>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import AuthStatus from "./AuthStatus";
 
 const NAV_LINKS = [
   { href: "/services", label: "Услуги" },
@@ -34,14 +35,9 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
+          <AuthStatus />
           <Link
-            href="/login"
-            className="hidden text-sm font-medium text-zinc-600 hover:text-zinc-900 sm:block"
-          >
-            Войти
-          </Link>
-          <Link
-            href="/for-specialists"
+            href="/register"
             className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700"
           >
             Разместить карточку

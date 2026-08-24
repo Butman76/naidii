@@ -102,6 +102,13 @@ punchy saturated color grading по цвету направления (тот ж
 An extremely wide panoramic advertising banner for an AI business automation service, cinematic wide composition — about twice to two and a half times wider than it is tall, like a horizontal banner strip, not a normal photo. No people in the frame. A glowing friendly robot-like AI orb floats in a softly lit modern office environment — soft rounded shape made of light, simple friendly face, no screens, no panels, no readable content anywhere on it. Abstract glowing particles, soft light streaks, and simple icon-only shapes (a plain checkmark, a plain upward arrow) float around the robot purely as glowing symbols with no accompanying words or labels of any kind. Dynamic composition, dramatic lighting with lens flare, glossy modern tech-corporate photography style. Color grading: vivid saturated blue to cyan gradient lighting throughout the scene. Keep the robot compact within the middle horizontal band of the frame, with open window light or soft blurred bokeh filling the space above and below it — compose it as an already-wide banner strip, not a square or portrait photo. Absolutely no text, no letters, no words, no numbers, no chat bubbles, no UI mockups, no screens with content, no logos, no watermarks, no people, no human figures. Ultra vibrant, punchy, premium advertising quality, photorealistic, highly detailed.
 ```
 
+**Вариант v6b — мультяшный (2026-08-24, для сравнения с #9):** та же
+сцена (робот + галочка + стрелка вверх), плоская мультяшная
+иллюстрация вместо фотореализма. 480 символов.
+```
+Ultra-wide banner (2.5:1) in flat cartoon vector style for an AI business automation service. No people. A friendly round robot face with a big smile floats mid-frame, a plain checkmark and upward arrow drifting beside it as flat glowing icons. Bright flat shapes, soft cel-shading, bouncy energy. Color: blue to cyan gradient background. Centered in the middle band. No text, letters, logos, UI screens, chat bubbles, watermarks, people. Vibrant, playful, premium.
+```
+
 ### 2. RAG / базы знаний (v6 — без человека, робот можно)
 Файл: `banner-rag.png`
 

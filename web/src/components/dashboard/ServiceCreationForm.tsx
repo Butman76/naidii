@@ -1,15 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type {
   ServiceCardTag,
-  ServiceOffer,
   ServicePriceType,
 } from "@/types/service-card";
 import { SERVICE_TAG_LABELS } from "@/types/service-card";
 import { CATEGORIES } from "@/data/categories";
 import { getCategoryStyle } from "@/data/category-style";
-import { mockResultTypes } from "@/data/mock-services";
+import { pbClient } from "@/lib/auth-client";
 import type { Specialist } from "@/types/specialist";
 
 // Метки, которые специалист вправе проставить себе сам. "verified" и "top"
@@ -31,11 +30,26 @@ const OFF_PLATFORM_CONTACT_RE =
   /(\+?\d[\d\s\-()]{7,}\d)|([a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,})|(@[a-zA-Z0-9_]{4,})|(t\.me\/)/i;
 
 interface FormResultType {
+  id: string;
   slug: string;
   title: string;
   scopeLabel: string;
   categorySlug: string;
+  categoryId: string;
   subcategory: string;
+}
+
+// Слаги в базе (в т.ч. остальные 42 типа) — латиница/цифры, для URL
+// /services/{slug}. Название почти всегда вводят на русском — оставляем
+// только то, что уже латиница/цифры (обычно ничего), и полагаемся на
+// временной суффикс для уникальности и человекочитаемости не ждём.
+function slugify(title: string): string {
+  const base = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+  return `custom-${base || "tip"}-${Date.now().toString(36)}`;
 }
 
 export default function ServiceCreationForm({
@@ -44,13 +58,55 @@ export default function ServiceCreationForm({
   onCancel,
 }: {
   specialist: Specialist;
-  onCreated: (offer: ServiceOffer) => void;
+  onCreated: () => void;
   onCancel: () => void;
 }) {
+  const [liveTypes, setLiveTypes] = useState<FormResultType[]>([]);
+  const [typesLoading, setTypesLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    pbClient
+      .collection("result_types")
+      .getFullList({ expand: "category_id", sort: "subcategory" })
+      .then((records) => {
+        if (cancelled) return;
+        setLiveTypes(
+          records.map((r) => ({
+            id: r.id,
+            slug: r.slug,
+            title: r.title,
+            scopeLabel: r.scope_label ?? "",
+            categorySlug: r.expand?.category_id?.slug ?? "",
+            categoryId: r.category_id,
+            subcategory: r.subcategory,
+          }))
+        );
+      })
+      .finally(() => {
+        if (!cancelled) setTypesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // category_id (реальный id записи в categories, не слаг) нужен, чтобы
+  // отправить заявку на свой тип результата — берём его из уже загруженных
+  // типов той же категории вместо отдельного похода за categories.
+  const categoryIdBySlug = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const t of liveTypes) {
+      if (t.categorySlug && t.categoryId) map.set(t.categorySlug, t.categoryId);
+    }
+    return map;
+  }, [liveTypes]);
+
   const [categorySlug, setCategorySlug] = useState("");
   const [subcategory, setSubcategory] = useState("");
   const [resultTypeSlug, setResultTypeSlug] = useState("");
   const [customType, setCustomType] = useState("");
+  const [customDescription, setCustomDescription] = useState("");
   const [useCustomType, setUseCustomType] = useState(false);
 
   const [priceType, setPriceType] = useState<ServicePriceType>("from");
@@ -61,25 +117,28 @@ export default function ServiceCreationForm({
   const [tagline, setTagline] = useState("");
   const [tags, setTags] = useState<ServiceCardTag[]>([]);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const [submitted, setSubmitted] = useState(false);
+
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [result, setResult] = useState<"published" | "type_pending" | null>(null);
 
   const subcategories = useMemo(() => {
     if (!categorySlug) return [];
     return Array.from(
       new Set(
-        mockResultTypes
+        liveTypes
           .filter((t) => t.categorySlug === categorySlug)
           .map((t) => t.subcategory)
       )
     );
-  }, [categorySlug]);
+  }, [categorySlug, liveTypes]);
 
   const resultTypes: FormResultType[] = useMemo(() => {
     if (!categorySlug || !subcategory) return [];
-    return mockResultTypes.filter(
+    return liveTypes.filter(
       (t) => t.categorySlug === categorySlug && t.subcategory === subcategory
     );
-  }, [categorySlug, subcategory]);
+  }, [categorySlug, subcategory, liveTypes]);
 
   const selectedType = resultTypes.find((t) => t.slug === resultTypeSlug);
   const style = getCategoryStyle(categorySlug || "other");
@@ -97,6 +156,8 @@ export default function ServiceCreationForm({
   }
 
   const hasResultName = useCustomType ? customType.trim().length > 3 : Boolean(selectedType);
+  const hasCustomDescription =
+    !useCustomType || customDescription.trim().length >= 20;
   const hasPrice = Number(priceValue) > 0;
   const hasDuration = durationFrom.trim().length > 0;
   const hasScope = Boolean(selectedType) || useCustomType; // унаследован от типа результата
@@ -107,6 +168,9 @@ export default function ServiceCreationForm({
 
   const checklist = [
     { label: "Понятное название результата выбрано", ok: hasResultName },
+    ...(useCustomType
+      ? [{ label: "Добавлено подробное описание услуги (от 20 символов)", ok: hasCustomDescription }]
+      : []),
     { label: "Указана цена", ok: hasPrice },
     { label: "Указан срок выполнения", ok: hasDuration },
     { label: "Объём работы задан", ok: hasScope },
@@ -116,43 +180,72 @@ export default function ServiceCreationForm({
     { label: "Заполнено краткое УТП", ok: hasTagline },
   ];
 
-  const canSubmit = checklist.every((c) => c.ok);
+  const canSubmit = checklist.every((c) => c.ok) && !submitting;
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!canSubmit) return;
 
-    const offer: ServiceOffer = {
-      id: `pending-${Date.now()}`,
-      resultTypeSlug: useCustomType ? "" : resultTypeSlug,
-      tagline: tagline.trim(),
-      priceType,
-      priceValue: Number(priceValue),
-      durationFrom: durationFrom.trim(),
-      scopeLabel: selectedType?.scopeLabel ?? "По согласованию",
-      revisionsIncluded:
-        revisionsMode === "count" ? Number(revisionsCount) : undefined,
-      tags,
-      specialistSlug: specialist.slug,
-      specialistName: specialist.name,
-      specialistAvatarInitials: specialist.avatarInitials,
-      specialistRating: specialist.rating,
-      specialistCompletedOrders: 0,
-    };
+    setSubmitting(true);
+    setSubmitError(null);
 
-    onCreated(offer);
-    setSubmitted(true);
+    try {
+      let resultTypeId: string;
+      let typePending = false;
+
+      if (useCustomType) {
+        const categoryId = categoryIdBySlug.get(categorySlug);
+        const userId = pbClient.authStore.record?.id;
+        if (!categoryId || !userId) {
+          throw new Error("Не удалось определить категорию — выберите направление заново.");
+        }
+        const created = await pbClient.collection("result_types").create({
+          category_id: categoryId,
+          subcategory: customType.trim(),
+          title: customType.trim(),
+          slug: slugify(customType),
+          description: customDescription.trim(),
+          status: "pending",
+          created_by: userId,
+        });
+        resultTypeId = created.id;
+        typePending = true;
+      } else {
+        resultTypeId = selectedType!.id;
+      }
+
+      await pbClient.collection("services").create({
+        specialist_profile_id: specialist.id,
+        result_type_id: resultTypeId,
+        tagline: tagline.trim(),
+        price_type: priceType,
+        price_from: Number(priceValue),
+        duration_from: durationFrom.trim(),
+        scope_label: selectedType?.scopeLabel ?? "",
+        revisions_included: revisionsMode === "count" ? Number(revisionsCount) : 0,
+        tags,
+        active: true,
+      });
+
+      setResult(typePending ? "type_pending" : "published");
+      onCreated();
+    } catch {
+      setSubmitError("Не получилось сохранить услугу — попробуйте ещё раз.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
-  if (submitted) {
+  if (result) {
     return (
       <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-center">
         <p className="text-sm font-semibold text-emerald-900">
-          Отправлено на модерацию
+          {result === "type_pending" ? "Отправлено на модерацию" : "Услуга опубликована"}
         </p>
         <p className="mt-1 text-sm text-emerald-800">
-          Карточка появится в каталоге после проверки. Обычно это занимает
-          до 24 часов.
+          {result === "type_pending"
+            ? "Новый тип результата проверит команда площадки — обычно это занимает до 24 часов, после чего карточка появится в каталоге."
+            : "Карточка уже видна в каталоге (если ваш профиль прошёл модерацию)."}
         </p>
         <button
           type="button"
@@ -212,6 +305,10 @@ export default function ServiceCreationForm({
             </button>
           ))}
         </div>
+
+        {categorySlug && typesLoading && (
+          <p className="mt-2 text-xs text-zinc-400">Загружаем типы результата…</p>
+        )}
 
         {categorySlug && (
           <div className="mt-2 flex flex-wrap gap-1.5">
@@ -278,13 +375,22 @@ export default function ServiceCreationForm({
         )}
 
         {useCustomType && (
-          <input
-            type="text"
-            value={customType}
-            onChange={(e) => setCustomType(e.target.value)}
-            placeholder="Название нового типа результата"
-            className="mt-2 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none"
-          />
+          <div className="mt-2 flex flex-col gap-2">
+            <input
+              type="text"
+              value={customType}
+              onChange={(e) => setCustomType(e.target.value)}
+              placeholder="Название услуги"
+              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none"
+            />
+            <textarea
+              value={customDescription}
+              onChange={(e) => setCustomDescription(e.target.value)}
+              placeholder="Подробное описание — что именно входит в результат, для кого он подходит"
+              rows={3}
+              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none"
+            />
+          </div>
         )}
       </div>
 
@@ -310,6 +416,10 @@ export default function ServiceCreationForm({
               className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none"
             />
           </div>
+          <p className="mt-1 text-[11px] text-zinc-400">
+            Цену всегда назначаете вы сами — площадка её не диктует, даже для
+            стандартных типов результата.
+          </p>
         </div>
 
         <div>
@@ -457,12 +567,20 @@ export default function ServiceCreationForm({
         </ul>
       </div>
 
+      {submitError && (
+        <p className="mt-3 text-sm text-red-600">{submitError}</p>
+      )}
+
       <button
         type="submit"
         disabled={!canSubmit}
         className="mt-5 w-full rounded-full bg-zinc-900 py-2.5 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
       >
-        Отправить на модерацию
+        {submitting
+          ? "Сохраняем…"
+          : useCustomType
+            ? "Отправить на модерацию"
+            : "Опубликовать"}
       </button>
     </form>
   );

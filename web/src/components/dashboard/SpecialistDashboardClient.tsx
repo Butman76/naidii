@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { pbClient } from "@/lib/auth-client";
 import { useAuth } from "@/lib/use-auth";
 import { fetchOwnSpecialistDashboard, type SpecialistDashboardData } from "@/lib/dashboard";
@@ -9,26 +9,25 @@ import SpecialistDashboard from "./SpecialistDashboard";
 // Тонкая обёртка: RequireAuth уже гарантирует, что сюда попадает только
 // вошедший специалист — здесь только подгружаем его собственный профиль и
 // офферы из PocketBase, чтобы кабинет показывал того, кто реально вошёл, а
-// не одного и того же мок-специалиста для всех подряд.
+// не одного и того же мок-специалиста для всех подряд. refresh() отдельно
+// вынесен наружу — после реального сохранения новой услуги
+// (ServiceCreationForm, Фаза 1) кабинет перечитывает данные с нуля вместо
+// того, чтобы держать отдельный локальный список "черновиков".
 export default function SpecialistDashboardClient() {
   const { user } = useAuth();
   const [data, setData] = useState<SpecialistDashboardData | null>(null);
   const [error, setError] = useState(false);
 
-  useEffect(() => {
+  const refresh = useCallback(() => {
     if (!user) return;
-    let cancelled = false;
-    fetchOwnSpecialistDashboard(pbClient, user.id)
-      .then((result) => {
-        if (!cancelled) setData(result);
-      })
-      .catch(() => {
-        if (!cancelled) setError(true);
-      });
-    return () => {
-      cancelled = true;
-    };
+    return fetchOwnSpecialistDashboard(pbClient, user.id)
+      .then((result) => setData(result))
+      .catch(() => setError(true));
   }, [user]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   if (error) {
     return (
@@ -46,5 +45,5 @@ export default function SpecialistDashboardClient() {
     );
   }
 
-  return <SpecialistDashboard data={data} />;
+  return <SpecialistDashboard data={data} onOfferCreated={refresh} />;
 }

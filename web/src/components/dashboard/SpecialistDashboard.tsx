@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { ServiceOffer } from "@/types/service-card";
 import { formatPrice, SERVICE_TAG_LABELS } from "@/types/service-card";
 import ServiceCreationForm from "./ServiceCreationForm";
 import { LEAD_STATUS_LABELS, LEAD_STATUS_STYLES } from "@/data/dashboard-mock";
@@ -28,15 +27,20 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-export default function SpecialistDashboard({ data }: { data: SpecialistDashboardData }) {
+export default function SpecialistDashboard({
+  data,
+  onOfferCreated,
+}: {
+  data: SpecialistDashboardData;
+  onOfferCreated: () => void;
+}) {
   const { specialist, profileStatus, viewsCount, leadsCount, offers, leads, cases } = data;
   const [tab, setTab] = useState<Tab>("overview");
   const isPremium = Boolean(specialist.premium);
 
-  const [pendingOffers, setPendingOffers] = useState<ServiceOffer[]>([]);
   const [showCreationForm, setShowCreationForm] = useState(false);
 
-  const totalOfferCount = offers.length + pendingOffers.length;
+  const totalOfferCount = offers.length;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
@@ -214,36 +218,14 @@ export default function SpecialistDashboard({ data }: { data: SpecialistDashboar
               </div>
             ))}
 
-            {pendingOffers.map((offer) => (
-              <div
-                key={offer.id}
-                className="flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 p-4"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-zinc-900">
-                    {offer.resultTypeSlug}
-                  </p>
-                  <p className="mt-1 text-xs text-zinc-500">
-                    {formatPrice(offer.priceType, offer.priceValue)} ·{" "}
-                    {offer.durationFrom}
-                  </p>
-                </div>
-                <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
-                  На модерации (черновик — пока не отправлено)
-                </span>
-              </div>
-            ))}
-
-            {offers.length === 0 && pendingOffers.length === 0 && !showCreationForm && (
+            {offers.length === 0 && !showCreationForm && (
               <p className="text-sm text-zinc-500">У вас пока нет ни одной услуги.</p>
             )}
 
             {showCreationForm ? (
               <ServiceCreationForm
                 specialist={specialist}
-                onCreated={(offer) =>
-                  setPendingOffers((prev) => [offer, ...prev])
-                }
+                onCreated={onOfferCreated}
                 onCancel={() => setShowCreationForm(false)}
               />
             ) : (

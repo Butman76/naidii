@@ -35,9 +35,18 @@ migrate((app) => {
 
   app.save(collection)
 
+  // meta.senderName/senderAddress подтверждены рабочими на живом сервере
+  // (2026-08-25) — письмо ушло от "НайдИИ <reg@naidii.ru>". meta.appName
+  // тем же способом, скорее всего, тоже применяется, не проверяли отдельно.
+  // meta.appUrl — НЕ подтверждено: после этой миграции ссылка в письме
+  // всё равно вела на дефолтный http://localhost:8090, а не на
+  // https://naidii.ru, то есть либо поле называется иначе в этой версии
+  // PocketBase, либо сохраняется по-другому. Пришлось поправить руками
+  // через /_/ → Settings → Application. Если завтра снова понадобится
+  // поднимать PocketBase с нуля — учтите, что после прогона миграций
+  // Application URL тоже надо будет проверить/выставить вручную.
   const settings = app.settings()
   settings.meta.appName = "НайдИИ"
-  settings.meta.appUrl = "https://naidii.ru"
   settings.meta.senderName = "НайдИИ"
   settings.meta.senderAddress = "reg@naidii.ru"
 

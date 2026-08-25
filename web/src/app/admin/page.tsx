@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import RequireAuth from "@/components/RequireAuth";
 import AdminPanel from "@/components/admin/AdminPanel";
 
 export const metadata: Metadata = {
@@ -13,7 +14,9 @@ export default function AdminPage() {
     <>
       <Header />
       <main className="flex-1 bg-zinc-50">
-        <AdminPanel />
+        <RequireAuth role={["admin", "moderator"]}>
+          <AdminPanel />
+        </RequireAuth>
       </main>
       <Footer />
     </>

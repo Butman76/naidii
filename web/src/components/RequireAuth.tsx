@@ -13,21 +13,24 @@ export default function RequireAuth({
   role,
   children,
 }: {
-  role: AuthUser["role"];
+  role: AuthUser["role"] | AuthUser["role"][];
   children: React.ReactNode;
 }) {
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
+  const allowedRoles = Array.isArray(role) ? role : [role];
+  const hasRole = (u: AuthUser) => allowedRoles.includes(u.role);
 
   useEffect(() => {
     if (!isAuthenticated) {
       router.replace("/login");
-    } else if (user && user.role !== role) {
+    } else if (user && !hasRole(user)) {
       router.replace("/");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- allowedRoles/hasRole пересоздаются каждый рендер, сравнивать по role/user/isAuthenticated
   }, [isAuthenticated, user, role, router]);
 
-  if (!isAuthenticated || !user || user.role !== role) {
+  if (!isAuthenticated || !user || !hasRole(user)) {
     return (
       <div className="flex flex-1 items-center justify-center py-24 text-sm text-zinc-500">
         Проверяем авторизацию…

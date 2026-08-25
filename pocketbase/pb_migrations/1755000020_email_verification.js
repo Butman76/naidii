@@ -18,7 +18,11 @@
 migrate((app) => {
   const collection = app.findCollectionByNameOrId("users")
 
-  collection.verificationTemplate = new MailerTemplate({
+  // Плоский объект, а не `new MailerTemplate(...)` — такого конструктора в
+  // JSVM PocketBase нет (проверено на живом сервере 2026-08-25:
+  // "ReferenceError: MailerTemplate is not defined"), сеттер поля сам
+  // принимает {subject, body}.
+  collection.verificationTemplate = {
     subject: "Подтвердите почту на НайдИИ",
     body: `
       <p>Здравствуйте!</p>
@@ -27,7 +31,7 @@ migrate((app) => {
       <p><a href="{APP_URL}/verify?token={TOKEN}">Подтвердить почту</a></p>
       <p>Если это были не вы — просто проигнорируйте это письмо.</p>
     `,
-  })
+  }
 
   app.save(collection)
 

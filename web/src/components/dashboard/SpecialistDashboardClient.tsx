@@ -18,12 +18,25 @@ export default function SpecialistDashboardClient() {
   const [data, setData] = useState<SpecialistDashboardData | null>(null);
   const [error, setError] = useState(false);
 
+  const userId = user?.id;
+
   const refresh = useCallback(() => {
-    if (!user) return;
-    return fetchOwnSpecialistDashboard(pbClient, user.id)
+    if (!userId) return;
+    return fetchOwnSpecialistDashboard(pbClient, userId)
       .then((result) => setData(result))
-      .catch(() => setError(true));
-  }, [user]);
+      .catch((err) => {
+        // useAuth() эмитит новый объект user (та же личность, новая
+        // ссылка) сразу после монтирования — эффект ниже перезапускается,
+        // и PocketBase-клиент сам отменяет первый, устаревший запрос. Это
+        // ожидаемая отмена, а не настоящая ошибка загрузки — раньше это
+        // тихо игнорировалось через локальный cancelled-флаг, при
+        // переписывании на переиспользуемый refresh() эта защита
+        // потерялась, из-за чего кабинет ошибочно показывал "Не удалось
+        // загрузить профиль" почти всегда.
+        if (err?.isAbort) return;
+        setError(true);
+      });
+  }, [userId]);
 
   useEffect(() => {
     refresh();

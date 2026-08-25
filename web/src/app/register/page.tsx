@@ -59,10 +59,20 @@ export default function RegisterPage() {
           leads_count: 0,
           completed_orders_count: 0,
         });
-        router.push("/dashboard");
-      } else {
-        router.push("/dashboard/customer");
       }
+
+      try {
+        // Письмо-активация (см. STATUS.md) — не блокируем регистрацию,
+        // если на сервере ещё не настроен SMTP (см. миграцию
+        // 1755000020_email_verification.js): сам кабинет уже покажет
+        // экран "подтвердите почту" через RequireAuth, письмо можно
+        // будет запросить повторно оттуда же.
+        await pbClient.collection("users").requestVerification(email);
+      } catch {
+        // ignore
+      }
+
+      router.push(role === "specialist" ? "/dashboard" : "/dashboard/customer");
     } catch {
       setError(
         "Не удалось зарегистрироваться — возможно, такой email уже занят."

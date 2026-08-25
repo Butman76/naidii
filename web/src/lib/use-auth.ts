@@ -9,6 +9,7 @@ export interface AuthUser {
   email: string;
   name: string;
   role: "customer" | "specialist" | "moderator" | "admin";
+  verified: boolean;
 }
 
 function toAuthUser(record: AuthRecord): AuthUser | null {
@@ -18,6 +19,7 @@ function toAuthUser(record: AuthRecord): AuthUser | null {
     email: record.email,
     name: record.name ?? "",
     role: record.role ?? "customer",
+    verified: record.verified ?? false,
   };
 }
 

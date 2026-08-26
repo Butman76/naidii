@@ -170,6 +170,34 @@ export default function AdminPanel() {
         entityId: id,
         newData: { status: nextStatus },
       });
+
+      // Блокировка пользователя должна скрывать и его карточку из каталога —
+      // /specialists и /services фильтруют только по profile_status, они не
+      // знают о users.status. Без этого шага заблокированный пользователь
+      // не может войти, но его витрина остаётся на сайте как ни в чём не
+      // бывало. Разблокировка НЕ возвращает профиль в published автоматически
+      // — это отдельное решение модератора (раздел "Профили").
+      if (nextStatus === "blocked") {
+        try {
+          const profile = await pbClient
+            .collection("specialist_profiles")
+            .getFirstListItem(pbClient.filter("user_id = {:id}", { id }));
+          if (profile.profile_status !== "blocked") {
+            await pbClient
+              .collection("specialist_profiles")
+              .update(profile.id, { profile_status: "blocked" });
+            await logAdminAction(pbClient, {
+              action: "Скрыл профиль (блокировка пользователя)",
+              entityType: "specialist_profiles",
+              entityId: profile.id,
+              newData: { profile_status: "blocked" },
+            });
+          }
+        } catch {
+          // У заказчика (или специалиста без анкеты) профиля просто нет —
+          // это ожидаемо, не ошибка.
+        }
+      }
     });
   }
 

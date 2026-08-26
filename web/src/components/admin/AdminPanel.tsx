@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { pbClient } from "@/lib/auth-client";
 import { useAuth } from "@/lib/use-auth";
 import {
@@ -80,7 +79,6 @@ function ActionBtn({
 
 export default function AdminPanel() {
   const { user } = useAuth();
-  const router = useRouter();
   const [tab, setTab] = useState<Tab>("profiles");
   const [data, setData] = useState<ModerationData | null>(null);
   const [logs, setLogs] = useState<AdminLogEntry[] | null>(null);
@@ -248,10 +246,15 @@ export default function AdminPanel() {
       "naidii_admin_return",
       JSON.stringify({ token: pbClient.authStore.token, record: pbClient.authStore.record })
     );
-    window.dispatchEvent(new Event("naidii-impersonation"));
 
     pbClient.authStore.save(token, record);
-    router.push(targetRole === "specialist" ? "/dashboard" : "/dashboard/customer");
+    // Полная перезагрузка, а не router.push: /admin остаётся смонтированной,
+    // пока идёт клиентский переход, и её собственный RequireAuth видит уже
+    // подменённую (не-admin) сессию раньше, чем успевает сработать переход
+    // на кабинет — и перекидывает на "/" первым. Жёсткая навигация убирает
+    // гонку: старое дерево целиком уничтожается, новая страница читает уже
+    // сохранённую сессию из localStorage с чистого листа.
+    window.location.href = targetRole === "specialist" ? "/dashboard" : "/dashboard/customer";
   }
 
   const TABS: Array<{ id: Tab; label: string; count?: number }> = [

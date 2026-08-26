@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import type { RecordModel } from "pocketbase";
 import { pbClient } from "@/lib/auth-client";
 
@@ -17,16 +16,15 @@ const STORAGE_KEY = "naidii_admin_return";
 // было бы только повторным логином — то, чего просил избежать пользователь.
 export default function ImpersonationBanner() {
   const [saved, setSaved] = useState<SavedAdminSession | null>(null);
-  const router = useRouter();
 
   useEffect(() => {
-    function read() {
-      const raw = sessionStorage.getItem(STORAGE_KEY);
-      setSaved(raw ? JSON.parse(raw) : null);
-    }
-    read();
-    window.addEventListener("naidii-impersonation", read);
-    return () => window.removeEventListener("naidii-impersonation", read);
+    // Переходы туда/обратно всегда идут через window.location (полную
+    // перезагрузку, см. restore() ниже и impersonateUser в AdminPanel.tsx),
+    // так что достаточно читать sessionStorage один раз при монтировании —
+    // отдельное событие для "живого" обновления в рамках одной страницы не
+    // нужно.
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    setSaved(raw ? JSON.parse(raw) : null);
   }, []);
 
   if (!saved) return null;
@@ -35,8 +33,11 @@ export default function ImpersonationBanner() {
     if (!saved) return;
     pbClient.authStore.save(saved.token, saved.record);
     sessionStorage.removeItem(STORAGE_KEY);
-    window.dispatchEvent(new Event("naidii-impersonation"));
-    router.push("/admin");
+    // window.location, не router.push — та же гонка, что и при входе "как
+    // пользователь": страница кабинета ещё смонтирована, и её RequireAuth
+    // среагировал бы на подмену сессии раньше, чем успеет сработать переход
+    // на /admin. Жёсткая навигация читает уже сохранённую сессию с нуля.
+    window.location.href = "/admin";
   }
 
   return (

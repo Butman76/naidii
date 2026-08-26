@@ -4,6 +4,11 @@ import Footer from "@/components/Footer";
 import SpecialistsCatalog from "@/components/SpecialistsCatalog";
 import { fetchSpecialists } from "@/lib/specialists";
 
+// Без этого страница была полностью статической (собранной один раз при
+// билде) и не видела изменений в PocketBase (публикацию профиля админом)
+// до следующего git-деплоя. См. STATUS.md.
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: "Специалисты по автоматизации и AI — НайдИИ",
   description:

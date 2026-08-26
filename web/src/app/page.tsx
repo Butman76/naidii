@@ -5,6 +5,12 @@ import TrustStats from "@/components/TrustStats";
 import TopServices from "@/components/TopServices";
 import Footer from "@/components/Footer";
 
+// Без этого страница считалась полностью статической (собранной один раз
+// при билде) — карточки услуг/специалистов и счётчики на главной не видели
+// изменений в PocketBase (например, публикацию профиля админом) до
+// следующего git-деплоя. См. STATUS.md.
+export const revalidate = 60;
+
 export default function Home() {
   return (
     <>

@@ -15,6 +15,12 @@ export function generateStaticParams() {
   return CATEGORIES.map((c) => ({ slug: c.slug }));
 }
 
+// Без этого страница была полностью статической (собранной один раз при
+// билде) и не видела изменений в PocketBase до следующего git-деплоя —
+// см. STATUS.md. Не влияет на STATIC_EXPORT-сборку (там сервера нет,
+// значение просто игнорируется).
+export const revalidate = 60;
+
 export async function generateMetadata({
   params,
 }: {

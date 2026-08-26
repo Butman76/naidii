@@ -4,6 +4,11 @@ import Footer from "@/components/Footer";
 import ServicesCatalog from "@/components/ServicesCatalog";
 import { fetchCatalogData, summarizeResultTypes } from "@/lib/catalog";
 
+// Без этого страница была полностью статической (собранной один раз при
+// билде) и не видела изменений в PocketBase (публикацию профиля/карточки
+// админом) до следующего git-деплоя. См. STATUS.md.
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: "Каталог услуг по автоматизации и AI — НайдИИ",
   description:

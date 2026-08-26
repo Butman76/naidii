@@ -5,6 +5,11 @@ import Footer from "@/components/Footer";
 import { CATEGORIES } from "@/data/categories";
 import { fetchSpecialists } from "@/lib/specialists";
 
+// Без этого страница была полностью статической (собранной один раз при
+// билде) и не видела изменений в PocketBase до следующего git-деплоя.
+// См. STATUS.md.
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: "Категории специалистов по AI и автоматизации — НайдИИ",
   description:

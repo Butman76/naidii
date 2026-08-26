@@ -37,7 +37,7 @@ export default function SpecialistCard({
       )}
 
       <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-sm font-semibold text-white">
             {specialist.avatarInitials}
           </div>
@@ -50,12 +50,12 @@ export default function SpecialistCard({
             </p>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-1 pt-1">
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1 pt-1">
           {(specialist.categories ?? [specialist.category]).map((slug) => (
             <span
               key={slug}
               title={CATEGORIES.find((c) => c.slug === slug)?.name ?? slug}
-              className={`h-2.5 w-2.5 rounded-full ${getCategoryStyle(slug).dot}`}
+              className={`h-2.5 w-2.5 shrink-0 rounded-full ${getCategoryStyle(slug).dot}`}
             />
           ))}
         </div>

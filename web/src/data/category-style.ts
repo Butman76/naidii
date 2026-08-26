@@ -6,18 +6,18 @@
 // генерации картинок.
 export const CATEGORY_STYLE: Record<
   string,
-  { gradient: string; icon: string }
+  { gradient: string; icon: string; dot: string }
 > = {
-  "ai-agents": { gradient: "from-blue-600 to-cyan-500", icon: "🤖" },
-  rag: { gradient: "from-emerald-600 to-teal-500", icon: "📚" },
-  orchestration: { gradient: "from-indigo-600 to-blue-500", icon: "🔗" },
-  chatbots: { gradient: "from-sky-600 to-blue-500", icon: "💬" },
-  "voice-ai": { gradient: "from-rose-600 to-orange-500", icon: "🎙️" },
-  "ai-video": { gradient: "from-fuchsia-600 to-pink-500", icon: "🎬" },
-  "crm-ai": { gradient: "from-amber-600 to-yellow-500", icon: "🧩" },
-  "prompt-engineering": { gradient: "from-purple-600 to-violet-500", icon: "🧠" },
-  "ai-analytics": { gradient: "from-teal-600 to-emerald-500", icon: "📈" },
-  other: { gradient: "from-zinc-600 to-zinc-500", icon: "✨" },
+  "ai-agents": { gradient: "from-blue-600 to-cyan-500", icon: "🤖", dot: "bg-blue-500" },
+  rag: { gradient: "from-emerald-600 to-teal-500", icon: "📚", dot: "bg-emerald-500" },
+  orchestration: { gradient: "from-indigo-600 to-blue-500", icon: "🔗", dot: "bg-indigo-500" },
+  chatbots: { gradient: "from-sky-600 to-blue-500", icon: "💬", dot: "bg-sky-500" },
+  "voice-ai": { gradient: "from-rose-600 to-orange-500", icon: "🎙️", dot: "bg-rose-500" },
+  "ai-video": { gradient: "from-fuchsia-600 to-pink-500", icon: "🎬", dot: "bg-fuchsia-500" },
+  "crm-ai": { gradient: "from-amber-600 to-yellow-500", icon: "🧩", dot: "bg-amber-500" },
+  "prompt-engineering": { gradient: "from-purple-600 to-violet-500", icon: "🧠", dot: "bg-purple-500" },
+  "ai-analytics": { gradient: "from-teal-600 to-emerald-500", icon: "📈", dot: "bg-teal-500" },
+  other: { gradient: "from-zinc-600 to-zinc-500", icon: "✨", dot: "bg-zinc-400" },
 };
 
 export function getCategoryStyle(slug: string) {

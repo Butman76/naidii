@@ -1,5 +1,7 @@
 import Link from "next/link";
 import type { Specialist } from "@/types/specialist";
+import { CATEGORIES } from "@/data/categories";
+import { getCategoryStyle } from "@/data/category-style";
 
 const BADGE_LABELS: Record<Specialist["badges"][number], string> = {
   top: "Топ",
@@ -47,6 +49,15 @@ export default function SpecialistCard({
               {specialist.title}
             </p>
           </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-1 pt-1">
+          {(specialist.categories ?? [specialist.category]).map((slug) => (
+            <span
+              key={slug}
+              title={CATEGORIES.find((c) => c.slug === slug)?.name ?? slug}
+              className={`h-2.5 w-2.5 rounded-full ${getCategoryStyle(slug).dot}`}
+            />
+          ))}
         </div>
       </div>
 

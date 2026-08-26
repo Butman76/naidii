@@ -45,6 +45,13 @@ export interface Specialist {
   shortDescription: string;
   fullDescription: string;
   category: string;
+  // Все направления, в которых у специалиста есть хотя бы одно активное
+  // предложение (для цветных точек-меток на карточке в каталоге) —
+  // необязательное, т.к. в мок-данных специалист привязан только к одной
+  // категории; там, где его нет, карточка просто рисует одну точку по
+  // `category`. Реальные (не мок) специалисты всегда получают его из
+  // web/src/lib/specialists.ts.
+  categories?: string[];
   skills: string[];
   priceFrom: string;
   experienceYears: number;

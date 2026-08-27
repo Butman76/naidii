@@ -208,6 +208,18 @@ export default function AdminPanel() {
     });
   }
 
+  async function verifyUserEmail(id: string) {
+    await runAction(id, async () => {
+      await pbClient.collection("users").update(id, { verified: true });
+      await logAdminAction(pbClient, {
+        action: "Подтвердил почту вручную",
+        entityType: "users",
+        entityId: id,
+        newData: { verified: true },
+      });
+    });
+  }
+
   async function deleteUser(id: string, name: string) {
     if (!window.confirm(`Удалить пользователя «${name || id}» безвозвратно? Его анкета и услуги (если есть) удалятся вместе с ним.`)) {
       return;
@@ -482,6 +494,7 @@ export default function AdminPanel() {
                   <Th>Email</Th>
                   <Th>Роль</Th>
                   <Th>Статус</Th>
+                  <Th>Почта</Th>
                   <Th>Регистрация</Th>
                   <Th>Действия</Th>
                 </tr>
@@ -505,6 +518,11 @@ export default function AdminPanel() {
                         {u.status}
                       </span>
                     </Td>
+                    <Td>
+                      <span className={u.verified ? "text-emerald-600" : "text-amber-600"}>
+                        {u.verified ? "подтверждена" : "не подтверждена"}
+                      </span>
+                    </Td>
                     <Td className="whitespace-nowrap text-zinc-500">{formatDate(u.createdAt)}</Td>
                     <Td>
                       {isAdmin ? (
@@ -515,6 +533,14 @@ export default function AdminPanel() {
                               tone="ok"
                               disabled={busyId === u.id}
                               onClick={() => impersonateUser(u.id, u.role)}
+                            />
+                          )}
+                          {!u.verified && (
+                            <ActionBtn
+                              label="confirm email"
+                              tone="ok"
+                              disabled={busyId === u.id}
+                              onClick={() => verifyUserEmail(u.id)}
                             />
                           )}
                           {u.status === "blocked" ? (

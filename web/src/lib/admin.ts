@@ -41,6 +41,7 @@ export interface AdminUserRow {
   email: string;
   role: string;
   status: string;
+  verified: boolean;
   createdAt: string;
 }
 
@@ -116,6 +117,7 @@ export async function fetchModerationData(pb: PocketBase): Promise<ModerationDat
     email: u.email,
     role: u.role,
     status: u.status,
+    verified: Boolean(u.verified),
     createdAt: u.created,
   }));
 

@@ -79,6 +79,13 @@ export async function fetchSpecialists(): Promise<Specialist[]> {
     const myOffers = offerRecords.filter((o) => o.specialist_profile_id === p.id);
     const firstResultType = myOffers[0]?.expand?.result_type_id;
     const category = firstResultType?.expand?.category_id?.slug ?? "other";
+    // Все направления специалиста (не только первое) — для цветных точек на
+    // карточке в каталоге, см. SpecialistCard.tsx.
+    const categories = Array.from(
+      new Set(
+        myOffers.map((o) => o.expand?.result_type_id?.expand?.category_id?.slug ?? "other")
+      )
+    );
 
     const services: SpecialistService[] = myOffers.map((o) => ({
       title: o.expand?.result_type_id?.title ?? "Услуга",
@@ -96,6 +103,7 @@ export async function fetchSpecialists(): Promise<Specialist[]> {
       shortDescription: p.short_description,
       fullDescription: p.full_description,
       category,
+      categories,
       skills: [],
       priceFrom: formatPriceFrom(p.project_rate_from),
       experienceYears: p.experience_years,

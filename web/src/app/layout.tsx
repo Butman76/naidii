@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Unbounded } from "next/font/google";
+import ImpersonationBanner from "@/components/ImpersonationBanner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} ${unbounded.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-zinc-50 text-zinc-900">
+        <ImpersonationBanner />
         {children}
       </body>
     </html>

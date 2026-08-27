@@ -170,7 +170,91 @@ export default function AdminPanel() {
         entityId: id,
         newData: { status: nextStatus },
       });
+
+      // Блокировка пользователя должна скрывать и его карточку из каталога —
+      // /specialists и /services фильтруют только по profile_status, они не
+      // знают о users.status. Без этого шага заблокированный пользователь
+      // не может войти, но его витрина остаётся на сайте как ни в чём не
+      // бывало. Симметрично: разблокировка возвращает профиль в published —
+      // первая версия делала это только в одну сторону ("это отдельное
+      // решение модератора"), но живая проверка показала, что для того, кто
+      // разблокировал, это выглядит как баг ("разблокировал, а карточки всё
+      // равно нет") — раздела "Профили" для уже опубликованных карточек и
+      // не существует, туда попадают только pending, так что вручную
+      // вернуть её тоже неоткуда.
+      try {
+        const profile = await pbClient
+          .collection("specialist_profiles")
+          .getFirstListItem(pbClient.filter("user_id = {:id}", { id }));
+        const wanted = nextStatus === "blocked" ? "blocked" : "published";
+        if (profile.profile_status !== wanted) {
+          await pbClient
+            .collection("specialist_profiles")
+            .update(profile.id, { profile_status: wanted });
+          await logAdminAction(pbClient, {
+            action:
+              wanted === "blocked"
+                ? "Скрыл профиль (блокировка пользователя)"
+                : "Вернул профиль в каталог (разблокировка пользователя)",
+            entityType: "specialist_profiles",
+            entityId: profile.id,
+            newData: { profile_status: wanted },
+          });
+        }
+      } catch {
+        // У заказчика (или специалиста без анкеты) профиля просто нет —
+        // это ожидаемо, не ошибка.
+      }
     });
+  }
+
+  async function deleteUser(id: string, name: string) {
+    if (!window.confirm(`Удалить пользователя «${name || id}» безвозвратно? Его анкета и услуги (если есть) удалятся вместе с ним.`)) {
+      return;
+    }
+    await runAction(id, async () => {
+      await pbClient.collection("users").delete(id);
+      await logAdminAction(pbClient, {
+        action: "Удалил пользователя",
+        entityType: "users",
+        entityId: id,
+      });
+    });
+  }
+
+  // "Войти как" — реальная подмена сессии на целевого пользователя через
+  // серверный /api/impersonate (нужен суперпользователь PocketBase, у
+  // обычной роли admin прав на impersonate нет). Свою admin-сессию кладём
+  // в sessionStorage, чтобы ImpersonationBanner мог вернуть её одной
+  // кнопкой — без повторного логина в обе стороны.
+  async function impersonateUser(targetId: string, targetRole: string) {
+    const res = await fetch("/api/impersonate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: pbClient.authStore.token,
+      },
+      body: JSON.stringify({ targetUserId: targetId }),
+    });
+    if (!res.ok) {
+      window.alert("Не удалось войти как этот пользователь.");
+      return;
+    }
+    const { token, record } = await res.json();
+
+    sessionStorage.setItem(
+      "naidii_admin_return",
+      JSON.stringify({ token: pbClient.authStore.token, record: pbClient.authStore.record })
+    );
+
+    pbClient.authStore.save(token, record);
+    // Полная перезагрузка, а не router.push: /admin остаётся смонтированной,
+    // пока идёт клиентский переход, и её собственный RequireAuth видит уже
+    // подменённую (не-admin) сессию раньше, чем успевает сработать переход
+    // на кабинет — и перекидывает на "/" первым. Жёсткая навигация убирает
+    // гонку: старое дерево целиком уничтожается, новая страница читает уже
+    // сохранённую сессию из localStorage с чистого листа.
+    window.location.href = targetRole === "specialist" ? "/dashboard" : "/dashboard/customer";
   }
 
   const TABS: Array<{ id: Tab; label: string; count?: number }> = [
@@ -424,21 +508,39 @@ export default function AdminPanel() {
                     <Td className="whitespace-nowrap text-zinc-500">{formatDate(u.createdAt)}</Td>
                     <Td>
                       {isAdmin ? (
-                        u.status === "blocked" ? (
-                          <ActionBtn
-                            label="unblock"
-                            tone="ok"
-                            disabled={busyId === u.id}
-                            onClick={() => toggleUserBlock(u.id, "active", "Разблокировал пользователя")}
-                          />
-                        ) : (
-                          <ActionBtn
-                            label="block"
-                            tone="bad"
-                            disabled={busyId === u.id}
-                            onClick={() => toggleUserBlock(u.id, "blocked", "Заблокировал пользователя")}
-                          />
-                        )
+                        <div className="flex flex-wrap gap-1.5">
+                          {(u.role === "specialist" || u.role === "customer") && u.id !== user?.id && (
+                            <ActionBtn
+                              label="войти как"
+                              tone="ok"
+                              disabled={busyId === u.id}
+                              onClick={() => impersonateUser(u.id, u.role)}
+                            />
+                          )}
+                          {u.status === "blocked" ? (
+                            <ActionBtn
+                              label="unblock"
+                              tone="ok"
+                              disabled={busyId === u.id}
+                              onClick={() => toggleUserBlock(u.id, "active", "Разблокировал пользователя")}
+                            />
+                          ) : (
+                            <ActionBtn
+                              label="block"
+                              tone="bad"
+                              disabled={busyId === u.id}
+                              onClick={() => toggleUserBlock(u.id, "blocked", "Заблокировал пользователя")}
+                            />
+                          )}
+                          {u.id !== user?.id && (
+                            <ActionBtn
+                              label="delete"
+                              tone="bad"
+                              disabled={busyId === u.id}
+                              onClick={() => deleteUser(u.id, u.name)}
+                            />
+                          )}
+                        </div>
                       ) : (
                         <span className="text-zinc-300">только admin</span>
                       )}

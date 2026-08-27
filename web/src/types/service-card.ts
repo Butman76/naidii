@@ -58,6 +58,9 @@ export interface ServiceOffer {
   revisionsIncluded?: number;
   tags: ServiceCardTag[];
   promoted?: boolean;
+  // Реальный id записи specialist_profiles (не слаг) — нужен, чтобы отправить
+  // заявку (leads.specialist_profile_id — relation, ждёт id, не слаг).
+  specialistProfileId: string;
   specialistSlug: string;
   specialistName: string;
   specialistAvatarInitials: string;

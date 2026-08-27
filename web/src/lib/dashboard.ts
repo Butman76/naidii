@@ -89,6 +89,7 @@ export async function fetchOwnSpecialistDashboard(
     scopeLabel: o.scope_label ?? "",
     revisionsIncluded: o.revisions_included ?? undefined,
     tags: (o.tags ?? []) as ServiceCardTag[],
+    specialistProfileId: profile.id,
     specialistSlug: profile.slug,
     specialistName: profile.public_name,
     specialistAvatarInitials: computeInitials(profile.public_name || "?"),

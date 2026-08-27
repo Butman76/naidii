@@ -68,6 +68,7 @@ export async function fetchCatalogData(): Promise<CatalogData> {
         revisionsIncluded: o.revisions_included || undefined,
         tags: o.tags ?? [],
         promoted: promotedServiceIds.has(o.id),
+        specialistProfileId: specialist.id,
         specialistSlug: specialist.slug,
         specialistName: specialist.public_name,
         specialistAvatarInitials: computeInitials(specialist.public_name),

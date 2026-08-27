@@ -467,6 +467,9 @@ export const mockServiceOffers: ServiceOffer[] = RAW_TYPES.flatMap((raw) => {
       revisionsIncluded: offer.revisions,
       tags: offer.tags,
       promoted: offer.promoted,
+      // Мок-данные, реального id specialist_profiles нет — слаг как
+      // заглушка (эти офферы никогда не идут в реальную отправку заявки).
+      specialistProfileId: provider.slug,
       specialistSlug: provider.slug,
       specialistName: provider.name,
       specialistAvatarInitials: provider.initials,

@@ -96,7 +96,7 @@ export default async function ResultTypePage({
           </div>
         </div>
 
-        <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-zinc-900">
               Предложения специалистов
@@ -110,9 +110,9 @@ export default async function ResultTypePage({
             чем смотреть, кто именно исполнитель.
           </p>
 
-          <div className="mt-6 flex flex-col gap-3">
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {typeOffers.map((offer) => (
-              <ServiceOfferRow key={offer.id} offer={offer} />
+              <ServiceOfferRow key={offer.id} offer={offer} contextLabel={type.title} />
             ))}
           </div>
         </div>

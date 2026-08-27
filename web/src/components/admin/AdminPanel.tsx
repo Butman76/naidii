@@ -84,6 +84,7 @@ export default function AdminPanel() {
   const [logs, setLogs] = useState<AdminLogEntry[] | null>(null);
   const [error, setError] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const isAdmin = user?.role === "admin";
 
@@ -114,12 +115,20 @@ export default function AdminPanel() {
     action: () => Promise<void>
   ) {
     setBusyId(id);
+    setActionError(null);
     try {
       await action();
       await refresh();
-    } catch {
-      // ошибка конкретного действия не должна ронять всю страницу — просто
-      // не обновляем список, кнопки останутся кликабельными для повтора
+    } catch (err) {
+      // Раньше ошибка проглатывалась молча — из-за этого баг с manageRule
+      // (кнопка "confirm email" ничего не делала) было не отличить от
+      // "ничего не сломалось, просто такое поведение". Показываем текст
+      // ошибки от PocketBase, чтобы это не повторилось незамеченным.
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Не удалось выполнить действие.";
+      setActionError(message);
     } finally {
       setBusyId(null);
     }
@@ -311,6 +320,12 @@ export default function AdminPanel() {
           </button>
         ))}
       </div>
+
+      {actionError && (
+        <p className="mt-3 rounded border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-700">
+          {actionError}
+        </p>
+      )}
 
       {!data ? (
         <p className="mt-6 text-xs text-zinc-500">Загружаем…</p>

@@ -49,9 +49,9 @@ export default function OrderButton({
 
   if (state === "sent") {
     return (
-      <span className="block w-full rounded-full bg-emerald-100 px-3 py-1.5 text-center text-[11px] font-medium text-emerald-800">
-        Заявка отправлена
-      </span>
+      <p className="rounded-lg bg-emerald-50 px-2.5 py-2 text-center text-[11px] font-medium leading-snug text-emerald-800">
+        Заявка отправлена — ждите ответа от исполнителя в личном кабинете.
+      </p>
     );
   }
 

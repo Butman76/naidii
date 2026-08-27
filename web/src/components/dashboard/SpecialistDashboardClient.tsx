@@ -58,5 +58,5 @@ export default function SpecialistDashboardClient() {
     );
   }
 
-  return <SpecialistDashboard data={data} onOfferCreated={refresh} />;
+  return <SpecialistDashboard data={data} refresh={refresh} />;
 }

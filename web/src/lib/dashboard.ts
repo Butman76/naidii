@@ -32,7 +32,11 @@ export interface SpecialistDashboardLead {
 // ServiceOffer не хранит заголовок типа результата (его отдаёт ResultType
 // в публичном каталоге) — для кабинета берём заголовок сразу из expand,
 // чтобы не тянуть отдельный mock-каталог типов и не рисковать рассинхроном.
-export type SpecialistDashboardOffer = ServiceOffer & { resultTypeTitle: string };
+export type SpecialistDashboardOffer = ServiceOffer & {
+  resultTypeTitle: string;
+  categorySlug: string;
+  categoryName: string;
+};
 
 export interface SpecialistDashboardData {
   specialist: Specialist;
@@ -55,7 +59,7 @@ export async function fetchOwnSpecialistDashboard(
   const [offerRecords, leadRecords, reviewRecords, caseRecords] = await Promise.all([
     pb.collection("services").getFullList({
       filter: pb.filter("specialist_profile_id = {:id}", { id: profile.id }),
-      expand: "result_type_id",
+      expand: "result_type_id.category_id",
       sort: "-created",
     }),
     pb.collection("leads").getFullList({
@@ -76,6 +80,8 @@ export async function fetchOwnSpecialistDashboard(
     id: o.id,
     resultTypeSlug: o.expand?.result_type_id?.slug ?? "",
     resultTypeTitle: o.expand?.result_type_id?.title ?? "Своё направление (на модерации)",
+    categorySlug: o.expand?.result_type_id?.expand?.category_id?.slug ?? "",
+    categoryName: o.expand?.result_type_id?.expand?.category_id?.name ?? "На модерации",
     tagline: o.tagline ?? "",
     priceType: (o.price_type || "from") as ServicePriceType,
     priceValue: o.price_from ?? 0,

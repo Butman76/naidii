@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { formatPrice, SERVICE_TAG_LABELS } from "@/types/service-card";
 import ServiceCreationForm from "./ServiceCreationForm";
+import ProfileEditForm from "./ProfileEditForm";
+import { getCategoryStyle, getCategoryAccent } from "@/data/category-style";
 import { LEAD_STATUS_LABELS, LEAD_STATUS_STYLES } from "@/data/dashboard-mock";
 import type { SpecialistDashboardData } from "@/lib/dashboard";
 
@@ -29,16 +31,17 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
 
 export default function SpecialistDashboard({
   data,
-  onOfferCreated,
+  refresh,
 }: {
   data: SpecialistDashboardData;
-  onOfferCreated: () => void;
+  refresh: () => void;
 }) {
   const { specialist, profileStatus, viewsCount, leadsCount, offers, leads, cases } = data;
   const [tab, setTab] = useState<Tab>("overview");
   const isPremium = Boolean(specialist.premium);
 
   const [showCreationForm, setShowCreationForm] = useState(false);
+  const [editingProfile, setEditingProfile] = useState(false);
 
   const totalOfferCount = offers.length;
 
@@ -140,10 +143,23 @@ export default function SpecialistDashboard({
               <p className="text-sm font-semibold text-zinc-900">
                 Публичный профиль
               </p>
-              <button className="rounded-full border border-zinc-300 px-4 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50">
-                Редактировать
-              </button>
+              {!editingProfile && (
+                <button
+                  onClick={() => setEditingProfile(true)}
+                  className="rounded-full border border-zinc-300 px-4 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
+                >
+                  Редактировать
+                </button>
+              )}
             </div>
+
+            {editingProfile ? (
+              <ProfileEditForm
+                specialist={specialist}
+                onSaved={refresh}
+                onCancel={() => setEditingProfile(false)}
+              />
+            ) : (
             <dl className="mt-4 flex flex-col gap-3 text-sm">
               <div>
                 <dt className="text-xs text-zinc-500">Заголовок</dt>
@@ -181,42 +197,53 @@ export default function SpecialistDashboard({
                 </dd>
               </div>
             </dl>
+            )}
           </div>
         )}
 
         {tab === "services" && (
           <div className="flex flex-col gap-4">
-            {offers.map((offer) => (
-              <div
-                key={offer.id}
-                className="flex items-center justify-between rounded-2xl border border-zinc-200 bg-white p-4"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-zinc-900">
-                    {offer.resultTypeTitle}
-                  </p>
-                  <p className="mt-1 text-xs text-zinc-500">
-                    {formatPrice(offer.priceType, offer.priceValue)} ·{" "}
-                    {offer.durationFrom}
-                  </p>
-                  {offer.tags.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {offer.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="rounded-md bg-zinc-50 px-1.5 py-0.5 text-[10px] text-zinc-500 ring-1 ring-inset ring-zinc-200"
-                        >
-                          {SERVICE_TAG_LABELS[tag]}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+            {offers.map((offer) => {
+              const style = getCategoryStyle(offer.categorySlug);
+              const accent = getCategoryAccent(offer.categorySlug);
+              return (
+                <div
+                  key={offer.id}
+                  className={`flex items-center justify-between rounded-2xl border p-4 ${accent.border} ${accent.tint}`}
+                >
+                  <div className="min-w-0">
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full bg-gradient-to-r ${style.gradient} px-2 py-0.5 text-[11px] font-medium text-white`}
+                    >
+                      <span>{style.icon}</span>
+                      {offer.categoryName}
+                    </span>
+                    <p className="mt-1.5 truncate text-sm font-medium text-zinc-900">
+                      {offer.resultTypeTitle}
+                    </p>
+                    <p className="mt-1 text-xs text-zinc-500">
+                      {formatPrice(offer.priceType, offer.priceValue)} ·{" "}
+                      {offer.durationFrom}
+                    </p>
+                    {offer.tags.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {offer.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="rounded-md bg-white px-1.5 py-0.5 text-[10px] text-zinc-500 ring-1 ring-inset ring-zinc-200"
+                          >
+                            {SERVICE_TAG_LABELS[tag]}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-800">
+                    Опубликовано
+                  </span>
                 </div>
-                <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-800">
-                  Опубликовано
-                </span>
-              </div>
-            ))}
+              );
+            })}
 
             {offers.length === 0 && !showCreationForm && (
               <p className="text-sm text-zinc-500">У вас пока нет ни одной услуги.</p>
@@ -225,7 +252,7 @@ export default function SpecialistDashboard({
             {showCreationForm ? (
               <ServiceCreationForm
                 specialist={specialist}
-                onCreated={onOfferCreated}
+                onCreated={refresh}
                 onCancel={() => setShowCreationForm(false)}
               />
             ) : (

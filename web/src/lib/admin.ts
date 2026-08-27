@@ -94,7 +94,7 @@ export async function fetchModerationData(pb: PocketBase): Promise<ModerationDat
     id: t.id,
     title: t.title,
     subcategory: t.subcategory,
-    categoryName: t.expand?.category_id?.title ?? t.expand?.category_id?.slug ?? "",
+    categoryName: t.expand?.category_id?.name ?? t.expand?.category_id?.slug ?? "",
     description: t.description ?? "",
     authorName: t.expand?.created_by?.name ?? "",
     authorEmail: t.expand?.created_by?.email ?? "",

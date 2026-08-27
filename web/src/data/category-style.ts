@@ -23,3 +23,23 @@ export const CATEGORY_STYLE: Record<
 export function getCategoryStyle(slug: string) {
   return CATEGORY_STYLE[slug] ?? CATEGORY_STYLE.other;
 }
+
+// Мягкий акцент того же семейства цвета, что и gradient выше — для мест,
+// где нужна не яркая плашка, а просто "рамка в цвет направления" (карточки
+// услуг в личном кабинете специалиста и т.п., см. STATUS.md 2026-08-25).
+export const CATEGORY_ACCENT: Record<string, { border: string; tint: string }> = {
+  "ai-agents": { border: "border-blue-200", tint: "bg-blue-50/60" },
+  rag: { border: "border-emerald-200", tint: "bg-emerald-50/60" },
+  orchestration: { border: "border-indigo-200", tint: "bg-indigo-50/60" },
+  chatbots: { border: "border-sky-200", tint: "bg-sky-50/60" },
+  "voice-ai": { border: "border-rose-200", tint: "bg-rose-50/60" },
+  "ai-video": { border: "border-fuchsia-200", tint: "bg-fuchsia-50/60" },
+  "crm-ai": { border: "border-amber-200", tint: "bg-amber-50/60" },
+  "prompt-engineering": { border: "border-purple-200", tint: "bg-purple-50/60" },
+  "ai-analytics": { border: "border-teal-200", tint: "bg-teal-50/60" },
+  other: { border: "border-zinc-200", tint: "bg-white" },
+};
+
+export function getCategoryAccent(slug: string) {
+  return CATEGORY_ACCENT[slug] ?? CATEGORY_ACCENT.other;
+}

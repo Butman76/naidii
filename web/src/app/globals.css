@@ -60,6 +60,30 @@ body {
   animation: letter-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
+/* Переворот кнопки "Заказать" в 3D-плашку с подтверждением — см.
+   OrderButton.tsx. Классический flip-card приём: сцена с перспективой,
+   карта с двумя гранями (backface-visibility: hidden), поворот на 180deg
+   переключает видимую грань. */
+.order-flip-scene {
+  perspective: 800px;
+}
+.order-flip-card {
+  position: relative;
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-style: preserve-3d;
+}
+.order-flip-card.is-flipped {
+  transform: rotateY(180deg);
+}
+.order-flip-face {
+  backface-visibility: hidden;
+}
+.order-flip-face-back {
+  position: absolute;
+  inset: 0;
+  transform: rotateY(180deg);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .plate-3d,
   .plate-3d:hover {
@@ -69,5 +93,8 @@ body {
   .letter-in {
     animation: none;
     opacity: 1;
+  }
+  .order-flip-card {
+    transition: none;
   }
 }

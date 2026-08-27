@@ -19,6 +19,7 @@ export interface CustomerLead {
   specialistSlug: string;
   message: string;
   status: CustomerLeadStatus;
+  categorySlug: string;
   createdAt: string;
 }
 

@@ -12,9 +12,11 @@ import OrderButton from "./OrderButton";
 // stopPropagation внутри вложенного <a>.
 export default function ServiceOfferRow({
   offer,
+  categorySlug,
   contextLabel,
 }: {
   offer: ServiceOffer;
+  categorySlug: string;
   contextLabel: string;
 }) {
   return (
@@ -69,6 +71,7 @@ export default function ServiceOfferRow({
         <div className="mt-2">
           <OrderButton
             specialistProfileId={offer.specialistProfileId}
+            categorySlug={categorySlug}
             contextLabel={contextLabel}
           />
         </div>

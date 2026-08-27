@@ -295,29 +295,43 @@ export default function SpecialistDashboard({
         )}
 
         {tab === "leads" && (
-          <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {leads.length === 0 && (
-              <p className="text-sm text-zinc-500">У вас пока нет заявок.</p>
+              <p className="col-span-full text-sm text-zinc-500">У вас пока нет заявок.</p>
             )}
-            {leads.map((lead) => (
-              <div
-                key={lead.id}
-                className="rounded-2xl border border-zinc-200 bg-white p-4"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-medium text-zinc-900">
-                    {lead.clientName}
-                  </p>
-                  <span
-                    className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${LEAD_STATUS_STYLES[lead.status]}`}
-                  >
-                    {LEAD_STATUS_LABELS[lead.status]}
-                  </span>
+            {leads.map((lead) => {
+              const style = getCategoryStyle(lead.categorySlug);
+              const accent = getCategoryAccent(lead.categorySlug);
+              return (
+                <div
+                  key={lead.id}
+                  className={`flex aspect-square flex-col justify-between rounded-2xl border p-3 ${accent.border} ${accent.tint}`}
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className="h-2.5 w-2.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: style.hex }}
+                      />
+                      <p className="truncate text-sm font-medium text-zinc-900">
+                        {lead.clientName}
+                      </p>
+                    </div>
+                    <p className="mt-1.5 line-clamp-4 text-xs text-zinc-600">
+                      {lead.message}
+                    </p>
+                  </div>
+                  <div className="flex items-end justify-between gap-1">
+                    <span className="text-[10px] text-zinc-400">{lead.createdAt}</span>
+                    <span
+                      className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${LEAD_STATUS_STYLES[lead.status]}`}
+                    >
+                      {LEAD_STATUS_LABELS[lead.status]}
+                    </span>
+                  </div>
                 </div>
-                <p className="mt-1 text-sm text-zinc-600">{lead.message}</p>
-                <p className="mt-2 text-xs text-zinc-400">{lead.createdAt}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

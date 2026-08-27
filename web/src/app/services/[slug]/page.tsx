@@ -112,7 +112,12 @@ export default async function ResultTypePage({
 
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {typeOffers.map((offer) => (
-              <ServiceOfferRow key={offer.id} offer={offer} contextLabel={type.title} />
+              <ServiceOfferRow
+                key={offer.id}
+                offer={offer}
+                categorySlug={type.categorySlug}
+                contextLabel={type.title}
+              />
             ))}
           </div>
         </div>

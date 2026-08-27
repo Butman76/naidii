@@ -26,6 +26,7 @@ export interface SpecialistDashboardLead {
   clientName: string;
   message: string;
   status: LeadStatus;
+  categorySlug: string;
   createdAt: string;
 }
 
@@ -129,6 +130,7 @@ export async function fetchOwnSpecialistDashboard(
     clientName: l.customer_name,
     message: l.request_text,
     status: (l.status || "new") as LeadStatus,
+    categorySlug: l.category_slug ?? "",
     createdAt: l.created,
   }));
 
@@ -178,6 +180,7 @@ export async function fetchOwnCustomerDashboard(
     specialistSlug: l.expand?.specialist_profile_id?.slug ?? "",
     message: l.request_text,
     status: (l.status || "new") as CustomerLead["status"],
+    categorySlug: l.category_slug ?? "",
     createdAt: l.created,
   }));
 

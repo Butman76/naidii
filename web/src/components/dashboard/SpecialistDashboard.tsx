@@ -6,6 +6,7 @@ import { formatPrice, SERVICE_TAG_LABELS } from "@/types/service-card";
 import ServiceCreationForm from "./ServiceCreationForm";
 import ProfileEditForm from "./ProfileEditForm";
 import { getCategoryStyle, getCategoryAccent } from "@/data/category-style";
+import type { SpecialistDashboardOffer } from "@/lib/dashboard";
 import { LEAD_STATUS_LABELS, LEAD_STATUS_STYLES } from "@/data/dashboard-mock";
 import type { SpecialistDashboardData } from "@/lib/dashboard";
 
@@ -19,6 +20,22 @@ const TABS: Array<{ id: Tab; label: string }> = [
   { id: "reviews", label: "Отзывы" },
   { id: "plan", label: "Тариф" },
 ];
+
+// Услуги группируются по направлению (не идут вперемешку) — порядок групп
+// по первому появлению в списке (сам список уже отсортирован по дате
+// создания в dashboard.ts, так что группы получаются в разумном порядке).
+function groupOffersByCategory(offers: SpecialistDashboardOffer[]) {
+  const groups: { categorySlug: string; categoryName: string; items: SpecialistDashboardOffer[] }[] = [];
+  for (const offer of offers) {
+    let group = groups.find((g) => g.categorySlug === offer.categorySlug);
+    if (!group) {
+      group = { categorySlug: offer.categorySlug, categoryName: offer.categoryName, items: [] };
+      groups.push(group);
+    }
+    group.items.push(offer);
+  }
+  return groups;
+}
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
@@ -202,45 +219,56 @@ export default function SpecialistDashboard({
         )}
 
         {tab === "services" && (
-          <div className="flex flex-col gap-4">
-            {offers.map((offer) => {
-              const style = getCategoryStyle(offer.categorySlug);
-              const accent = getCategoryAccent(offer.categorySlug);
+          <div className="flex flex-col gap-6">
+            {groupOffersByCategory(offers).map((group) => {
+              const style = getCategoryStyle(group.categorySlug);
               return (
-                <div
-                  key={offer.id}
-                  className={`flex items-center justify-between rounded-2xl border p-4 ${accent.border} ${accent.tint}`}
-                >
-                  <div className="min-w-0">
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-full bg-gradient-to-r ${style.gradient} px-2 py-0.5 text-[11px] font-medium text-white`}
-                    >
-                      <span>{style.icon}</span>
-                      {offer.categoryName}
-                    </span>
-                    <p className="mt-1.5 truncate text-sm font-medium text-zinc-900">
-                      {offer.resultTypeTitle}
-                    </p>
-                    <p className="mt-1 text-xs text-zinc-500">
-                      {formatPrice(offer.priceType, offer.priceValue)} ·{" "}
-                      {offer.durationFrom}
-                    </p>
-                    {offer.tags.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {offer.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="rounded-md bg-white px-1.5 py-0.5 text-[10px] text-zinc-500 ring-1 ring-inset ring-zinc-200"
-                          >
-                            {SERVICE_TAG_LABELS[tag]}
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                <div key={group.categorySlug}>
+                  <p
+                    className={`inline-block rounded-full bg-gradient-to-r ${style.gradient} px-3 py-1 text-xs font-semibold text-white`}
+                  >
+                    {group.categoryName}
+                  </p>
+                  <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                    {group.items.map((offer) => {
+                      const accent = getCategoryAccent(offer.categorySlug);
+                      return (
+                        <div
+                          key={offer.id}
+                          className={`flex aspect-square flex-col justify-between rounded-2xl border p-3 ${accent.border} ${accent.tint}`}
+                        >
+                          <div className="min-w-0">
+                            <p className="line-clamp-3 text-sm font-medium text-zinc-900">
+                              {offer.resultTypeTitle}
+                            </p>
+                            <p className="mt-1.5 text-sm font-semibold text-zinc-900">
+                              {formatPrice(offer.priceType, offer.priceValue)}
+                            </p>
+                            <p className="text-[11px] text-zinc-500">
+                              {offer.durationFrom}
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap items-end justify-between gap-1">
+                            {offer.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1">
+                                {offer.tags.slice(0, 2).map((tag) => (
+                                  <span
+                                    key={tag}
+                                    className="rounded-md bg-white px-1.5 py-0.5 text-[10px] text-zinc-500 ring-1 ring-inset ring-zinc-200"
+                                  >
+                                    {SERVICE_TAG_LABELS[tag]}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800">
+                              Опубликовано
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-800">
-                    Опубликовано
-                  </span>
                 </div>
               );
             })}

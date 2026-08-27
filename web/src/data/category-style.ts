@@ -43,3 +43,24 @@ export const CATEGORY_ACCENT: Record<string, { border: string; tint: string }> =
 export function getCategoryAccent(slug: string) {
   return CATEGORY_ACCENT[slug] ?? CATEGORY_ACCENT.other;
 }
+
+// "Объёмная" 3D-плашка в цвет направления — градиент + более тёмный низ
+// (border-b, классический приём бевела) + цветная тень. Раньше жила только
+// в DirectionsStrip.tsx, вынесено сюда, чтобы использовать и на /categories
+// (см. STATUS.md, 2026-08-27), и где ещё понадобится тот же приём.
+export const CATEGORY_3D: Record<string, string> = {
+  "ai-agents": "from-blue-600 to-cyan-500 border-blue-800 shadow-blue-500/40",
+  rag: "from-emerald-600 to-teal-500 border-emerald-800 shadow-emerald-500/40",
+  orchestration: "from-indigo-600 to-blue-500 border-indigo-800 shadow-indigo-500/40",
+  chatbots: "from-sky-600 to-blue-500 border-sky-800 shadow-sky-500/40",
+  "voice-ai": "from-rose-600 to-orange-500 border-rose-800 shadow-rose-500/40",
+  "ai-video": "from-fuchsia-600 to-pink-500 border-fuchsia-800 shadow-fuchsia-500/40",
+  "crm-ai": "from-amber-600 to-yellow-500 border-amber-800 shadow-amber-500/40",
+  "prompt-engineering": "from-purple-600 to-violet-500 border-purple-800 shadow-purple-500/40",
+  "ai-analytics": "from-teal-600 to-emerald-500 border-teal-800 shadow-teal-500/40",
+  other: "from-zinc-600 to-zinc-500 border-zinc-800 shadow-zinc-500/40",
+};
+
+export function getCategory3D(slug: string) {
+  return CATEGORY_3D[slug] ?? CATEGORY_3D.other;
+}

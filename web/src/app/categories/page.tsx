@@ -3,6 +3,7 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { CATEGORIES } from "@/data/categories";
+import { getCategory3D } from "@/data/category-style";
 import { fetchSpecialists } from "@/lib/specialists";
 
 // Без этого страница была полностью статической (собранной один раз при
@@ -40,19 +41,18 @@ export default async function CategoriesPage() {
               const count = specialists.filter(
                 (s) => s.category === category.slug
               ).length;
+              const classes = getCategory3D(category.slug);
               return (
                 <Link
                   key={category.slug}
                   href={`/category/${category.slug}`}
-                  className="flex flex-col rounded-2xl border border-zinc-200 bg-white p-5 transition-shadow hover:shadow-md"
+                  className={`flex flex-col rounded-2xl border-b-4 bg-gradient-to-br p-5 text-white shadow-lg transition-all duration-150 hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0.5 active:border-b-2 ${classes}`}
                 >
-                  <p className="text-base font-semibold text-zinc-900">
-                    {category.name}
-                  </p>
-                  <p className="mt-2 line-clamp-2 text-sm text-zinc-600">
+                  <p className="text-base font-semibold">{category.name}</p>
+                  <p className="mt-2 line-clamp-2 text-sm text-white/85">
                     {category.description}
                   </p>
-                  <p className="mt-3 text-xs text-zinc-500">
+                  <p className="mt-3 text-xs font-medium text-white/75">
                     Специалистов: {count}
                   </p>
                 </Link>

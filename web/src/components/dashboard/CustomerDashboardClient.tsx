@@ -35,6 +35,7 @@ export default function CustomerDashboardClient() {
   return (
     <CustomerDashboard
       customerName={user?.name || user?.email || "Заказчик"}
+      userId={user!.id}
       leads={data.leads}
       reviews={data.reviews}
     />

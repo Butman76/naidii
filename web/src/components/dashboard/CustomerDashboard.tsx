@@ -9,14 +9,16 @@ import {
   type CustomerReview,
 } from "@/data/customer-dashboard-mock";
 import { getCategoryStyle, getCategoryAccent } from "@/data/category-style";
+import { pbClient } from "@/lib/auth-client";
 
-type Tab = "overview" | "leads" | "reviews" | "favorites";
+type Tab = "overview" | "leads" | "reviews" | "favorites" | "suggestions";
 
 const TABS: Array<{ id: Tab; label: string }> = [
   { id: "overview", label: "Обзор" },
   { id: "leads", label: "Мои заявки" },
   { id: "reviews", label: "Мои отзывы" },
   { id: "favorites", label: "Избранное" },
+  { id: "suggestions", label: "Не нашли то, что нужно?" },
 ];
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
@@ -28,12 +30,90 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
   );
 }
 
+// Идея/пожелание уходит письмом на info@naidii.ru — см.
+// pocketbase/pb_hooks/suggestions.pb.js (хук на создание записи в
+// suggestions, использует уже настроенный SMTP). Само сообщение всё
+// равно сохраняется в базе, даже если письмо не дойдёт.
+function SuggestionForm({ userId }: { userId: string }) {
+  const [text, setText] = useState("");
+  const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (text.trim().length < 10) return;
+    setState("sending");
+    try {
+      await pbClient.collection("suggestions").create({
+        user_id: userId,
+        text: text.trim(),
+      });
+      setState("sent");
+      setText("");
+    } catch {
+      setState("error");
+    }
+  }
+
+  if (state === "sent") {
+    return (
+      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-center">
+        <p className="text-sm font-semibold text-emerald-900">Спасибо, мы получили вашу идею</p>
+        <p className="mt-1 text-sm text-emerald-800">
+          Команда площадки рассмотрит её и постарается найти или привлечь
+          подходящего специалиста.
+        </p>
+        <button
+          type="button"
+          onClick={() => setState("idle")}
+          className="mt-3 rounded-full border border-emerald-300 px-4 py-1.5 text-xs font-medium text-emerald-800 transition-colors hover:bg-emerald-100"
+        >
+          Отправить ещё одну идею
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="rounded-2xl border border-zinc-200 bg-white p-5">
+      <p className="text-sm font-semibold text-zinc-900">
+        Не нашли то, что вам надо?
+      </p>
+      <p className="mt-1 text-sm text-zinc-500">
+        Опишите, какая доработка или автоматизация с помощью новых
+        технологий вам нужна, но вы не нашли подходящего специалиста или
+        услугу на площадке — сообщение уйдёт прямо команде НайдИИ.
+      </p>
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        rows={5}
+        placeholder="Например: нужен AI-агент для распознавания брака на производстве по фото с камер"
+        className="mt-3 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none"
+      />
+      {state === "error" && (
+        <p className="mt-2 text-sm text-red-600">
+          Не получилось отправить — попробуйте ещё раз.
+        </p>
+      )}
+      <button
+        type="submit"
+        disabled={state === "sending" || text.trim().length < 10}
+        className="mt-3 rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
+      >
+        {state === "sending" ? "Отправляем…" : "Отправить идею"}
+      </button>
+    </form>
+  );
+}
+
 export default function CustomerDashboard({
   customerName,
+  userId,
   leads,
   reviews,
 }: {
   customerName: string;
+  userId: string;
   leads: CustomerLead[];
   reviews: CustomerReview[];
 }) {
@@ -155,6 +235,8 @@ export default function CustomerDashboard({
             позже.
           </p>
         )}
+
+        {tab === "suggestions" && <SuggestionForm userId={userId} />}
       </div>
     </div>
   );

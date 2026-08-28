@@ -5,10 +5,12 @@ import Link from "next/link";
 import { formatPrice, SERVICE_TAG_LABELS } from "@/types/service-card";
 import ServiceCreationForm from "./ServiceCreationForm";
 import ProfileEditForm from "./ProfileEditForm";
+import LeadChat from "./LeadChat";
 import { getCategoryStyle, getCategoryAccent } from "@/data/category-style";
 import type { SpecialistDashboardOffer } from "@/lib/dashboard";
 import { LEAD_STATUS_LABELS, LEAD_STATUS_STYLES } from "@/data/dashboard-mock";
 import type { SpecialistDashboardData } from "@/lib/dashboard";
+import { useAuth } from "@/lib/use-auth";
 
 type Tab = "overview" | "profile" | "services" | "leads" | "reviews" | "plan";
 
@@ -54,7 +56,9 @@ export default function SpecialistDashboard({
   refresh: () => void;
 }) {
   const { specialist, profileStatus, viewsCount, leadsCount, offers, leads, cases } = data;
+  const { user } = useAuth();
   const [tab, setTab] = useState<Tab>("overview");
+  const [openLeadId, setOpenLeadId] = useState<string | null>(null);
   const isPremium = Boolean(specialist.premium);
 
   const [showCreationForm, setShowCreationForm] = useState(false);
@@ -294,7 +298,32 @@ export default function SpecialistDashboard({
           </div>
         )}
 
-        {tab === "leads" && (
+        {tab === "leads" && openLeadId && (() => {
+          const lead = leads.find((l) => l.id === openLeadId);
+          if (!lead || !user) return null;
+          return (
+            <div>
+              <button
+                type="button"
+                onClick={() => setOpenLeadId(null)}
+                className="mb-3 text-xs font-medium text-zinc-500 hover:text-zinc-900"
+              >
+                ← Все заявки
+              </button>
+              <LeadChat
+                leadId={lead.id}
+                currentUserId={user.id}
+                currentUserRole="specialist"
+                customerId={lead.customerId}
+                specialistProfileId={specialist.id}
+                otherPartyName={lead.clientName}
+                onClose={() => setOpenLeadId(null)}
+              />
+            </div>
+          );
+        })()}
+
+        {tab === "leads" && !openLeadId && (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {leads.length === 0 && (
               <p className="col-span-full text-sm text-zinc-500">У вас пока нет заявок.</p>
@@ -303,9 +332,11 @@ export default function SpecialistDashboard({
               const style = getCategoryStyle(lead.categorySlug);
               const accent = getCategoryAccent(lead.categorySlug);
               return (
-                <div
+                <button
                   key={lead.id}
-                  className={`flex aspect-square flex-col justify-between rounded-2xl border p-3 ${accent.border} ${accent.tint}`}
+                  type="button"
+                  onClick={() => setOpenLeadId(lead.id)}
+                  className={`flex aspect-square flex-col justify-between rounded-2xl border p-3 text-left transition-shadow hover:shadow-md ${accent.border} ${accent.tint}`}
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
@@ -329,7 +360,7 @@ export default function SpecialistDashboard({
                       {LEAD_STATUS_LABELS[lead.status]}
                     </span>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>

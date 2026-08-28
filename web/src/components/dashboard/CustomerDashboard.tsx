@@ -10,6 +10,7 @@ import {
 } from "@/data/customer-dashboard-mock";
 import { getCategoryStyle, getCategoryAccent } from "@/data/category-style";
 import { pbClient } from "@/lib/auth-client";
+import LeadChat from "./LeadChat";
 
 type Tab = "overview" | "leads" | "reviews" | "favorites" | "suggestions";
 
@@ -118,6 +119,7 @@ export default function CustomerDashboard({
   reviews: CustomerReview[];
 }) {
   const [tab, setTab] = useState<Tab>("overview");
+  const [openLeadId, setOpenLeadId] = useState<string | null>(null);
   const activeLeads = leads.filter(
     (l) => l.status !== "closed" && l.status !== "spam"
   ).length;
@@ -153,7 +155,38 @@ export default function CustomerDashboard({
           </div>
         )}
 
-        {tab === "leads" && (
+        {tab === "leads" && openLeadId && (() => {
+          const lead = leads.find((l) => l.id === openLeadId);
+          if (!lead) return null;
+          return (
+            <div>
+              <button
+                type="button"
+                onClick={() => setOpenLeadId(null)}
+                className="mb-3 text-xs font-medium text-zinc-500 hover:text-zinc-900"
+              >
+                ← Все заявки
+              </button>
+              <LeadChat
+                leadId={lead.id}
+                currentUserId={userId}
+                currentUserRole="customer"
+                customerId={userId}
+                specialistProfileId={lead.specialistProfileId}
+                otherPartyName={lead.specialistName}
+                onClose={() => setOpenLeadId(null)}
+              />
+              <Link
+                href={`/specialist/${lead.specialistSlug}`}
+                className="mt-2 inline-block text-xs font-medium text-zinc-500 hover:text-zinc-900 hover:underline"
+              >
+                Открыть профиль специалиста →
+              </Link>
+            </div>
+          );
+        })()}
+
+        {tab === "leads" && !openLeadId && (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {leads.length === 0 && (
               <p className="col-span-full text-sm text-zinc-500">Вы ещё не отправляли заявок.</p>
@@ -162,9 +195,11 @@ export default function CustomerDashboard({
               const style = getCategoryStyle(lead.categorySlug);
               const accent = getCategoryAccent(lead.categorySlug);
               return (
-                <div
+                <button
                   key={lead.id}
-                  className={`flex aspect-square flex-col justify-between rounded-2xl border p-3 ${accent.border} ${accent.tint}`}
+                  type="button"
+                  onClick={() => setOpenLeadId(lead.id)}
+                  className={`flex aspect-square flex-col justify-between rounded-2xl border p-3 text-left transition-shadow hover:shadow-md ${accent.border} ${accent.tint}`}
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
@@ -172,12 +207,9 @@ export default function CustomerDashboard({
                         className="h-2.5 w-2.5 shrink-0 rounded-full"
                         style={{ backgroundColor: style.hex }}
                       />
-                      <Link
-                        href={`/specialist/${lead.specialistSlug}`}
-                        className="truncate text-sm font-medium text-zinc-900 hover:underline"
-                      >
+                      <p className="truncate text-sm font-medium text-zinc-900">
                         {lead.specialistName}
-                      </Link>
+                      </p>
                     </div>
                     <p className="mt-1.5 line-clamp-4 text-xs text-zinc-600">
                       {lead.message}
@@ -191,7 +223,7 @@ export default function CustomerDashboard({
                       {CUSTOMER_LEAD_STATUS_LABELS[lead.status]}
                     </span>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>

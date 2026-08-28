@@ -23,6 +23,7 @@ function computeInitials(name: string): string {
 
 export interface SpecialistDashboardLead {
   id: string;
+  customerId: string;
   clientName: string;
   message: string;
   status: LeadStatus;
@@ -127,6 +128,7 @@ export async function fetchOwnSpecialistDashboard(
 
   const leads: SpecialistDashboardLead[] = leadRecords.map((l) => ({
     id: l.id,
+    customerId: l.customer_id,
     clientName: l.customer_name,
     message: l.request_text,
     status: (l.status || "new") as LeadStatus,
@@ -176,6 +178,7 @@ export async function fetchOwnCustomerDashboard(
 
   const leads: CustomerLead[] = leadRecords.map((l) => ({
     id: l.id,
+    specialistProfileId: l.specialist_profile_id,
     specialistName: l.expand?.specialist_profile_id?.public_name ?? "Специалист",
     specialistSlug: l.expand?.specialist_profile_id?.slug ?? "",
     message: l.request_text,

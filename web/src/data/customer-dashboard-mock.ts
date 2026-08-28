@@ -15,6 +15,7 @@ export type CustomerLeadStatus =
 
 export interface CustomerLead {
   id: string;
+  specialistProfileId: string;
   specialistName: string;
   specialistSlug: string;
   message: string;

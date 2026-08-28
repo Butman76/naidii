@@ -3,7 +3,7 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { CATEGORIES } from "@/data/categories";
-import { getCategory3D, getCategoryStyle } from "@/data/category-style";
+import { getCategory3D } from "@/data/category-style";
 
 export const metadata: Metadata = {
   title: "Как это работает — НайдИИ",
@@ -53,7 +53,12 @@ const FAQ_GROUPS: { title: string; items: FaqBlock[] }[] = [
       {
         question: "Что происходит после отправки заявки?",
         answer:
-          "Заявка появляется в кабинете специалиста вместе с вашим именем и почтой. Дальше специалист сам свяжется с вами по контактам из заявки, чтобы обсудить детали — статус заявки при этом можно отслеживать в разделе «Мои заявки» в своём кабинете.",
+          "Заявка появляется в кабинете специалиста, и дальше всё общение идёт прямо на площадке — в разделе «Мои заявки» открывается чат с историей переписки. Когда договоритесь об условиях, обе стороны нажимают «Заключить сделку» — результат, стоимость и срок фиксируются отдельной записью.",
+      },
+      {
+        question: "Почему в чате иногда замазан текст?",
+        answer:
+          "Система автоматически скрывает от собеседника телефоны, email и юзернеймы, которыми кто-то попытался обменяться в чате — это защищает обе стороны: пока сделка ведётся внутри площадки, можно гарантировать соблюдение условий по качеству, срокам и стоимости работ.",
       },
     ],
   },
@@ -125,20 +130,18 @@ export default function HowItWorksPage() {
           </div>
 
           <div className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8">
-            <p className="text-center text-sm font-medium text-zinc-500">
-              9 направлений AI-автоматизации — каждое со своим цветом
-            </p>
+            <h2 className="text-center text-lg font-bold text-zinc-900">
+              Направления автоматизации и сервиса
+            </h2>
             <div className="mt-5 flex flex-wrap justify-center gap-3">
               {CATEGORIES.filter((c) => c.slug !== "other").map((category) => {
                 const classes = getCategory3D(category.slug);
-                const style = getCategoryStyle(category.slug);
                 return (
                   <Link
                     key={category.slug}
                     href={`/category/${category.slug}`}
-                    className={`flex items-center gap-1.5 rounded-full border-b-4 bg-gradient-to-br px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all duration-150 hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0.5 active:border-b-2 ${classes}`}
+                    className={`rounded-full border-b-4 bg-gradient-to-br px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all duration-150 hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0.5 active:border-b-2 ${classes}`}
                   >
-                    <span>{style.icon}</span>
                     {category.name}
                   </Link>
                 );

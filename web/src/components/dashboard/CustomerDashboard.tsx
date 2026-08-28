@@ -11,12 +11,15 @@ import {
 import { getCategoryStyle, getCategoryAccent } from "@/data/category-style";
 import { pbClient } from "@/lib/auth-client";
 import LeadChat from "./LeadChat";
+import OrdersTab from "./OrdersTab";
 
-type Tab = "overview" | "leads" | "reviews" | "favorites" | "suggestions";
+type Tab = "overview" | "leads" | "orders" | "archive" | "reviews" | "favorites" | "suggestions";
 
 const TABS: Array<{ id: Tab; label: string }> = [
   { id: "overview", label: "Обзор" },
   { id: "leads", label: "Мои заявки" },
+  { id: "orders", label: "Заказы" },
+  { id: "archive", label: "Архив" },
   { id: "reviews", label: "Мои отзывы" },
   { id: "favorites", label: "Избранное" },
   { id: "suggestions", label: "Не нашли то, что нужно?" },
@@ -228,6 +231,9 @@ export default function CustomerDashboard({
             })}
           </div>
         )}
+
+        {tab === "orders" && <OrdersTab role="customer" ownId={userId} archive={false} />}
+        {tab === "archive" && <OrdersTab role="customer" ownId={userId} archive={true} />}
 
         {tab === "reviews" && (
           <div className="flex flex-col gap-3">

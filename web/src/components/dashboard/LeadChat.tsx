@@ -11,6 +11,15 @@ import {
   proposeDeal,
   confirmDeal,
   declineDeal,
+  markDelivered,
+  acceptDelivery,
+  requestRevision,
+  fileDispute,
+  moderatorCloseDispute,
+  moderatorSendToRevision,
+  formatMoney,
+  formatDate,
+  daysRemainingLabel,
   type LeadMessage,
   type Deal,
 } from "@/lib/chat";
@@ -41,9 +50,7 @@ function MessageBody({ text, redact }: { text: string; redact: boolean }) {
   );
 }
 
-function formatMoney(value: number): string {
-  return value.toLocaleString("ru-RU") + " ₽";
-}
+type ChatRole = "customer" | "specialist" | "moderator";
 
 export default function LeadChat({
   leadId,
@@ -53,14 +60,16 @@ export default function LeadChat({
   specialistProfileId,
   otherPartyName,
   onClose,
+  onDealChanged,
 }: {
   leadId: string;
   currentUserId: string;
-  currentUserRole: "customer" | "specialist";
+  currentUserRole: ChatRole;
   customerId: string;
   specialistProfileId: string;
   otherPartyName: string;
   onClose: () => void;
+  onDealChanged?: () => void;
 }) {
   const [messages, setMessages] = useState<LeadMessage[] | null>(null);
   const [deal, setDeal] = useState<Deal | null>(null);
@@ -69,6 +78,8 @@ export default function LeadChat({
   const [showDealForm, setShowDealForm] = useState(false);
   const [dealBusy, setDealBusy] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  const isParticipant = currentUserRole === "customer" || currentUserRole === "specialist";
 
   useEffect(() => {
     let cancelled = false;
@@ -102,7 +113,7 @@ export default function LeadChat({
       cancelled = true;
       unsubscribe?.();
     };
-  }, [leadId]);
+  }, [leadId, currentUserId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: "nearest" });
@@ -124,26 +135,11 @@ export default function LeadChat({
     }
   }
 
-  async function refreshDeal() {
-    setDeal(await fetchDeal(pbClient, leadId));
-  }
-
-  async function handleConfirm() {
-    if (!deal) return;
+  async function runDealAction(action: () => Promise<Deal>) {
     setDealBusy(true);
     try {
-      setDeal(await confirmDeal(pbClient, deal, currentUserRole));
-    } finally {
-      setDealBusy(false);
-    }
-  }
-
-  async function handleDecline() {
-    if (!deal) return;
-    setDealBusy(true);
-    try {
-      await declineDeal(pbClient, deal.id);
-      await refreshDeal();
+      setDeal(await action());
+      onDealChanged?.();
     } finally {
       setDealBusy(false);
     }
@@ -152,6 +148,8 @@ export default function LeadChat({
   const myConfirmed =
     deal && (currentUserRole === "customer" ? deal.customerConfirmed : deal.specialistConfirmed);
   const iProposed = deal?.proposedBy === currentUserId;
+  const isActiveOrder =
+    deal && ["confirmed", "delivered", "needs_revision"].includes(deal.status);
 
   return (
     <div className="flex h-[32rem] flex-col rounded-2xl border border-zinc-200 bg-white">
@@ -166,32 +164,12 @@ export default function LeadChat({
         </button>
       </div>
 
-      {deal && deal.status !== "declined" && (
-        <div
-          className={`m-3 rounded-xl border p-3 text-xs ${
-            deal.status === "confirmed"
-              ? "border-emerald-200 bg-emerald-50"
-              : "border-violet-200 bg-violet-50"
-          }`}
-        >
-          <p className="font-semibold text-zinc-900">
-            {deal.status === "confirmed" ? "Сделка заключена" : "Предложена сделка"}
-          </p>
-          <dl className="mt-1.5 flex flex-col gap-0.5 text-zinc-700">
-            <div>
-              <dt className="inline text-zinc-500">Результат: </dt>
-              <dd className="inline">{deal.resultText}</dd>
-            </div>
-            <div>
-              <dt className="inline text-zinc-500">Стоимость: </dt>
-              <dd className="inline">{formatMoney(deal.price)}</dd>
-            </div>
-            <div>
-              <dt className="inline text-zinc-500">Срок: </dt>
-              <dd className="inline">{deal.deadline}</dd>
-            </div>
-          </dl>
-          {deal.status === "proposed" && (
+      {/* --- Предложена сделка, ждём подтверждения второй стороны --- */}
+      {deal?.status === "proposed" && (
+        <div className="m-3 rounded-xl border border-violet-200 bg-violet-50 p-3 text-xs">
+          <p className="font-semibold text-zinc-900">Предложена сделка</p>
+          <DealTerms deal={deal} />
+          {isParticipant && (
             <div className="mt-2">
               {myConfirmed ? (
                 <p className="text-zinc-500">
@@ -203,7 +181,9 @@ export default function LeadChat({
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={handleConfirm}
+                    onClick={() =>
+                      runDealAction(() => confirmDeal(pbClient, deal, currentUserRole as "customer" | "specialist"))
+                    }
                     disabled={dealBusy}
                     className="rounded-full bg-emerald-600 px-3 py-1.5 text-[11px] font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
                   >
@@ -211,7 +191,7 @@ export default function LeadChat({
                   </button>
                   <button
                     type="button"
-                    onClick={handleDecline}
+                    onClick={() => runDealAction(() => declineDeal(pbClient, deal.id).then(() => ({ ...deal, status: "declined" as const })))}
                     disabled={dealBusy}
                     className="rounded-full border border-red-200 px-3 py-1.5 text-[11px] font-medium text-red-700 transition-colors hover:bg-red-50 disabled:opacity-50"
                   >
@@ -221,6 +201,100 @@ export default function LeadChat({
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* --- Активный заказ: подтверждена / оказана / на доработке --- */}
+      {isActiveOrder && deal && (
+        <div className="m-3 rounded-xl border border-blue-200 bg-blue-50 p-3 text-xs">
+          <div className="flex items-center justify-between">
+            <p className="font-semibold text-zinc-900">
+              {deal.status === "confirmed" && "Заказ в работе"}
+              {deal.status === "delivered" && "Услуга оказана — на проверке"}
+              {deal.status === "needs_revision" && "Отправлено на доработку"}
+            </p>
+            <span className="text-zinc-500">{daysRemainingLabel(deal.dueDate)}</span>
+          </div>
+          <DealTerms deal={deal} />
+          <div className="mt-2 flex flex-wrap gap-2">
+            {currentUserRole === "specialist" &&
+              (deal.status === "confirmed" || deal.status === "needs_revision") && (
+                <button
+                  type="button"
+                  onClick={() => runDealAction(() => markDelivered(pbClient, deal.id))}
+                  disabled={dealBusy}
+                  className="rounded-full bg-zinc-900 px-3 py-1.5 text-[11px] font-medium text-white transition-colors hover:bg-zinc-700 disabled:opacity-50"
+                >
+                  Услуга оказана
+                </button>
+              )}
+            {currentUserRole === "customer" && deal.status === "delivered" && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => runDealAction(() => acceptDelivery(pbClient, deal.id))}
+                  disabled={dealBusy}
+                  className="rounded-full bg-emerald-600 px-3 py-1.5 text-[11px] font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  Всё устраивает
+                </button>
+                <button
+                  type="button"
+                  onClick={() => runDealAction(() => requestRevision(pbClient, deal.id))}
+                  disabled={dealBusy}
+                  className="rounded-full border border-amber-300 bg-white px-3 py-1.5 text-[11px] font-medium text-amber-800 transition-colors hover:bg-amber-50 disabled:opacity-50"
+                >
+                  Требуется доработка
+                </button>
+              </>
+            )}
+            {isParticipant && (
+              <button
+                type="button"
+                onClick={() => runDealAction(() => fileDispute(pbClient, deal.id, currentUserId))}
+                disabled={dealBusy}
+                className="rounded-full border border-red-200 px-3 py-1.5 text-[11px] font-medium text-red-700 transition-colors hover:bg-red-50 disabled:opacity-50"
+              >
+                Жалоба модераторам
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* --- Спор --- */}
+      {deal?.status === "disputed" && (
+        <div className="m-3 rounded-xl border border-red-200 bg-red-50 p-3 text-xs">
+          <p className="font-semibold text-red-900">Спор передан модераторам</p>
+          <DealTerms deal={deal} />
+          {currentUserRole === "moderator" && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => runDealAction(() => moderatorCloseDispute(pbClient, deal.id))}
+                disabled={dealBusy}
+                className="rounded-full bg-zinc-900 px-3 py-1.5 text-[11px] font-medium text-white transition-colors hover:bg-zinc-700 disabled:opacity-50"
+              >
+                Закрыть сделку
+              </button>
+              <button
+                type="button"
+                onClick={() => runDealAction(() => moderatorSendToRevision(pbClient, deal.id))}
+                disabled={dealBusy}
+                className="rounded-full border border-amber-300 bg-white px-3 py-1.5 text-[11px] font-medium text-amber-800 transition-colors hover:bg-amber-50 disabled:opacity-50"
+              >
+                Отправить на доработку
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* --- Архив --- */}
+      {deal?.status === "archived" && (
+        <div className="m-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs">
+          <p className="font-semibold text-emerald-900">Заказ выполнен и принят</p>
+          <DealTerms deal={deal} />
         </div>
       )}
 
@@ -241,7 +315,7 @@ export default function LeadChat({
                     : "self-start bg-zinc-100 text-zinc-800"
                 }`}
               >
-                <MessageBody text={m.body} redact={!isOwn} />
+                <MessageBody text={m.body} redact={!isOwn && currentUserRole !== "moderator"} />
               </div>
             );
           })}
@@ -249,7 +323,7 @@ export default function LeadChat({
         <div ref={bottomRef} />
       </div>
 
-      {(!deal || deal.status === "declined") && !showDealForm && (
+      {isParticipant && (!deal || deal.status === "declined") && !showDealForm && (
         <div className="px-4 pb-2">
           <button
             type="button"
@@ -272,13 +346,14 @@ export default function LeadChat({
                 customerId,
                 specialistProfileId,
                 proposedBy: currentUserId,
-                proposerRole: currentUserRole,
+                proposerRole: currentUserRole as "customer" | "specialist",
                 resultText: form.resultText,
                 price: form.price,
-                deadline: form.deadline,
+                dueDate: form.dueDate,
               });
               setDeal(created);
               setShowDealForm(false);
+              onDealChanged?.();
             } finally {
               setDealBusy(false);
             }
@@ -307,20 +382,39 @@ export default function LeadChat({
   );
 }
 
+function DealTerms({ deal }: { deal: Deal }) {
+  return (
+    <dl className="mt-1.5 flex flex-col gap-0.5 text-zinc-700">
+      <div>
+        <dt className="inline text-zinc-500">Результат: </dt>
+        <dd className="inline">{deal.resultText}</dd>
+      </div>
+      <div>
+        <dt className="inline text-zinc-500">Стоимость: </dt>
+        <dd className="inline">{formatMoney(deal.price)}</dd>
+      </div>
+      <div>
+        <dt className="inline text-zinc-500">Срок сдачи: </dt>
+        <dd className="inline">{formatDate(deal.dueDate)}</dd>
+      </div>
+    </dl>
+  );
+}
+
 function DealForm({
   onSubmit,
   onCancel,
   busy,
 }: {
-  onSubmit: (form: { resultText: string; price: number; deadline: string }) => void;
+  onSubmit: (form: { resultText: string; price: number; dueDate: string }) => void;
   onCancel: () => void;
   busy: boolean;
 }) {
   const [resultText, setResultText] = useState("");
   const [price, setPrice] = useState("");
-  const [deadline, setDeadline] = useState("");
+  const [dueDate, setDueDate] = useState("");
 
-  const canSubmit = resultText.trim().length > 3 && Number(price) > 0 && deadline.trim().length > 0;
+  const canSubmit = resultText.trim().length > 3 && Number(price) > 0 && dueDate.length > 0;
 
   return (
     <div className="mx-3 mb-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3">
@@ -343,10 +437,9 @@ function DealForm({
             className="w-1/2 rounded-lg border border-zinc-300 px-2.5 py-1.5 text-xs focus:border-zinc-900 focus:outline-none"
           />
           <input
-            type="text"
-            value={deadline}
-            onChange={(e) => setDeadline(e.target.value)}
-            placeholder="Срок, например «2 недели»"
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
             className="w-1/2 rounded-lg border border-zinc-300 px-2.5 py-1.5 text-xs focus:border-zinc-900 focus:outline-none"
           />
         </div>
@@ -355,7 +448,13 @@ function DealForm({
         <button
           type="button"
           disabled={!canSubmit || busy}
-          onClick={() => onSubmit({ resultText: resultText.trim(), price: Number(price), deadline: deadline.trim() })}
+          onClick={() =>
+            onSubmit({
+              resultText: resultText.trim(),
+              price: Number(price),
+              dueDate: new Date(dueDate).toISOString(),
+            })
+          }
           className="rounded-full bg-zinc-900 px-3 py-1.5 text-[11px] font-medium text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
         >
           Предложить

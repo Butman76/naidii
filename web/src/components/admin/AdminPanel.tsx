@@ -10,8 +10,10 @@ import {
   type ModerationData,
   type AdminLogEntry,
 } from "@/lib/admin";
+import { fetchDisputedDeals, formatMoney, type DisputedDealSummary } from "@/lib/chat";
+import LeadChat from "@/components/dashboard/LeadChat";
 
-type Tab = "profiles" | "types" | "reviews" | "users" | "log";
+type Tab = "profiles" | "types" | "reviews" | "users" | "disputes" | "log";
 
 function formatDate(iso: string): string {
   if (!iso) return "—";
@@ -85,8 +87,14 @@ export default function AdminPanel() {
   const [error, setError] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [disputes, setDisputes] = useState<DisputedDealSummary[] | null>(null);
+  const [openDisputeLeadId, setOpenDisputeLeadId] = useState<string | null>(null);
 
   const isAdmin = user?.role === "admin";
+
+  const refreshDisputes = useCallback(() => {
+    return fetchDisputedDeals(pbClient).then(setDisputes);
+  }, []);
 
   const refresh = useCallback(() => {
     return fetchModerationData(pbClient)
@@ -109,6 +117,11 @@ export default function AdminPanel() {
         if (err?.isAbort) return;
       });
   }, [tab, isAdmin]);
+
+  useEffect(() => {
+    if (tab !== "disputes") return;
+    refreshDisputes();
+  }, [tab, refreshDisputes]);
 
   async function runAction(
     id: string,
@@ -283,6 +296,7 @@ export default function AdminPanel() {
     { id: "types", label: "Типы услуг", count: data?.resultTypes.length },
     { id: "reviews", label: "Отзывы", count: data?.reviews.length },
     { id: "users", label: "Пользователи", count: data?.users.length },
+    { id: "disputes", label: "Споры", count: disputes?.length },
     ...(isAdmin ? [{ id: "log" as Tab, label: "Журнал" }] : []),
   ];
 
@@ -591,6 +605,83 @@ export default function AdminPanel() {
               </tbody>
             </table>
           )}
+
+          {tab === "disputes" && !openDisputeLeadId && (
+            <table className="w-full min-w-[720px] border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-zinc-300 bg-zinc-50">
+                  <Th>Заказчик</Th>
+                  <Th>Специалист</Th>
+                  <Th>Результат</Th>
+                  <Th>Цена</Th>
+                  <Th>Действия</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {(disputes ?? []).map((d) => (
+                  <tr key={d.deal.id} className="border-b border-zinc-100 last:border-0">
+                    <Td>{d.customerName}</Td>
+                    <Td>{d.specialistName}</Td>
+                    <Td className="max-w-xs truncate" title={d.deal.resultText}>
+                      {d.deal.resultText}
+                    </Td>
+                    <Td>{formatMoney(d.deal.price)}</Td>
+                    <Td>
+                      <ActionBtn
+                        label="открыть чат"
+                        tone="warn"
+                        onClick={() => setOpenDisputeLeadId(d.leadId)}
+                      />
+                    </Td>
+                  </tr>
+                ))}
+                {disputes !== null && disputes.length === 0 && (
+                  <tr>
+                    <Td className="text-zinc-400">Споров нет</Td>
+                    <Td>{""}</Td>
+                    <Td>{""}</Td>
+                    <Td>{""}</Td>
+                    <Td>{""}</Td>
+                  </tr>
+                )}
+                {disputes === null && (
+                  <tr>
+                    <Td className="text-zinc-400">Загружаем…</Td>
+                    <Td>{""}</Td>
+                    <Td>{""}</Td>
+                    <Td>{""}</Td>
+                    <Td>{""}</Td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
+
+          {tab === "disputes" && openDisputeLeadId && (() => {
+            const item = disputes?.find((d) => d.leadId === openDisputeLeadId);
+            if (!item || !user) return null;
+            return (
+              <div className="p-3 font-sans">
+                <button
+                  type="button"
+                  onClick={() => setOpenDisputeLeadId(null)}
+                  className="mb-3 text-xs font-medium text-zinc-500 hover:text-zinc-900"
+                >
+                  ← Все споры
+                </button>
+                <LeadChat
+                  leadId={item.leadId}
+                  currentUserId={user.id}
+                  currentUserRole="moderator"
+                  customerId={item.deal.customerId}
+                  specialistProfileId={item.deal.specialistProfileId}
+                  otherPartyName={`${item.customerName} ↔ ${item.specialistName}`}
+                  onClose={() => setOpenDisputeLeadId(null)}
+                  onDealChanged={refreshDisputes}
+                />
+              </div>
+            );
+          })()}
 
           {tab === "log" && isAdmin && (
             <table className="w-full min-w-[640px] border-collapse text-xs">

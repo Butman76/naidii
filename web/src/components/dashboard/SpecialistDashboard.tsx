@@ -6,19 +6,22 @@ import { formatPrice, SERVICE_TAG_LABELS } from "@/types/service-card";
 import ServiceCreationForm from "./ServiceCreationForm";
 import ProfileEditForm from "./ProfileEditForm";
 import LeadChat from "./LeadChat";
+import OrdersTab from "./OrdersTab";
 import { getCategoryStyle, getCategoryAccent } from "@/data/category-style";
 import type { SpecialistDashboardOffer } from "@/lib/dashboard";
 import { LEAD_STATUS_LABELS, LEAD_STATUS_STYLES } from "@/data/dashboard-mock";
 import type { SpecialistDashboardData } from "@/lib/dashboard";
 import { useAuth } from "@/lib/use-auth";
 
-type Tab = "overview" | "profile" | "services" | "leads" | "reviews" | "plan";
+type Tab = "overview" | "profile" | "services" | "leads" | "orders" | "archive" | "reviews" | "plan";
 
 const TABS: Array<{ id: Tab; label: string }> = [
   { id: "overview", label: "Обзор" },
   { id: "profile", label: "Профиль" },
   { id: "services", label: "Услуги" },
   { id: "leads", label: "Заявки" },
+  { id: "orders", label: "Заказы" },
+  { id: "archive", label: "Архив" },
   { id: "reviews", label: "Отзывы" },
   { id: "plan", label: "Тариф" },
 ];
@@ -365,6 +368,9 @@ export default function SpecialistDashboard({
             })}
           </div>
         )}
+
+        {tab === "orders" && <OrdersTab role="specialist" ownId={specialist.id} archive={false} />}
+        {tab === "archive" && <OrdersTab role="specialist" ownId={specialist.id} archive={true} />}
 
         {tab === "reviews" && (
           <div className="flex flex-col gap-3">

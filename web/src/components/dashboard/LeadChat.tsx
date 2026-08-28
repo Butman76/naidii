@@ -83,6 +83,11 @@ export default function LeadChat({
     );
 
     subscribeToLeadMessages(pbClient, leadId, (message) => {
+      // Свои же сообщения уже добавляются сразу в handleSend (оптимистично,
+      // без ожидания round-trip) — сервер всё равно рассылает событие о
+      // создании и автору тоже, так что без этого фильтра сообщение
+      // удваивалось бы у отправителя при каждой отправке.
+      if (message.senderId === currentUserId) return;
       setMessages((prev) => {
         if (!prev) return [message];
         if (prev.some((m) => m.id === message.id)) return prev;

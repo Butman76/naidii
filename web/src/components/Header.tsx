@@ -11,7 +11,6 @@ const NAV_LINKS = [
   { href: "/categories", label: "Категории" },
   { href: "/how-it-works", label: "Как это работает" },
   { href: "/tariffs", label: "Тарифы" },
-  { href: "/for-specialists", label: "Для исполнителей" },
 ];
 
 export default function Header() {

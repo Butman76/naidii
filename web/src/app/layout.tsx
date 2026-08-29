@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Unbounded } from "next/font/google";
+import { Geist, Geist_Mono, Golos_Text, Unbounded } from "next/font/google";
 import ImpersonationBanner from "@/components/ImpersonationBanner";
 import "./globals.css";
 
@@ -21,6 +21,15 @@ const unbounded = Unbounded({
   weight: ["600", "700", "800"],
 });
 
+// Шрифт шапки сайта (лого + меню) — рисовался под кириллицу с нуля,
+// выбран пользователем среди трёх вариантов взамен Unbounded/Geist,
+// которые в шапке "не понравились". Используется только в Header.tsx.
+const golosText = Golos_Text({
+  variable: "--font-golos-text",
+  subsets: ["latin", "cyrillic"],
+  weight: ["500", "600", "800"],
+});
+
 export const metadata: Metadata = {
   title: "НайдИИ — сервис поиска специалистов по автоматизации и AI",
   description:
@@ -31,7 +40,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="ru"
-      className={`${geistSans.variable} ${geistMono.variable} ${unbounded.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${unbounded.variable} ${golosText.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-zinc-50 text-zinc-900">
         <ImpersonationBanner />

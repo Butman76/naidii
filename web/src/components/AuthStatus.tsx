@@ -24,7 +24,7 @@ export default function AuthStatus() {
     return (
       <Link
         href="/login"
-        className="hidden text-sm font-medium text-zinc-600 hover:text-zinc-900 sm:block"
+        className="hidden font-[family-name:var(--font-golos)] text-sm font-medium text-zinc-600 hover:text-zinc-900 sm:block"
       >
         Войти
       </Link>
@@ -32,7 +32,7 @@ export default function AuthStatus() {
   }
 
   return (
-    <div className="hidden items-center gap-3 sm:flex">
+    <div className="hidden items-center gap-3 font-[family-name:var(--font-golos)] sm:flex">
       <Link
         href={ROLE_HREF[user.role] ?? "/"}
         className="text-sm font-medium text-zinc-600 hover:text-zinc-900"

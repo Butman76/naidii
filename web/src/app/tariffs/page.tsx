@@ -1,17 +1,25 @@
 import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { PLANS, PLAN_FEATURE_ROWS } from "@/data/plans";
+import { PLANS, PLAN_FEATURE_ROWS, type Plan } from "@/data/plans";
 
 export const metadata: Metadata = {
   title: "Тарифы для специалистов — НайдИИ",
   description:
-    "Тарифы размещения на НайдИИ: от бесплатной карточки до профиля-лендинга с продвижением в топ-20.",
+    "Тарифы размещения на НайдИИ: вход или подписка плюс процент с подтверждённой сделки — от Базового до Enterprise с выделенным менеджером.",
 };
 
-function formatPrice(price: number) {
-  if (price === 0) return "Бесплатно";
-  return `${price.toLocaleString("ru-RU")} ₽/мес`;
+function formatMoney(value: number) {
+  return `${value.toLocaleString("ru-RU")} ₽`;
+}
+
+// Главная цифра карточки — то, что платится регулярно/при входе. Комиссия
+// с сделки показывается отдельной строкой, т.к. она есть у всех тарифов и
+// не укладывается в "цена за период".
+function primaryPrice(plan: Plan) {
+  if (plan.monthlyFee > 0) return `${formatMoney(plan.monthlyFee)}/мес`;
+  if (plan.entryFee > 0) return `${formatMoney(plan.entryFee)} вход`;
+  return "Бесплатно";
 }
 
 export default function TariffsPage() {
@@ -25,8 +33,8 @@ export default function TariffsPage() {
               Тарифы для специалистов
             </h1>
             <p className="mt-2 max-w-2xl text-sm text-zinc-600">
-              От бесплатной карточки до полноценного профиля-лендинга с
-              продвижением в топ-20 каталога.
+              Вход или подписка — и процент с каждой подтверждённой сделки
+              через безопасную сделку. Чем выше тариф, тем ниже комиссия.
             </p>
           </div>
         </div>
@@ -56,14 +64,18 @@ export default function TariffsPage() {
                   {plan.title}
                 </p>
                 <p className="mt-1 text-2xl font-bold text-zinc-900">
-                  {formatPrice(plan.price)}
+                  {primaryPrice(plan)}
+                </p>
+                <p className="text-sm font-medium text-zinc-600">
+                  + {plan.commissionPercent}% с подтверждённой сделки
                 </p>
                 <p className="mt-2 text-sm text-zinc-600">
                   {plan.description}
                 </p>
-                {plan.trialDays > 0 && (
+                {plan.volumeDiscount && (
                   <p className="mt-2 text-xs text-emerald-600">
-                    Пробный период {plan.trialDays} дней
+                    Комиссия снижается до {plan.volumeDiscount.commissionPercent}% при{" "}
+                    {plan.volumeDiscount.minDeals}+ сделках
                   </p>
                 )}
                 <button
@@ -73,7 +85,7 @@ export default function TariffsPage() {
                       : "border border-zinc-300 text-zinc-700 hover:bg-zinc-50"
                   }`}
                 >
-                  {plan.price === 0 ? "Начать бесплатно" : "Выбрать тариф"}
+                  Выбрать тариф
                 </button>
               </div>
             ))}

@@ -1,6 +1,11 @@
 /// <reference path="../pb_data/types.d.ts" />
 
 // ТЗ §11.8 / §9 — tariffs, editable in admin without code changes (§15).
+// СТАЛО НЕАКТУАЛЬНО (2026-08-29): реальная ценовая модель ушла на
+// вход/подписка + % с эскроу-сделки (см. web/src/data/plans.ts) — эта
+// коллекция ни разу не читалась фронтендом (данные всегда шли из
+// статического plans.ts), поэтому схему здесь не меняли. Не подключать
+// как есть, если решим брать /tariffs с бэкенда — поля устарели.
 migrate((app) => {
   const collection = new Collection({
     type: "base",

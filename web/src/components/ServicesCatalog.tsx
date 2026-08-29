@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import ResultTypePlate from "./ResultTypePlate";
 import { CATEGORIES } from "@/data/categories";
+import { getCategory3D } from "@/data/category-style";
 import { SERVICE_TAG_LABELS, type ServiceCardTag, type ServiceOffer } from "@/types/service-card";
 import type { ResultTypeSummary } from "@/data/mock-services";
 
@@ -103,28 +104,30 @@ export default function ServicesCatalog({
         <button
           type="button"
           onClick={() => setActiveCategory(null)}
-          className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+          className={`rounded-full border-b-4 border-zinc-950 bg-zinc-900 px-3 py-1.5 text-sm font-semibold text-white shadow-md shadow-zinc-500/30 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0.5 active:border-b-2 ${
             activeCategory === null
-              ? "border-zinc-900 bg-zinc-900 text-white"
-              : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-400"
+              ? "ring-2 ring-offset-2 ring-zinc-900"
+              : "opacity-80 hover:opacity-100"
           }`}
         >
           Все направления
         </button>
-        {CATEGORIES.filter((c) => c.slug !== "other").map((category) => (
-          <button
-            key={category.slug}
-            type="button"
-            onClick={() => setActiveCategory(category.slug)}
-            className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
-              activeCategory === category.slug
-                ? "border-zinc-900 bg-zinc-900 text-white"
-                : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-400"
-            }`}
-          >
-            {category.name}
-          </button>
-        ))}
+        {CATEGORIES.filter((c) => c.slug !== "other").map((category) => {
+          const classes = getCategory3D(category.slug);
+          const active = activeCategory === category.slug;
+          return (
+            <button
+              key={category.slug}
+              type="button"
+              onClick={() => setActiveCategory(category.slug)}
+              className={`rounded-full border-b-4 bg-gradient-to-br px-3 py-1.5 text-sm font-semibold text-white shadow-md transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0.5 active:border-b-2 ${classes} ${
+                active ? "ring-2 ring-offset-2 ring-zinc-900" : "opacity-80 hover:opacity-100"
+              }`}
+            >
+              {category.name}
+            </button>
+          );
+        })}
       </div>
 
       <div className="mt-3 flex flex-wrap gap-2">

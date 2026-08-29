@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import SpecialistCard from "./SpecialistCard";
 import { CATEGORIES } from "@/data/categories";
+import { getCategory3D } from "@/data/category-style";
 import type { Specialist } from "@/types/specialist";
 
 type SortOption = "rating" | "priceAsc" | "reviews";
@@ -89,28 +90,30 @@ export default function SpecialistsCatalog({
         <button
           type="button"
           onClick={() => setActiveCategory(null)}
-          className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+          className={`rounded-full border-b-4 border-zinc-950 bg-zinc-900 px-3 py-1.5 text-sm font-semibold text-white shadow-md shadow-zinc-500/30 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0.5 active:border-b-2 ${
             activeCategory === null
-              ? "border-zinc-900 bg-zinc-900 text-white"
-              : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-400"
+              ? "ring-2 ring-offset-2 ring-zinc-900"
+              : "opacity-80 hover:opacity-100"
           }`}
         >
           Все направления
         </button>
-        {CATEGORIES.map((category) => (
-          <button
-            key={category.slug}
-            type="button"
-            onClick={() => setActiveCategory(category.slug)}
-            className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
-              activeCategory === category.slug
-                ? "border-zinc-900 bg-zinc-900 text-white"
-                : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-400"
-            }`}
-          >
-            {category.name}
-          </button>
-        ))}
+        {CATEGORIES.map((category) => {
+          const classes = getCategory3D(category.slug);
+          const active = activeCategory === category.slug;
+          return (
+            <button
+              key={category.slug}
+              type="button"
+              onClick={() => setActiveCategory(category.slug)}
+              className={`rounded-full border-b-4 bg-gradient-to-br px-3 py-1.5 text-sm font-semibold text-white shadow-md transition-all duration-150 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0.5 active:border-b-2 ${classes} ${
+                active ? "ring-2 ring-offset-2 ring-zinc-900" : "opacity-80 hover:opacity-100"
+              }`}
+            >
+              {category.name}
+            </button>
+          );
+        })}
       </div>
 
       <p className="mt-6 text-sm text-zinc-500">

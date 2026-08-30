@@ -142,6 +142,7 @@ function JobPostDetail({
   const [responses, setResponses] = useState<JobPostResponse[] | null>(null);
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [responseSubTab, setResponseSubTab] = useState<"active" | "declined">("active");
 
   const refreshResponses = useCallback(() => {
     return fetchJobPostResponses(pbClient, post.id).then(setResponses);
@@ -252,52 +253,82 @@ function JobPostDetail({
         )}
       </div>
 
-      <p className="mt-6 text-sm font-semibold text-zinc-900">
-        Отклики {responses ? `(${responses.length})` : ""}
-      </p>
+      {(() => {
+        const activeResponses = responses?.filter((r) => r.status !== "closed" && r.status !== "spam") ?? [];
+        const declinedResponses = responses?.filter((r) => r.status === "closed" || r.status === "spam") ?? [];
+        const shown = responseSubTab === "active" ? activeResponses : declinedResponses;
 
-      {responses === null && <p className="mt-2 text-xs text-zinc-400">Загружаем…</p>}
-      {responses?.length === 0 && (
-        <p className="mt-2 text-sm text-zinc-500">Пока никто не откликнулся.</p>
-      )}
-
-      <div className="mt-3 flex flex-col gap-2">
-        {responses?.map((r) => {
-          const declined = r.status === "closed" || r.status === "spam";
-          return (
-            <div
-              key={r.leadId}
-              className={`flex items-center justify-between gap-3 rounded-2xl border p-4 ${
-                declined ? "border-zinc-200 bg-zinc-50 opacity-60" : "border-zinc-200 bg-white"
-              }`}
-            >
+        return (
+          <>
+            <div className="mt-6 flex items-center gap-4">
               <button
                 type="button"
-                onClick={() => setOpenLeadId(r.leadId)}
-                className="min-w-0 flex-1 text-left"
+                onClick={() => setResponseSubTab("active")}
+                className={`text-sm font-semibold transition-colors ${
+                  responseSubTab === "active" ? "text-zinc-900" : "text-zinc-400 hover:text-zinc-600"
+                }`}
               >
-                <p className="truncate text-sm font-medium text-zinc-900">{r.specialistName}</p>
-                <p className="mt-0.5 line-clamp-1 text-xs text-zinc-500">{r.message}</p>
+                Отклики {responses ? `(${activeResponses.length})` : ""}
               </button>
-              <div className="flex shrink-0 items-center gap-2">
-                <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-medium text-zinc-600">
-                  {RESPONSE_STATUS_LABELS[r.status] ?? r.status}
-                </span>
-                {!declined && (
+              {declinedResponses.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setResponseSubTab("declined")}
+                  className={`text-sm font-semibold transition-colors ${
+                    responseSubTab === "declined" ? "text-zinc-900" : "text-zinc-400 hover:text-zinc-600"
+                  }`}
+                >
+                  Отказы ({declinedResponses.length})
+                </button>
+              )}
+            </div>
+
+            {responses === null && <p className="mt-2 text-xs text-zinc-400">Загружаем…</p>}
+            {responses !== null && shown.length === 0 && (
+              <p className="mt-2 text-sm text-zinc-500">
+                {responseSubTab === "active" ? "Пока никто не откликнулся." : "Отказанных откликов нет."}
+              </p>
+            )}
+
+            <div className="mt-3 flex flex-col gap-2">
+              {shown.map((r) => (
+                <div
+                  key={r.leadId}
+                  className={`flex items-center justify-between gap-3 rounded-2xl border p-4 ${
+                    responseSubTab === "declined"
+                      ? "border-zinc-200 bg-zinc-50"
+                      : "border-zinc-200 bg-white"
+                  }`}
+                >
                   <button
                     type="button"
-                    onClick={() => handleDecline(r.leadId)}
-                    disabled={busy}
-                    className="rounded-full border border-red-200 px-2.5 py-1 text-[11px] font-medium text-red-700 transition-colors hover:bg-red-50 disabled:opacity-50"
+                    onClick={() => setOpenLeadId(r.leadId)}
+                    className="min-w-0 flex-1 text-left"
                   >
-                    Отказать
+                    <p className="truncate text-sm font-medium text-zinc-900">{r.specialistName}</p>
+                    <p className="mt-0.5 line-clamp-1 text-xs text-zinc-500">{r.message}</p>
                   </button>
-                )}
-              </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-medium text-zinc-600">
+                      {RESPONSE_STATUS_LABELS[r.status] ?? r.status}
+                    </span>
+                    {responseSubTab === "active" && (
+                      <button
+                        type="button"
+                        onClick={() => handleDecline(r.leadId)}
+                        disabled={busy}
+                        className="rounded-full border border-red-200 px-2.5 py-1 text-[11px] font-medium text-red-700 transition-colors hover:bg-red-50 disabled:opacity-50"
+                      >
+                        Отказать
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
-          );
-        })}
-      </div>
+          </>
+        );
+      })()}
     </div>
   );
 }

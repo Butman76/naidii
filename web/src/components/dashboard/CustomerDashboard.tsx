@@ -13,7 +13,6 @@ import { pbClient } from "@/lib/auth-client";
 import LeadChat from "./LeadChat";
 import OrdersTab from "./OrdersTab";
 import CustomerJobPostsTab from "./CustomerJobPostsTab";
-import DeclinedResponsesTab from "./DeclinedResponsesTab";
 
 type Tab = "overview" | "leads" | "jobposts" | "orders" | "archive" | "reviews" | "favorites" | "suggestions";
 
@@ -22,7 +21,7 @@ const TABS: Array<{ id: Tab; label: string }> = [
   { id: "leads", label: "Мои заявки" },
   { id: "jobposts", label: "Объявления" },
   { id: "orders", label: "Заказы" },
-  { id: "archive", label: "Архив" },
+  { id: "archive", label: "Архив заказов" },
   { id: "reviews", label: "Мои отзывы" },
   { id: "favorites", label: "Избранное" },
   { id: "suggestions", label: "Не нашли то, что нужно?" },
@@ -126,7 +125,6 @@ export default function CustomerDashboard({
 }) {
   const [tab, setTab] = useState<Tab>("overview");
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
-  const [archiveSubTab, setArchiveSubTab] = useState<"deals" | "declined">("deals");
   const activeLeads = leads.filter(
     (l) => l.status !== "closed" && l.status !== "spam"
   ).length;
@@ -241,35 +239,7 @@ export default function CustomerDashboard({
         )}
 
         {tab === "orders" && <OrdersTab role="customer" ownId={userId} archive={false} />}
-        {tab === "archive" && (
-          <div>
-            <div className="mb-4 flex gap-1 rounded-full bg-zinc-100 p-1 text-xs font-medium w-fit">
-              <button
-                type="button"
-                onClick={() => setArchiveSubTab("deals")}
-                className={`rounded-full px-3 py-1.5 transition-colors ${
-                  archiveSubTab === "deals" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500"
-                }`}
-              >
-                Выполненные заказы
-              </button>
-              <button
-                type="button"
-                onClick={() => setArchiveSubTab("declined")}
-                className={`rounded-full px-3 py-1.5 transition-colors ${
-                  archiveSubTab === "declined" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500"
-                }`}
-              >
-                Отказанные
-              </button>
-            </div>
-            {archiveSubTab === "deals" ? (
-              <OrdersTab role="customer" ownId={userId} archive={true} />
-            ) : (
-              <DeclinedResponsesTab customerId={userId} />
-            )}
-          </div>
-        )}
+        {tab === "archive" && <OrdersTab role="customer" ownId={userId} archive={true} />}
 
         {tab === "reviews" && (
           <div className="flex flex-col gap-3">

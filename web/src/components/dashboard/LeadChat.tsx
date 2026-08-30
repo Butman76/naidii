@@ -7,7 +7,9 @@ import {
   fetchLeadMessages,
   sendLeadMessage,
   subscribeToLeadMessages,
+  sendSystemMessage,
   fetchDeal,
+  subscribeToDeal,
   proposeDeal,
   confirmDeal,
   declineDeal,
@@ -19,6 +21,7 @@ import {
   moderatorSendToRevision,
   formatMoney,
   formatDate,
+  formatDateTime,
   daysRemainingLabel,
   type LeadMessage,
   type Deal,
@@ -83,7 +86,8 @@ export default function LeadChat({
 
   useEffect(() => {
     let cancelled = false;
-    let unsubscribe: (() => void) | null = null;
+    let unsubscribeMessages: (() => void) | null = null;
+    let unsubscribeDeal: (() => void) | null = null;
 
     Promise.all([fetchLeadMessages(pbClient, leadId), fetchDeal(pbClient, leadId)]).then(
       ([msgs, d]) => {
@@ -106,14 +110,26 @@ export default function LeadChat({
       });
     }).then((unsub) => {
       if (cancelled) unsub();
-      else unsubscribe = unsub;
+      else unsubscribeMessages = unsub;
+    });
+
+    // Предложение/подтверждение/отклонение сделки собеседником должно быть
+    // видно сразу, без обновления страницы — та же логика, что у сообщений
+    // выше, только для карточки статуса сделки над чатом.
+    subscribeToDeal(pbClient, leadId, (updatedDeal) => {
+      setDeal(updatedDeal);
+      onDealChanged?.();
+    }).then((unsub) => {
+      if (cancelled) unsub();
+      else unsubscribeDeal = unsub;
     });
 
     return () => {
       cancelled = true;
-      unsubscribe?.();
+      unsubscribeMessages?.();
+      unsubscribeDeal?.();
     };
-  }, [leadId, currentUserId]);
+  }, [leadId, currentUserId, onDealChanged]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: "nearest" });
@@ -140,6 +156,31 @@ export default function LeadChat({
     try {
       setDeal(await action());
       onDealChanged?.();
+    } finally {
+      setDealBusy(false);
+    }
+  }
+
+  // "Заказчик"/"Специалист" отклонил/предложил — по просьбе пользователя
+  // такие действия должны оставлять системную запись прямо в переписке
+  // (не только менять цветную карточку статуса), с датой и временем.
+  function roleLabel(): string {
+    return currentUserRole === "customer" ? "Заказчик" : "Специалист";
+  }
+
+  async function postSystemMessage(body: string) {
+    const message = await sendSystemMessage(pbClient, leadId, currentUserId, body);
+    setMessages((prev) => (prev ? [...prev, message] : [message]));
+  }
+
+  async function handleDecline() {
+    if (!deal) return;
+    setDealBusy(true);
+    try {
+      await declineDeal(pbClient, deal.id);
+      setDeal({ ...deal, status: "declined" });
+      onDealChanged?.();
+      await postSystemMessage(`${roleLabel()} отклонил предложение`);
     } finally {
       setDealBusy(false);
     }
@@ -191,7 +232,7 @@ export default function LeadChat({
                   </button>
                   <button
                     type="button"
-                    onClick={() => runDealAction(() => declineDeal(pbClient, deal.id).then(() => ({ ...deal, status: "declined" as const })))}
+                    onClick={handleDecline}
                     disabled={dealBusy}
                     className="rounded-full border border-red-200 px-3 py-1.5 text-[11px] font-medium text-red-700 transition-colors hover:bg-red-50 disabled:opacity-50"
                   >
@@ -305,6 +346,16 @@ export default function LeadChat({
         )}
         <div className="flex flex-col gap-2">
           {messages?.map((m) => {
+            if (m.isSystem) {
+              return (
+                <div
+                  key={m.id}
+                  className="self-center rounded-full bg-zinc-100 px-3 py-1 text-center text-[11px] text-zinc-500"
+                >
+                  {m.body} · {formatDateTime(m.createdAt)}
+                </div>
+              );
+            }
             const isOwn = m.senderId === currentUserId;
             return (
               <div
@@ -354,6 +405,7 @@ export default function LeadChat({
               setDeal(created);
               setShowDealForm(false);
               onDealChanged?.();
+              await postSystemMessage(`${roleLabel()} предложил заключить сделку`);
             } finally {
               setDealBusy(false);
             }

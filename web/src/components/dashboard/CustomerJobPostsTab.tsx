@@ -11,6 +11,7 @@ import {
   fetchJobPostResponses,
   fetchJobPostResponseCounts,
   declineJobPostResponse,
+  subscribeToJobPostResponses,
   type JobPost,
   type JobPostResponse,
 } from "@/lib/jobPosts";
@@ -149,6 +150,26 @@ function JobPostDetail({
   useEffect(() => {
     refreshResponses();
   }, [refreshResponses]);
+
+  // Новый отклик специалиста должен появиться в списке сразу, без
+  // перезагрузки страницы — по просьбе пользователя.
+  useEffect(() => {
+    let cancelled = false;
+    let unsubscribe: (() => void) | null = null;
+
+    subscribeToJobPostResponses(pbClient, post.id, () => {
+      refreshResponses();
+      onChanged();
+    }).then((unsub) => {
+      if (cancelled) unsub();
+      else unsubscribe = unsub;
+    });
+
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+  }, [post.id, refreshResponses, onChanged]);
 
   async function handleClosePost() {
     setBusy(true);

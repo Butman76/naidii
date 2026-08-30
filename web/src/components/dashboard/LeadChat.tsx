@@ -381,7 +381,7 @@ export default function LeadChat({
             onClick={() => setShowDealForm(true)}
             className="w-full rounded-full border border-violet-300 bg-violet-50 px-3 py-1.5 text-xs font-medium text-violet-800 transition-colors hover:bg-violet-100"
           >
-            Заключить сделку
+            Предложить сделку
           </button>
         </div>
       )}

@@ -111,6 +111,24 @@ export async function fetchJobPostResponseCounts(
   return counts;
 }
 
+// Новые отклики на объявление должны появляться у заказчика сразу, без
+// перезагрузки страницы — по просьбе пользователя, тот же принцип, что и у
+// realtime-подписок на сообщения/сделку в LeadChat (lib/chat.ts). Отдаём
+// только сам факт нового отклика (id заявки) — вызывающая сторона просто
+// перечитывает список откликов целиком, так проще получить имя специалиста
+// (expand) без риска разойтись с обычным fetchJobPostResponses.
+export async function subscribeToJobPostResponses(
+  pb: PocketBase,
+  jobPostId: string,
+  onCreate: (leadId: string) => void
+): Promise<() => void> {
+  return pb.collection("leads").subscribe("*", (e) => {
+    if (e.action === "create" && e.record.job_post_id === jobPostId) {
+      onCreate(e.record.id);
+    }
+  });
+}
+
 // Отклики (=leads с job_post_id) на конкретное объявление — для заказчика,
 // чтобы показать список параллельных чатов внутри карточки объявления.
 export async function fetchJobPostResponses(pb: PocketBase, jobPostId: string): Promise<JobPostResponse[]> {

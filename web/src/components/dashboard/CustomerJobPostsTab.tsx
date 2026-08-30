@@ -17,7 +17,7 @@ import {
 } from "@/lib/jobPosts";
 import LeadChat from "./LeadChat";
 
-// "Разместить заказ" (2026-08-29, по прямому запросу пользователя) —
+// "Разместить объявление" (2026-08-29, по прямому запросу пользователя) —
 // заказчик описывает задачу без привязки к конкретной карточке услуги,
 // категория/подкатегория опциональны. Внутри одного объявления параллельно
 // живёт несколько чатов — по одному на каждого откликнувшегося специалиста
@@ -61,7 +61,7 @@ function JobPostForm({
 
   return (
     <form onSubmit={handleSubmit} className="rounded-2xl border border-zinc-200 bg-white p-5">
-      <p className="text-sm font-semibold text-zinc-900">Разместить заказ</p>
+      <p className="text-sm font-semibold text-zinc-900">Разместить объявление</p>
       <p className="mt-1 text-sm text-zinc-500">
         Опишите задачу своими словами — категорию можно выбрать для удобства
         поиска, но это необязательно.
@@ -381,7 +381,7 @@ export default function CustomerJobPostsTab({
           onClick={() => setShowForm(true)}
           className="w-full rounded-2xl border border-dashed border-zinc-300 p-4 text-sm text-zinc-500 transition-colors hover:border-zinc-400 hover:text-zinc-700"
         >
-          + Разместить заказ
+          + Разместить объявление
         </button>
       )}
 
@@ -402,7 +402,7 @@ export default function CustomerJobPostsTab({
       {posts === null && <p className="mt-6 text-sm text-zinc-500">Загружаем…</p>}
       {posts?.length === 0 && !showForm && (
         <p className="mt-6 text-sm text-zinc-500">
-          Вы ещё не размещали объявлений — нажмите «Разместить заказ» выше,
+          Вы ещё не размещали объявлений — нажмите «Разместить объявление» выше,
           если не нашли подходящую услугу в каталоге.
         </p>
       )}

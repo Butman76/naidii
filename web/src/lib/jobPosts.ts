@@ -147,6 +147,38 @@ export async function fetchJobPostResponses(pb: PocketBase, jobPostId: string): 
   }));
 }
 
+export interface DeclinedResponse {
+  leadId: string;
+  jobPostId: string;
+  jobPostDescription: string;
+  specialistProfileId: string;
+  specialistName: string;
+  message: string;
+  declinedAt: string;
+}
+
+// Все отказанные отклики заказчика сразу по всем объявлениям — по просьбе
+// пользователя: карточка отклика (и вся переписка внутри неё, ничего не
+// удаляется при "Отказать") должна оставаться доступной в архиве, чтобы
+// можно было вспомнить, почему отказали. expand достаёт и имя специалиста,
+// и текст самого объявления (для контекста — "отказано по какой задаче").
+export async function fetchDeclinedResponses(pb: PocketBase, customerId: string): Promise<DeclinedResponse[]> {
+  const records = await pb.collection("leads").getFullList({
+    filter: pb.filter('customer_id = {:id} && job_post_id != "" && status = "closed"', { id: customerId }),
+    expand: "specialist_profile_id,job_post_id",
+    sort: "-updated",
+  });
+  return records.map((r) => ({
+    leadId: r.id,
+    jobPostId: r.job_post_id,
+    jobPostDescription: r.expand?.job_post_id?.description ?? "",
+    specialistProfileId: r.specialist_profile_id,
+    specialistName: r.expand?.specialist_profile_id?.public_name ?? "Специалист",
+    message: r.request_text,
+    declinedAt: r.updated,
+  }));
+}
+
 // specialist_profile_id этого специалиста среди откликов на переданные
 // объявления — чтобы на доске показать "Открыть чат" вместо формы отклика
 // там, где он уже откликнулся.

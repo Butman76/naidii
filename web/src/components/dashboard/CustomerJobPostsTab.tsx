@@ -211,6 +211,7 @@ function JobPostDetail({
           customerId={customerId}
           specialistProfileId={response.specialistProfileId}
           otherPartyName={response.specialistName}
+          leadStatus={response.status}
           onClose={() => setOpenLeadId(null)}
           onDealChanged={refreshResponses}
         />

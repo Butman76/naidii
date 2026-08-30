@@ -153,12 +153,12 @@ export async function fetchJobPostResponses(pb: PocketBase, jobPostId: string): 
 export async function fetchOwnJobPostResponses(
   pb: PocketBase,
   specialistProfileId: string
-): Promise<Array<{ jobPostId: string; leadId: string }>> {
+): Promise<Array<{ jobPostId: string; leadId: string; status: string }>> {
   const records = await pb.collection("leads").getFullList({
     filter: pb.filter("specialist_profile_id = {:id} && job_post_id != \"\"", { id: specialistProfileId }),
-    fields: "id,job_post_id",
+    fields: "id,job_post_id,status",
   });
-  return records.map((r) => ({ jobPostId: r.job_post_id, leadId: r.id }));
+  return records.map((r) => ({ jobPostId: r.job_post_id, leadId: r.id, status: r.status }));
 }
 
 export async function respondToJobPost(

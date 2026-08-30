@@ -322,6 +322,7 @@ export default function SpecialistDashboard({
                 customerId={lead.customerId}
                 specialistProfileId={specialist.id}
                 otherPartyName={lead.clientName}
+                leadStatus={lead.status}
                 onClose={() => setOpenLeadId(null)}
               />
             </div>

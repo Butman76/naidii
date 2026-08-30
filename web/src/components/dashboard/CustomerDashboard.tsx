@@ -179,6 +179,7 @@ export default function CustomerDashboard({
                 customerId={userId}
                 specialistProfileId={lead.specialistProfileId}
                 otherPartyName={lead.specialistName}
+                leadStatus={lead.status}
                 onClose={() => setOpenLeadId(null)}
               />
               <Link

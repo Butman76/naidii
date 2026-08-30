@@ -62,6 +62,7 @@ export default function LeadChat({
   customerId,
   specialistProfileId,
   otherPartyName,
+  leadStatus,
   onClose,
   onDealChanged,
 }: {
@@ -71,6 +72,15 @@ export default function LeadChat({
   customerId: string;
   specialistProfileId: string;
   otherPartyName: string;
+  // Статус самой заявки (не сделки) — "closed"/"spam" означает, что
+  // заказчик нажал "Отказать" этому отклику. Заявка и сделка на ней —
+  // разные записи: отказ отклику не трогает статус уже предложенной
+  // сделки, так что без этого флага в закрытой заявке можно было бы
+  // случайно нажать "Подтвердить" на устаревшем предложении, листая
+  // историю (баг, найденный пользователем вживую). Опционально — там,
+  // где статус заявки не передан (не завязано на объявления), поведение
+  // не меняется.
+  leadStatus?: string;
   onClose: () => void;
   onDealChanged?: () => void;
 }) {
@@ -82,7 +92,8 @@ export default function LeadChat({
   const [dealBusy, setDealBusy] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const isParticipant = currentUserRole === "customer" || currentUserRole === "specialist";
+  const isLocked = leadStatus === "closed" || leadStatus === "spam";
+  const isParticipant = (currentUserRole === "customer" || currentUserRole === "specialist") && !isLocked;
 
   useEffect(() => {
     let cancelled = false;
@@ -205,6 +216,12 @@ export default function LeadChat({
         </button>
       </div>
 
+      {isLocked && (
+        <div className="mx-3 mt-3 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-500">
+          Заявка отказана — переписка сохранена для истории, действия по сделке и отправка сообщений недоступны.
+        </div>
+      )}
+
       {/* --- Предложена сделка, ждём подтверждения второй стороны --- */}
       {deal?.status === "proposed" && (
         <div className="m-3 rounded-xl border border-violet-200 bg-violet-50 p-3 text-xs">
@@ -258,7 +275,8 @@ export default function LeadChat({
           </div>
           <DealTerms deal={deal} />
           <div className="mt-2 flex flex-wrap gap-2">
-            {currentUserRole === "specialist" &&
+            {!isLocked &&
+              currentUserRole === "specialist" &&
               (deal.status === "confirmed" || deal.status === "needs_revision") && (
                 <button
                   type="button"
@@ -269,7 +287,7 @@ export default function LeadChat({
                   Услуга оказана
                 </button>
               )}
-            {currentUserRole === "customer" && deal.status === "delivered" && (
+            {!isLocked && currentUserRole === "customer" && deal.status === "delivered" && (
               <>
                 <button
                   type="button"
@@ -419,12 +437,13 @@ export default function LeadChat({
           type="text"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder="Напишите сообщение…"
-          className="flex-1 rounded-full border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none"
+          disabled={isLocked}
+          placeholder={isLocked ? "Заявка отказана — переписка закрыта" : "Напишите сообщение…"}
+          className="flex-1 rounded-full border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none disabled:cursor-not-allowed disabled:bg-zinc-50 disabled:text-zinc-400"
         />
         <button
           type="submit"
-          disabled={sending || !draft.trim()}
+          disabled={sending || !draft.trim() || isLocked}
           className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
         >
           Отправить

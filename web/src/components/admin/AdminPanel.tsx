@@ -291,6 +291,29 @@ export default function AdminPanel() {
     );
   }
 
+  // Персональный поддомен (например, visiontechnolabs.naidii.ru вместо
+  // /specialist/{slug}) — тоже только admin, см. plan_guard.pb.js и
+  // web/middleware.ts, который по имени хоста решает, чей профиль отдать.
+  // Санитизация здесь мягкая (нижний регистр, только буквы/цифры/дефис) —
+  // окончательно уникальность поддомена всё равно проверяет уникальный
+  // индекс в базе, ошибка попадёт в actionError, если кто-то уже занял имя.
+  async function updateSubdomain(id: string, rawValue: string, publicName: string) {
+    const subdomain = rawValue.trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
+    await runAction(
+      id,
+      async () => {
+        await pbClient.collection("specialist_profiles").update(id, { subdomain });
+        await logAdminAction(pbClient, {
+          action: subdomain ? `Назначил поддомен «${subdomain}»` : "Убрал поддомен",
+          entityType: "specialist_profiles",
+          entityId: id,
+          newData: { subdomain, public_name: publicName },
+        });
+      },
+      refreshPlans
+    );
+  }
+
   // "Войти как" — реальная подмена сессии на целевого пользователя через
   // серверный /api/impersonate (нужен суперпользователь PocketBase, у
   // обычной роли admin прав на impersonate нет). Свою admin-сессию кладём
@@ -727,6 +750,7 @@ export default function AdminPanel() {
                   <Th>Email</Th>
                   <Th>Статус карточки</Th>
                   <Th>Тариф</Th>
+                  <Th>Поддомен</Th>
                 </tr>
               </thead>
               <tbody>
@@ -749,11 +773,30 @@ export default function AdminPanel() {
                         ))}
                       </select>
                     </Td>
+                    <Td>
+                      <div className="flex items-center gap-1">
+                        <input
+                          key={p.id + p.subdomain}
+                          type="text"
+                          defaultValue={p.subdomain}
+                          disabled={busyId === p.id}
+                          placeholder="без поддомена"
+                          onBlur={(e) => {
+                            if (e.target.value.trim().toLowerCase() !== p.subdomain) {
+                              updateSubdomain(p.id, e.target.value, p.publicName);
+                            }
+                          }}
+                          className="w-32 rounded border border-zinc-300 bg-white px-2 py-1 font-mono text-[11px] disabled:opacity-40"
+                        />
+                        <span className="text-zinc-400">.naidii.ru</span>
+                      </div>
+                    </Td>
                   </tr>
                 ))}
                 {plans === null && (
                   <tr>
                     <Td className="text-zinc-400">Загружаем…</Td>
+                    <Td>{""}</Td>
                     <Td>{""}</Td>
                     <Td>{""}</Td>
                     <Td>{""}</Td>

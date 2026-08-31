@@ -47,10 +47,12 @@ export interface AdminUserRow {
 
 export interface SpecialistPlanRow {
   id: string;
+  slug: string;
   publicName: string;
   ownerEmail: string;
   profileStatus: string;
   planCode: string;
+  subdomain: string;
 }
 
 export interface AdminLogEntry {
@@ -143,10 +145,12 @@ export async function fetchAllSpecialistProfiles(pb: PocketBase): Promise<Specia
   });
   return records.map((p) => ({
     id: p.id,
+    slug: p.slug,
     publicName: p.public_name || "Без названия",
     ownerEmail: p.expand?.user_id?.email ?? "",
     profileStatus: p.profile_status,
     planCode: p.plan_code || "basic",
+    subdomain: p.subdomain || "",
   }));
 }
 

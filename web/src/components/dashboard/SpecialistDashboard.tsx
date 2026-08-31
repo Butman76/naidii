@@ -9,6 +9,7 @@ import LeadChat from "./LeadChat";
 import OrdersTab from "./OrdersTab";
 import SpecialistJobBoard from "./SpecialistJobBoard";
 import { getCategoryStyle, getCategoryAccent } from "@/data/category-style";
+import { PLANS } from "@/data/plans";
 import type { SpecialistDashboardOffer } from "@/lib/dashboard";
 import { LEAD_STATUS_LABELS, LEAD_STATUS_STYLES } from "@/data/dashboard-mock";
 import type { SpecialistDashboardData } from "@/lib/dashboard";
@@ -60,11 +61,11 @@ export default function SpecialistDashboard({
   data: SpecialistDashboardData;
   refresh: () => void;
 }) {
-  const { specialist, profileStatus, viewsCount, leadsCount, offers, leads, cases } = data;
+  const { specialist, profileStatus, viewsCount, leadsCount, offers, leads, cases, planCode } = data;
   const { user } = useAuth();
   const [tab, setTab] = useState<Tab>("overview");
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
-  const isPremium = Boolean(specialist.premium);
+  const currentPlan = PLANS.find((p) => p.code === planCode) ?? PLANS[0];
 
   const [showCreationForm, setShowCreationForm] = useState(false);
   const [editingProfile, setEditingProfile] = useState(false);
@@ -412,23 +413,26 @@ export default function SpecialistDashboard({
             <div className="rounded-2xl border border-zinc-200 bg-white p-5">
               <p className="text-xs text-zinc-500">Текущий тариф</p>
               <p className="mt-1 text-lg font-semibold text-zinc-900">
-                {isPremium ? "Максимальный" : "Стандарт"}
+                {currentPlan.title}
               </p>
-              <p className="mt-2 text-sm text-zinc-600">
-                {isPremium
-                  ? "Доступен расширенный профиль-лендинг: обложка, галерея, команда, сертификаты."
-                  : "Базовая карточка в каталоге и обычный профиль. Расширенный профиль-лендинг с обложкой, галереей и командой доступен на максимальном тарифе."}
+              <p className="mt-2 text-sm text-zinc-600">{currentPlan.description}</p>
+              <p className="mt-3 text-xs text-zinc-500">
+                Комиссия площадки с подтверждённой сделки: {currentPlan.commissionPercent}%
+                {currentPlan.customLanding && " · включён профиль-лендинг вместо обычной карточки"}
+              </p>
+              <p className="mt-1 text-[11px] text-zinc-400">
+                Тариф назначает команда площадки вручную — оплата online ещё не подключена.
               </p>
             </div>
 
-            {!isPremium && (
+            {!currentPlan.customLanding && (
               <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
                 <p className="text-sm font-semibold text-amber-900">
-                  Максимальный тариф
+                  Хотите тариф выше?
                 </p>
                 <p className="mt-1 text-sm text-amber-800">
-                  Профиль-лендинг вместо обычной карточки, приоритет в
-                  каталоге и расширенная аналитика.
+                  На старших тарифах ниже комиссия, продвижение в каталоге, а на
+                  максимальном — профиль-лендинг вместо обычной карточки.
                 </p>
                 <Link
                   href="/tariffs"

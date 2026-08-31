@@ -48,6 +48,9 @@ export interface SpecialistDashboardData {
   offers: SpecialistDashboardOffer[];
   leads: SpecialistDashboardLead[];
   cases: DashboardCase[];
+  // basic/pro/enterprise (web/src/data/plans.ts) — назначает вручную admin
+  // в /admin, см. AdminPanel.tsx. Отсутствие значения = "basic".
+  planCode: string;
 }
 
 export async function fetchOwnSpecialistDashboard(
@@ -151,6 +154,7 @@ export async function fetchOwnSpecialistDashboard(
     offers,
     leads,
     cases,
+    planCode: profile.plan_code || "basic",
   };
 }
 

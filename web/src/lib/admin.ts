@@ -45,6 +45,14 @@ export interface AdminUserRow {
   createdAt: string;
 }
 
+export interface SpecialistPlanRow {
+  id: string;
+  publicName: string;
+  ownerEmail: string;
+  profileStatus: string;
+  planCode: string;
+}
+
 export interface AdminLogEntry {
   id: string;
   adminName: string;
@@ -122,6 +130,24 @@ export async function fetchModerationData(pb: PocketBase): Promise<ModerationDat
   }));
 
   return { profiles, resultTypes, reviews, users };
+}
+
+// Все специалисты (не только очередь на модерацию — тариф нужно менять и
+// уже опубликованным) — отдельная вкладка "Тарифы" в /admin, см.
+// AdminPanel.tsx. plan_code меняет только admin, см.
+// pocketbase/pb_hooks/plan_guard.pb.js.
+export async function fetchAllSpecialistProfiles(pb: PocketBase): Promise<SpecialistPlanRow[]> {
+  const records = await pb.collection("specialist_profiles").getFullList({
+    expand: "user_id",
+    sort: "-created",
+  });
+  return records.map((p) => ({
+    id: p.id,
+    publicName: p.public_name || "Без названия",
+    ownerEmail: p.expand?.user_id?.email ?? "",
+    profileStatus: p.profile_status,
+    planCode: p.plan_code || "basic",
+  }));
 }
 
 export async function logAdminAction(

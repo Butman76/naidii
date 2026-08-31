@@ -1,5 +1,11 @@
 import { createPocketBase } from "./pocketbase";
-import type { Specialist, SpecialistBadge, SpecialistService } from "@/types/specialist";
+import type {
+  Specialist,
+  SpecialistBadge,
+  SpecialistPremiumContent,
+  SpecialistService,
+} from "@/types/specialist";
+import { getCategoryStyle } from "@/data/category-style";
 
 // Живые данные специалистов из PocketBase. Форма результата совпадает с
 // Specialist (mock-specialists.ts), чтобы SpecialistCard/StandardSpecialistProfile
@@ -15,9 +21,12 @@ import type { Specialist, SpecialistBadge, SpecialistService } from "@/types/spe
 // - `category` — в specialist_profiles нет своего поля категории (это
 //   известный пробел, см. STATUS.md), поэтому категория определяется по
 //   первому активному предложению специалиста, а не хранится напрямую.
-// - `premium` — всегда unset: премиум-лендинг профиля — визуальный
-//   мокап тарифа, для живых специалистов пока не подключён (нет
-//   реальных тарифов/оплаты).
+// - `premium` — заполняется, только если админ вручную поставил тариф
+//   "enterprise" (specialist_profiles.plan_code — оплаты online ещё нет,
+//   назначение целиком ручное через /admin, см. AdminPanel.tsx). Контент
+//   лендинга честно собирается из уже реальных полей профиля — никаких
+//   выдуманных галерей/команды/сертификатов, просто соответствующие блоки
+//   PremiumSpecialistProfile.tsx не показываются, пока их не заполнят.
 // TODO: занести specialist_skills, реальные отзывы, поле категории на
 // профиле — по мере появления соответствующих данных.
 
@@ -95,6 +104,18 @@ export async function fetchSpecialists(): Promise<Specialist[]> {
 
     const badges: SpecialistBadge[] = promotedProfileIds.has(p.id) ? ["promoted"] : [];
 
+    const premium: SpecialistPremiumContent | undefined =
+      p.plan_code === "enterprise"
+        ? {
+            tagline: p.title || p.short_description || "",
+            coverGradient: `bg-gradient-to-br ${getCategoryStyle(category).gradient}`,
+            gallery: [],
+            videoPitchLabel: "",
+            team: [],
+            certificates: [],
+          }
+        : undefined;
+
     return {
       id: p.id,
       slug: p.slug,
@@ -115,6 +136,7 @@ export async function fetchSpecialists(): Promise<Specialist[]> {
       avatarInitials: computeInitials(p.public_name),
       services,
       reviews: [],
+      premium,
     };
   });
 }

@@ -6,14 +6,17 @@ import { useAuth } from "@/lib/use-auth";
 import {
   fetchModerationData,
   fetchAdminLogs,
+  fetchAllSpecialistProfiles,
   logAdminAction,
   type ModerationData,
   type AdminLogEntry,
+  type SpecialistPlanRow,
 } from "@/lib/admin";
+import { PLANS } from "@/data/plans";
 import { fetchDisputedDeals, formatMoney, type DisputedDealSummary } from "@/lib/chat";
 import LeadChat from "@/components/dashboard/LeadChat";
 
-type Tab = "profiles" | "types" | "reviews" | "users" | "disputes" | "log";
+type Tab = "profiles" | "types" | "reviews" | "users" | "disputes" | "plans" | "log";
 
 function formatDate(iso: string): string {
   if (!iso) return "—";
@@ -89,11 +92,16 @@ export default function AdminPanel() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [disputes, setDisputes] = useState<DisputedDealSummary[] | null>(null);
   const [openDisputeLeadId, setOpenDisputeLeadId] = useState<string | null>(null);
+  const [plans, setPlans] = useState<SpecialistPlanRow[] | null>(null);
 
   const isAdmin = user?.role === "admin";
 
   const refreshDisputes = useCallback(() => {
     return fetchDisputedDeals(pbClient).then(setDisputes);
+  }, []);
+
+  const refreshPlans = useCallback(() => {
+    return fetchAllSpecialistProfiles(pbClient).then(setPlans);
   }, []);
 
   const refresh = useCallback(() => {
@@ -123,15 +131,21 @@ export default function AdminPanel() {
     refreshDisputes();
   }, [tab, refreshDisputes]);
 
+  useEffect(() => {
+    if (tab !== "plans" || !isAdmin) return;
+    refreshPlans();
+  }, [tab, isAdmin, refreshPlans]);
+
   async function runAction(
     id: string,
-    action: () => Promise<void>
+    action: () => Promise<void>,
+    afterRefresh: () => Promise<void> | void = refresh
   ) {
     setBusyId(id);
     setActionError(null);
     try {
       await action();
-      await refresh();
+      await afterRefresh();
     } catch (err) {
       // Раньше ошибка проглатывалась молча — из-за этого баг с manageRule
       // (кнопка "confirm email" ничего не делала) было не отличить от
@@ -256,6 +270,27 @@ export default function AdminPanel() {
     });
   }
 
+  // Тариф специалиста (basic/pro/enterprise, см. web/src/data/plans.ts) —
+  // оплаты online ещё нет, назначает вручную только admin (сервер тоже это
+  // проверяет, см. pocketbase/pb_hooks/plan_guard.pb.js, — на случай если
+  // кто-то дёрнет API мимо этой панели). enterprise включает специалисту
+  // премиум-лендинг вместо обычной карточки (web/src/lib/specialists.ts).
+  async function updatePlan(id: string, planCode: string, publicName: string) {
+    await runAction(
+      id,
+      async () => {
+        await pbClient.collection("specialist_profiles").update(id, { plan_code: planCode });
+        await logAdminAction(pbClient, {
+          action: `Назначил тариф «${planCode}»`,
+          entityType: "specialist_profiles",
+          entityId: id,
+          newData: { plan_code: planCode, public_name: publicName },
+        });
+      },
+      refreshPlans
+    );
+  }
+
   // "Войти как" — реальная подмена сессии на целевого пользователя через
   // серверный /api/impersonate (нужен суперпользователь PocketBase, у
   // обычной роли admin прав на impersonate нет). Свою admin-сессию кладём
@@ -297,6 +332,7 @@ export default function AdminPanel() {
     { id: "reviews", label: "Отзывы", count: data?.reviews.length },
     { id: "users", label: "Пользователи", count: data?.users.length },
     { id: "disputes", label: "Споры", count: disputes?.length },
+    ...(isAdmin ? [{ id: "plans" as Tab, label: "Тарифы", count: plans?.length }] : []),
     ...(isAdmin ? [{ id: "log" as Tab, label: "Журнал" }] : []),
   ];
 
@@ -682,6 +718,50 @@ export default function AdminPanel() {
               </div>
             );
           })()}
+
+          {tab === "plans" && isAdmin && (
+            <table className="w-full min-w-[640px] border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-zinc-300 bg-zinc-50">
+                  <Th>Специалист</Th>
+                  <Th>Email</Th>
+                  <Th>Статус карточки</Th>
+                  <Th>Тариф</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {(plans ?? []).map((p) => (
+                  <tr key={p.id} className="border-b border-zinc-100 last:border-0">
+                    <Td className="font-medium">{p.publicName}</Td>
+                    <Td>{p.ownerEmail || "—"}</Td>
+                    <Td className="text-zinc-500">{p.profileStatus}</Td>
+                    <Td>
+                      <select
+                        value={p.planCode}
+                        disabled={busyId === p.id}
+                        onChange={(e) => updatePlan(p.id, e.target.value, p.publicName)}
+                        className="rounded border border-zinc-300 bg-white px-2 py-1 font-mono text-[11px] disabled:opacity-40"
+                      >
+                        {PLANS.map((plan) => (
+                          <option key={plan.code} value={plan.code}>
+                            {plan.title}
+                          </option>
+                        ))}
+                      </select>
+                    </Td>
+                  </tr>
+                ))}
+                {plans === null && (
+                  <tr>
+                    <Td className="text-zinc-400">Загружаем…</Td>
+                    <Td>{""}</Td>
+                    <Td>{""}</Td>
+                    <Td>{""}</Td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
 
           {tab === "log" && isAdmin && (
             <table className="w-full min-w-[640px] border-collapse text-xs">

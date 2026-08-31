@@ -1,6 +1,7 @@
 import type { Specialist } from "@/types/specialist";
 import { CATEGORIES } from "@/data/categories";
 import { withBasePath } from "@/lib/base-path";
+import { embedVideoUrl } from "@/lib/video-embed";
 
 const BADGE_LABELS: Record<string, string> = {
   top: "Топ",
@@ -157,23 +158,47 @@ export default function PremiumSpecialistProfile({
           </div>
         </section>
 
-        {premium.videoPitchLabel && (
-          <section className="mt-10">
-            <h2 className="text-lg font-semibold text-zinc-900">
-              Видео-презентация
-            </h2>
-            <div className="mt-4 flex aspect-video items-center justify-center rounded-2xl bg-zinc-900 text-white">
-              <div className="flex flex-col items-center gap-2 px-4 text-center">
-                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/15 text-2xl">
-                  ▶
-                </span>
-                <p className="text-sm text-zinc-300">
-                  {premium.videoPitchLabel}
-                </p>
+        {(() => {
+          const embedUrl = premium.videoUrl ? embedVideoUrl(premium.videoUrl) : null;
+          if (embedUrl) {
+            return (
+              <section className="mt-10">
+                <h2 className="text-lg font-semibold text-zinc-900">
+                  Видео-презентация
+                </h2>
+                <div className="mt-4 aspect-video overflow-hidden rounded-2xl bg-zinc-900">
+                  <iframe
+                    src={embedUrl}
+                    className="h-full w-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+                {premium.videoPitchLabel && (
+                  <p className="mt-2 text-sm text-zinc-500">{premium.videoPitchLabel}</p>
+                )}
+              </section>
+            );
+          }
+          // Ссылка не распознана (или её нет) — старая статичная заглушка,
+          // как было в моках, только если хотя бы подпись задана.
+          if (!premium.videoPitchLabel) return null;
+          return (
+            <section className="mt-10">
+              <h2 className="text-lg font-semibold text-zinc-900">
+                Видео-презентация
+              </h2>
+              <div className="mt-4 flex aspect-video items-center justify-center rounded-2xl bg-zinc-900 text-white">
+                <div className="flex flex-col items-center gap-2 px-4 text-center">
+                  <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/15 text-2xl">
+                    ▶
+                  </span>
+                  <p className="text-sm text-zinc-300">{premium.videoPitchLabel}</p>
+                </div>
               </div>
-            </div>
-          </section>
-        )}
+            </section>
+          );
+        })()}
 
         {premium.gallery.length > 0 && (
           <section className="mt-10">
@@ -181,16 +206,33 @@ export default function PremiumSpecialistProfile({
               Скриншоты и работы
             </h2>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {premium.gallery.map((item, i) => (
-                <div
-                  key={item}
-                  className={`flex aspect-video items-end rounded-2xl p-4 text-sm font-medium text-white ${
-                    GALLERY_GRADIENTS[i % GALLERY_GRADIENTS.length]
-                  }`}
-                >
-                  {item}
-                </div>
-              ))}
+              {premium.gallery.map((item, i) =>
+                item.imageUrl ? (
+                  <div
+                    key={item.imageUrl}
+                    className="overflow-hidden rounded-2xl border border-zinc-200 bg-white"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element -- статический экспорт, без оптимизатора изображений */}
+                    <img
+                      src={withBasePath(item.imageUrl)}
+                      alt={item.caption}
+                      className="aspect-video w-full object-cover"
+                    />
+                    {item.caption && (
+                      <p className="p-3 text-sm font-medium text-zinc-900">{item.caption}</p>
+                    )}
+                  </div>
+                ) : (
+                  <div
+                    key={item.caption}
+                    className={`flex aspect-video items-end rounded-2xl p-4 text-sm font-medium text-white ${
+                      GALLERY_GRADIENTS[i % GALLERY_GRADIENTS.length]
+                    }`}
+                  >
+                    {item.caption}
+                  </div>
+                )
+              )}
             </div>
           </section>
         )}
@@ -202,17 +244,27 @@ export default function PremiumSpecialistProfile({
               {specialist.services.map((service) => (
                 <div
                   key={service.title}
-                  className="rounded-2xl border border-zinc-200 bg-white p-4"
+                  className="overflow-hidden rounded-2xl border border-zinc-200 bg-white"
                 >
-                  <p className="text-sm font-medium text-zinc-900">
-                    {service.title}
-                  </p>
-                  <p className="mt-2 text-sm text-zinc-600">
-                    {service.priceFrom}
-                  </p>
-                  <p className="mt-1 text-xs text-zinc-500">
-                    Срок: {service.durationFrom}
-                  </p>
+                  {service.imageUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element -- статический экспорт, без оптимизатора изображений
+                    <img
+                      src={withBasePath(service.imageUrl)}
+                      alt=""
+                      className="aspect-video w-full object-cover"
+                    />
+                  )}
+                  <div className="p-4">
+                    <p className="text-sm font-medium text-zinc-900">
+                      {service.title}
+                    </p>
+                    <p className="mt-2 text-sm text-zinc-600">
+                      {service.priceFrom}
+                    </p>
+                    <p className="mt-1 text-xs text-zinc-500">
+                      Срок: {service.durationFrom}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>

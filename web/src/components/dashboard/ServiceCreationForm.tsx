@@ -117,6 +117,7 @@ export default function ServiceCreationForm({
   const [tagline, setTagline] = useState("");
   const [tags, setTags] = useState<ServiceCardTag[]>([]);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewImageFile, setPreviewImageFile] = useState<File | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -153,6 +154,7 @@ export default function ServiceCreationForm({
     const file = e.target.files?.[0];
     if (!file) return;
     setPreviewImage(URL.createObjectURL(file));
+    setPreviewImageFile(file);
   }
 
   const hasResultName = useCustomType ? customType.trim().length > 3 : Boolean(selectedType);
@@ -225,6 +227,11 @@ export default function ServiceCreationForm({
         revisions_included: revisionsMode === "count" ? Number(revisionsCount) : 0,
         tags,
         active: true,
+        // PocketBase JS SDK сам собирает multipart/form-data, когда в
+        // значении поля лежит File — было (см. checklist выше) уже
+        // обязательным полем формы, только не долетало до базы: до сих
+        // пор превью жило только как blob:-URL в состоянии React.
+        ...(previewImageFile ? { preview_images: previewImageFile } : {}),
       });
 
       setResult(typePending ? "type_pending" : "published");

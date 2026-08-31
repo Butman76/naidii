@@ -209,10 +209,10 @@ const TEMPLATES: Array<{
       coverImageUrl: "/premium/studio-avtomatika-cover.png",
       logoImageUrl: "/premium/studio-avtomatika-logo.png",
       gallery: [
-        "Дашборд обзвона в реальном времени",
-        "Конструктор диалоговых сценариев",
-        "Аналитика звонков и конверсий",
-        "Интеграция с телефонией и CRM",
+        { caption: "Дашборд обзвона в реальном времени" },
+        { caption: "Конструктор диалоговых сценариев" },
+        { caption: "Аналитика звонков и конверсий" },
+        { caption: "Интеграция с телефонией и CRM" },
       ],
       videoPitchLabel: "Видео: как работает голосовой агент «Автоматики»",
       team: [

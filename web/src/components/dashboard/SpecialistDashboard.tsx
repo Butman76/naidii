@@ -8,6 +8,7 @@ import ProfileEditForm from "./ProfileEditForm";
 import LeadChat from "./LeadChat";
 import OrdersTab from "./OrdersTab";
 import SpecialistJobBoard from "./SpecialistJobBoard";
+import PremiumLandingEditor from "./PremiumLandingEditor";
 import { getCategoryStyle, getCategoryAccent } from "@/data/category-style";
 import { PLANS } from "@/data/plans";
 import type { SpecialistDashboardOffer } from "@/lib/dashboard";
@@ -15,7 +16,7 @@ import { LEAD_STATUS_LABELS, LEAD_STATUS_STYLES } from "@/data/dashboard-mock";
 import type { SpecialistDashboardData } from "@/lib/dashboard";
 import { useAuth } from "@/lib/use-auth";
 
-type Tab = "overview" | "profile" | "services" | "leads" | "jobboard" | "orders" | "archive" | "reviews" | "plan";
+type Tab = "overview" | "profile" | "services" | "leads" | "jobboard" | "orders" | "archive" | "reviews" | "plan" | "landing";
 
 const TABS: Array<{ id: Tab; label: string }> = [
   { id: "overview", label: "Обзор" },
@@ -72,6 +73,12 @@ export default function SpecialistDashboard({
 
   const totalOfferCount = offers.length;
 
+  // "Лендинг" — только на тарифе с профилем-лендингом вместо обычной
+  // карточки (см. PremiumSpecialistProfile.tsx), остальным вкладка не нужна.
+  const visibleTabs = currentPlan.customLanding
+    ? [...TABS.slice(0, -1), { id: "landing" as const, label: "Лендинг" }, TABS[TABS.length - 1]]
+    : TABS;
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
       {profileStatus === "pending" && (
@@ -96,7 +103,7 @@ export default function SpecialistDashboard({
       </div>
 
       <div className="mt-6 flex gap-1 overflow-x-auto border-b border-zinc-200">
-        {TABS.map((t) => (
+        {visibleTabs.map((t) => (
           <button
             key={t.id}
             type="button"
@@ -443,6 +450,10 @@ export default function SpecialistDashboard({
               </div>
             )}
           </div>
+        )}
+
+        {tab === "landing" && currentPlan.customLanding && (
+          <PremiumLandingEditor specialistId={specialist.id} />
         )}
       </div>
     </div>

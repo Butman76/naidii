@@ -71,7 +71,7 @@ export async function fetchSpecialists(): Promise<Specialist[]> {
   const pb = createPocketBase();
   pb.autoCancellation(false);
 
-  const [profiles, offerRecords, promotionRecords] = await Promise.all([
+  const [profiles, offerRecords, promotionRecords, posterRecords] = await Promise.all([
     pb.collection("specialist_profiles").getFullList({
       filter: "profile_status = \"published\"",
     }),
@@ -80,6 +80,10 @@ export async function fetchSpecialists(): Promise<Specialist[]> {
       expand: "result_type_id.category_id",
     }),
     pb.collection("promotions").getFullList({ filter: "status = \"active\"" }),
+    // Небольшая таблица (только у enterprise-специалистов вообще есть
+    // строки) — проще забрать всю и сгруппировать в памяти, как offers/
+    // promotions выше, чем городить OR-фильтр по списку id профилей.
+    pb.collection("landing_posters").getFullList({ sort: "sort_order" }),
   ]);
 
   const promotedProfileIds = new Set(promotionRecords.map((p) => p.specialist_profile_id));
@@ -100,6 +104,7 @@ export async function fetchSpecialists(): Promise<Specialist[]> {
       title: o.expand?.result_type_id?.title ?? "Услуга",
       priceFrom: formatOfferPrice(o.price_type, o.price_from),
       durationFrom: o.duration_from,
+      imageUrl: o.preview_images?.[0] ? pb.files.getURL(o, o.preview_images[0]) : undefined,
     }));
 
     const badges: SpecialistBadge[] = promotedProfileIds.has(p.id) ? ["promoted"] : [];
@@ -109,7 +114,19 @@ export async function fetchSpecialists(): Promise<Specialist[]> {
         ? {
             tagline: p.title || p.short_description || "",
             coverGradient: `bg-gradient-to-br ${getCategoryStyle(category).gradient}`,
-            gallery: [],
+            coverImageUrl: p.premium_cover_image
+              ? pb.files.getURL(p, p.premium_cover_image)
+              : undefined,
+            logoImageUrl: p.premium_logo_image
+              ? pb.files.getURL(p, p.premium_logo_image)
+              : undefined,
+            gallery: posterRecords
+              .filter((poster) => poster.specialist_profile_id === p.id)
+              .map((poster) => ({
+                imageUrl: pb.files.getURL(poster, poster.image),
+                caption: poster.caption ?? "",
+              })),
+            videoUrl: p.premium_video_url || undefined,
             videoPitchLabel: "",
             team: [],
             certificates: [],

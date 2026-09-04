@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { formatPrice, SERVICE_TAG_LABELS } from "@/types/service-card";
 import ServiceCreationForm from "./ServiceCreationForm";
 import ProfileEditForm from "./ProfileEditForm";
@@ -29,6 +30,13 @@ const TABS: Array<{ id: Tab; label: string }> = [
   { id: "reviews", label: "Отзывы" },
   { id: "plan", label: "Тариф" },
 ];
+
+// Плашка "Тут новые заказы" на главной (HeroDealsBadge.tsx) ведёт сюда через
+// ?tab=jobboard — специалист попадает сразу на доску объявлений, а не на
+// "Обзор" по умолчанию.
+function isValidTab(value: string | null): value is Tab {
+  return TABS.some((t) => t.id === value);
+}
 
 // Услуги группируются по направлению (не идут вперемешку) — порядок групп
 // по первому появлению в списке (сам список уже отсортирован по дате
@@ -64,7 +72,9 @@ export default function SpecialistDashboard({
 }) {
   const { specialist, profileStatus, viewsCount, leadsCount, offers, leads, cases, planCode } = data;
   const { user } = useAuth();
-  const [tab, setTab] = useState<Tab>("overview");
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get("tab");
+  const [tab, setTab] = useState<Tab>(isValidTab(requestedTab) ? requestedTab : "overview");
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
   const currentPlan = PLANS.find((p) => p.code === planCode) ?? PLANS[0];
 

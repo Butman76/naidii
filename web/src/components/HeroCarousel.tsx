@@ -7,6 +7,7 @@ import { getBannerImagePath } from "@/data/banner-manifest";
 import { getCategoryStyle } from "@/data/category-style";
 import { CATEGORIES } from "@/data/categories";
 import { withBasePath } from "@/lib/base-path";
+import HeroDealsBadge from "./HeroDealsBadge";
 
 const AUTO_ADVANCE_MS = 5500;
 
@@ -30,10 +31,17 @@ export default function HeroCarousel() {
   return (
     <section className="border-b border-zinc-200 bg-white py-6">
       <div
-        className="group relative mx-auto max-w-7xl overflow-hidden rounded-2xl px-0 sm:px-6 lg:px-8"
+        className="group relative mx-auto max-w-7xl rounded-2xl px-0 sm:px-6 lg:px-8"
         onMouseEnter={() => (paused.current = true)}
         onMouseLeave={() => (paused.current = false)}
       >
+        {/* Плашка "ТУТ НОВЫЕ ЗАКАЗЫ" сидит поверх карусели (z-30, выше её
+            навигации z-20) — специально вне #inner-slides ниже, у которого
+            свой overflow-hidden для смены слайдов: если бы плашка была
+            внутри него, верхняя часть, торчащая за границу баннера,
+            обрезалась бы. overflow-hidden с ЭТОГО внешнего div снят
+            специально ради неё же (внутренний div сам клипует картинки). */}
+        <HeroDealsBadge />
         {/* Фиксированная высота, заметно ниже прежней (2:1 от полной ширины
             контейнера на десктопе — это ~640px, реально пол-экрана).
             Сейчас — тонкая полоса-баннер на любом экране, но из-за этого

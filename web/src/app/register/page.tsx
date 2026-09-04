@@ -5,9 +5,12 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import YandexCaptcha from "@/components/YandexCaptcha";
 import { pbClient } from "@/lib/auth-client";
 
 type Role = "customer" | "specialist";
+
+const CAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_YANDEX_CAPTCHA_SITE_KEY;
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -17,6 +20,8 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaAttempt, setCaptchaAttempt] = useState(0);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -27,8 +32,29 @@ export default function RegisterPage() {
       return;
     }
 
+    if (CAPTCHA_SITE_KEY && !captchaToken) {
+      setError("Подтвердите, что вы не робот.");
+      return;
+    }
+
     setLoading(true);
     try {
+      if (CAPTCHA_SITE_KEY) {
+        const verifyRes = await fetch("/api/verify-captcha", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: captchaToken }),
+        });
+        const verifyData = await verifyRes.json();
+        if (!verifyData.ok) {
+          setError("Капча не пройдена, попробуйте ещё раз.");
+          setCaptchaToken(null);
+          setCaptchaAttempt((n) => n + 1);
+          setLoading(false);
+          return;
+        }
+      }
+
       await pbClient.collection("users").create({
         email,
         password,
@@ -161,6 +187,14 @@ export default function RegisterPage() {
             </div>
           </div>
 
+          {CAPTCHA_SITE_KEY && (
+            <YandexCaptcha
+              key={captchaAttempt}
+              siteKey={CAPTCHA_SITE_KEY}
+              onToken={setCaptchaToken}
+            />
+          )}
+
           {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
           {role === "specialist" && (
@@ -172,7 +206,7 @@ export default function RegisterPage() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || (!!CAPTCHA_SITE_KEY && !captchaToken)}
             className="mt-5 w-full rounded-full bg-zinc-900 py-2.5 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
           >
             {loading ? "Регистрируем…" : "Зарегистрироваться"}

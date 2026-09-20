@@ -37,7 +37,28 @@ export interface SpecialistPremiumContent {
   logoImageUrl?: string;
   // imageUrl необязателен: без реальной загруженной картинки постер рисует
   // старое оформление (градиент + подпись) вместо сломанной картинки.
-  gallery: { imageUrl?: string; caption: string }[];
+  // thumbUrl — уменьшенная копия для сетки (полный imageUrl открывается
+  // по клику).
+  gallery: { imageUrl?: string; thumbUrl?: string; caption: string }[];
+  // Собственные карточки услуг лендинга (картинка + описание + цена/срок/
+  // рекламный текст) и презентации портфолио — только одобренные
+  // модерацией (landing_items, см. web/src/lib/landing.ts). Необязательные:
+  // у моков их нет, у специалистов без карточек блок не рисуется.
+  serviceCards?: {
+    title: string;
+    description: string;
+    priceText: string;
+    durationText: string;
+    imageUrl?: string;
+    thumbUrl?: string;
+  }[];
+  presentations?: {
+    title: string;
+    description: string;
+    fileUrl: string;
+    format: string;
+    previewUrl?: string;
+  }[];
   // videoUrl — настоящий ролик (YouTube/RuTube), см. embedVideoUrl() в
   // PremiumSpecialistProfile.tsx. videoPitchLabel без videoUrl — старое
   // поведение (статичная заглушка с подписью, как в моках).

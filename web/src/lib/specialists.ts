@@ -24,8 +24,9 @@ import { getCategoryStyle } from "@/data/category-style";
 // - `premium` — заполняется, только если админ вручную поставил тариф
 //   "enterprise" (specialist_profiles.plan_code — оплаты online ещё нет,
 //   назначение целиком ручное через /admin, см. AdminPanel.tsx). Контент
-//   лендинга честно собирается из уже реальных полей профиля — никаких
-//   выдуманных галерей/команды/сертификатов, просто соответствующие блоки
+//   лендинга собирается из landing_items — только ОДОБРЕННОГО модерацией
+//   (обложка, логотип, видео, карточки услуг, портфолио, презентации) —
+//   никаких выдуманных галерей/команды/сертификатов, соответствующие блоки
 //   PremiumSpecialistProfile.tsx не показываются, пока их не заполнят.
 // TODO: занести specialist_skills, реальные отзывы, поле категории на
 // профиле — по мере появления соответствующих данных.
@@ -71,7 +72,7 @@ export async function fetchSpecialists(): Promise<Specialist[]> {
   const pb = createPocketBase();
   pb.autoCancellation(false);
 
-  const [profiles, offerRecords, promotionRecords, posterRecords] = await Promise.all([
+  const [profiles, offerRecords, promotionRecords, landingRecords] = await Promise.all([
     pb.collection("specialist_profiles").getFullList({
       filter: "profile_status = \"published\"",
     }),
@@ -80,10 +81,20 @@ export async function fetchSpecialists(): Promise<Specialist[]> {
       expand: "result_type_id.category_id",
     }),
     pb.collection("promotions").getFullList({ filter: "status = \"active\"" }),
-    // Небольшая таблица (только у enterprise-специалистов вообще есть
-    // строки) — проще забрать всю и сгруппировать в памяти, как offers/
-    // promotions выше, чем городить OR-фильтр по списку id профилей.
-    pb.collection("landing_posters").getFullList({ sort: "sort_order" }),
+    // Только ОДОБРЕННОЕ модерацией содержимое лендингов (landing_items,
+    // см. web/src/lib/landing.ts) — обложка, логотип, видео, карточки
+    // услуг, портфолио, презентации. Небольшая таблица (строки есть только
+    // у enterprise-специалистов) — проще забрать всю и сгруппировать в
+    // памяти, как offers/promotions выше, чем городить OR-фильтр по списку
+    // id профилей. Публичное правило коллекции и так отдаёт анониму только
+    // approved, фильтр — явная страховка. catch: пока миграция
+    // 1755000046 не применена на сервере (или при сбое этого одного
+    // запроса), лендинги показываются без доп. блоков, а не роняют
+    // сборку/страницу всего каталога.
+    pb
+      .collection("landing_items")
+      .getFullList({ filter: 'moderation_status = "approved"', sort: "sort_order,created" })
+      .catch(() => []),
   ]);
 
   const promotedProfileIds = new Set(promotionRecords.map((p) => p.specialist_profile_id));
@@ -109,24 +120,50 @@ export async function fetchSpecialists(): Promise<Specialist[]> {
 
     const badges: SpecialistBadge[] = promotedProfileIds.has(p.id) ? ["promoted"] : [];
 
+    const myLanding = landingRecords.filter((i) => i.specialist_profile_id === p.id);
+    // Обложка/логотип/видео — по одному экземпляру; после одобрения новой
+    // версии хук переводит старую в superseded, но на случай гонки берём
+    // самую свежую из одобренных.
+    const newestOfKind = (kind: string) =>
+      myLanding.filter((i) => i.kind === kind).sort((a, b) => b.created.localeCompare(a.created))[0];
+    const cover = newestOfKind("cover");
+    const logo = newestOfKind("logo");
+    const video = newestOfKind("video");
+
     const premium: SpecialistPremiumContent | undefined =
       p.plan_code === "enterprise"
         ? {
             tagline: p.title || p.short_description || "",
             coverGradient: `bg-gradient-to-br ${getCategoryStyle(category).gradient}`,
-            coverImageUrl: p.premium_cover_image
-              ? pb.files.getURL(p, p.premium_cover_image)
-              : undefined,
-            logoImageUrl: p.premium_logo_image
-              ? pb.files.getURL(p, p.premium_logo_image)
-              : undefined,
-            gallery: posterRecords
-              .filter((poster) => poster.specialist_profile_id === p.id)
-              .map((poster) => ({
-                imageUrl: pb.files.getURL(poster, poster.image),
-                caption: poster.caption ?? "",
+            coverImageUrl: cover?.image ? pb.files.getURL(cover, cover.image) : undefined,
+            logoImageUrl: logo?.image ? pb.files.getURL(logo, logo.image) : undefined,
+            gallery: myLanding
+              .filter((i) => i.kind === "photo" && i.image)
+              .map((i) => ({
+                imageUrl: pb.files.getURL(i, i.image),
+                thumbUrl: pb.files.getURL(i, i.image, { thumb: "800x0" }),
+                caption: i.title ?? "",
               })),
-            videoUrl: p.premium_video_url || undefined,
+            serviceCards: myLanding
+              .filter((i) => i.kind === "service_card")
+              .map((i) => ({
+                title: i.title ?? "",
+                description: i.description ?? "",
+                priceText: i.price_text ?? "",
+                durationText: i.duration_text ?? "",
+                imageUrl: i.image ? pb.files.getURL(i, i.image) : undefined,
+                thumbUrl: i.image ? pb.files.getURL(i, i.image, { thumb: "800x0" }) : undefined,
+              })),
+            presentations: myLanding
+              .filter((i) => i.kind === "presentation" && i.document)
+              .map((i) => ({
+                title: i.title ?? "",
+                description: i.description ?? "",
+                fileUrl: pb.files.getURL(i, i.document),
+                format: (String(i.document).split(".").pop() ?? "").toUpperCase(),
+                previewUrl: i.image ? pb.files.getURL(i, i.image, { thumb: "800x0" }) : undefined,
+              })),
+            videoUrl: video?.video_url || undefined,
             videoPitchLabel: "",
             team: [],
             certificates: [],

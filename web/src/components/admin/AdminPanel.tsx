@@ -14,9 +14,11 @@ import {
 } from "@/lib/admin";
 import { PLANS } from "@/data/plans";
 import { fetchDisputedDeals, formatMoney, type DisputedDealSummary } from "@/lib/chat";
+import { countPendingLandingItems } from "@/lib/landing";
 import LeadChat from "@/components/dashboard/LeadChat";
+import LandingModerationTab from "./LandingModerationTab";
 
-type Tab = "profiles" | "types" | "reviews" | "users" | "disputes" | "plans" | "log";
+type Tab = "profiles" | "types" | "reviews" | "landing" | "users" | "disputes" | "plans" | "log";
 
 function formatDate(iso: string): string {
   if (!iso) return "—";
@@ -93,8 +95,19 @@ export default function AdminPanel() {
   const [disputes, setDisputes] = useState<DisputedDealSummary[] | null>(null);
   const [openDisputeLeadId, setOpenDisputeLeadId] = useState<string | null>(null);
   const [plans, setPlans] = useState<SpecialistPlanRow[] | null>(null);
+  const [landingPending, setLandingPending] = useState<number | undefined>(undefined);
 
   const isAdmin = user?.role === "admin";
+
+  const refreshLandingCount = useCallback(() => {
+    countPendingLandingItems(pbClient)
+      .then(setLandingPending)
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    refreshLandingCount();
+  }, [refreshLandingCount]);
 
   const refreshDisputes = useCallback(() => {
     return fetchDisputedDeals(pbClient).then(setDisputes);
@@ -353,6 +366,7 @@ export default function AdminPanel() {
     { id: "profiles", label: "Профили", count: data?.profiles.length },
     { id: "types", label: "Типы услуг", count: data?.resultTypes.length },
     { id: "reviews", label: "Отзывы", count: data?.reviews.length },
+    { id: "landing", label: "Лендинги", count: landingPending },
     { id: "users", label: "Пользователи", count: data?.users.length },
     { id: "disputes", label: "Споры", count: disputes?.length },
     ...(isAdmin ? [{ id: "plans" as Tab, label: "Тарифы", count: plans?.length }] : []),
@@ -573,6 +587,8 @@ export default function AdminPanel() {
               </tbody>
             </table>
           )}
+
+          {tab === "landing" && <LandingModerationTab onChanged={refreshLandingCount} />}
 
           {tab === "users" && (
             <table className="w-full min-w-[680px] border-collapse text-xs">

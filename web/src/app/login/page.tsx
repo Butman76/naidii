@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { pbClient } from "@/lib/auth-client";
+import { pbClient, logLogin } from "@/lib/auth-client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -22,6 +22,7 @@ export default function LoginPage() {
       const authData = await pbClient
         .collection("users")
         .authWithPassword(email, password);
+      logLogin();
       const role = authData.record.role;
       router.push(role === "specialist" ? "/dashboard" : "/dashboard/customer");
     } catch {

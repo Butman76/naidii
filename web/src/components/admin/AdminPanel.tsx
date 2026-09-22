@@ -6,10 +6,12 @@ import { useAuth } from "@/lib/use-auth";
 import {
   fetchModerationData,
   fetchAdminLogs,
+  fetchLoginLogs,
   fetchAllSpecialistProfiles,
   logAdminAction,
   type ModerationData,
   type AdminLogEntry,
+  type LoginLogEntry,
   type SpecialistPlanRow,
 } from "@/lib/admin";
 import { PLANS } from "@/data/plans";
@@ -18,7 +20,7 @@ import { countPendingLandingItems } from "@/lib/landing";
 import LeadChat from "@/components/dashboard/LeadChat";
 import LandingModerationTab from "./LandingModerationTab";
 
-type Tab = "profiles" | "types" | "reviews" | "landing" | "users" | "disputes" | "plans" | "log";
+type Tab = "profiles" | "types" | "reviews" | "landing" | "users" | "disputes" | "plans" | "log" | "logins";
 
 function formatDate(iso: string): string {
   if (!iso) return "—";
@@ -89,6 +91,7 @@ export default function AdminPanel() {
   const [tab, setTab] = useState<Tab>("profiles");
   const [data, setData] = useState<ModerationData | null>(null);
   const [logs, setLogs] = useState<AdminLogEntry[] | null>(null);
+  const [loginLogs, setLoginLogs] = useState<LoginLogEntry[] | null>(null);
   const [error, setError] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -134,6 +137,15 @@ export default function AdminPanel() {
     if (tab !== "log" || !isAdmin) return;
     fetchAdminLogs(pbClient)
       .then(setLogs)
+      .catch((err) => {
+        if (err?.isAbort) return;
+      });
+  }, [tab, isAdmin]);
+
+  useEffect(() => {
+    if (tab !== "logins" || !isAdmin) return;
+    fetchLoginLogs(pbClient)
+      .then(setLoginLogs)
       .catch((err) => {
         if (err?.isAbort) return;
       });
@@ -371,6 +383,7 @@ export default function AdminPanel() {
     { id: "disputes", label: "Споры", count: disputes?.length },
     ...(isAdmin ? [{ id: "plans" as Tab, label: "Тарифы", count: plans?.length }] : []),
     ...(isAdmin ? [{ id: "log" as Tab, label: "Журнал" }] : []),
+    ...(isAdmin ? [{ id: "logins" as Tab, label: "Входы", count: loginLogs?.length }] : []),
   ];
 
   if (error) {
@@ -846,6 +859,56 @@ export default function AdminPanel() {
                 {logs === null && (
                   <tr>
                     <Td className="text-zinc-400">Загружаем…</Td>
+                    <Td>{""}</Td>
+                    <Td>{""}</Td>
+                    <Td>{""}</Td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
+
+          {tab === "logins" && isAdmin && (
+            <table className="w-full min-w-[640px] border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-zinc-300 bg-zinc-50">
+                  <Th>Пользователь</Th>
+                  <Th>Как вошли</Th>
+                  <Th>IP</Th>
+                  <Th>Когда</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {(loginLogs ?? []).map((entry) => (
+                  <tr key={entry.id} className="border-b border-zinc-100 last:border-0">
+                    <Td>
+                      {entry.userName}
+                      {entry.userEmail && <span className="text-zinc-400"> · {entry.userEmail}</span>}
+                    </Td>
+                    <Td>
+                      {entry.isImpersonation ? (
+                        <span className="text-amber-700">
+                          Admin ({entry.actorName || "—"}) под видом «{entry.userName}»
+                        </span>
+                      ) : (
+                        <span className="text-emerald-700">Обычный вход</span>
+                      )}
+                    </Td>
+                    <Td className="text-zinc-500">{entry.ip || "—"}</Td>
+                    <Td className="whitespace-nowrap text-zinc-500">{formatDate(entry.createdAt)}</Td>
+                  </tr>
+                ))}
+                {loginLogs === null && (
+                  <tr>
+                    <Td className="text-zinc-400">Загружаем…</Td>
+                    <Td>{""}</Td>
+                    <Td>{""}</Td>
+                    <Td>{""}</Td>
+                  </tr>
+                )}
+                {loginLogs?.length === 0 && (
+                  <tr>
+                    <Td className="text-zinc-400">Пока входов не зафиксировано.</Td>
                     <Td>{""}</Td>
                     <Td>{""}</Td>
                     <Td>{""}</Td>

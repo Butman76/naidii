@@ -51,6 +51,22 @@ export async function POST(request: NextRequest) {
       entity_id: targetUserId,
     });
 
+    // Тот же вход попадает и в общий журнал заходов (see login_logs) —
+    // с actor_id/is_impersonation, чтобы в /admin было видно, что это не
+    // сам пользователь зашёл, а admin под его видом (см. AdminPanel.tsx).
+    // Отдельный try — если запись в журнал не удастся, сам impersonate
+    // (уже состоявшийся строкой выше) не должен из-за этого выглядеть
+    // неудавшимся для admin.
+    try {
+      await superuser.collection("login_logs").create({
+        user_id: targetUserId,
+        actor_id: callerRecord.id,
+        is_impersonation: true,
+      });
+    } catch {
+      // ignore
+    }
+
     return NextResponse.json({
       token: impersonated.authStore.token,
       record: impersonated.authStore.record,

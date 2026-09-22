@@ -6,7 +6,7 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import YandexCaptcha from "@/components/YandexCaptcha";
-import { pbClient } from "@/lib/auth-client";
+import { pbClient, logLogin } from "@/lib/auth-client";
 
 type Role = "customer" | "specialist";
 
@@ -67,6 +67,7 @@ export default function RegisterPage() {
       const authData = await pbClient
         .collection("users")
         .authWithPassword(email, password);
+      logLogin();
 
       if (role === "specialist") {
         // Черновой профиль сразу на модерацию (ТЗ §7.4) — специалист

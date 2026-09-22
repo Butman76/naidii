@@ -64,6 +64,16 @@ export interface AdminLogEntry {
   createdAt: string;
 }
 
+export interface LoginLogEntry {
+  id: string;
+  userName: string;
+  userEmail: string;
+  isImpersonation: boolean;
+  actorName: string;
+  ip: string;
+  createdAt: string;
+}
+
 export interface ModerationData {
   profiles: PendingProfile[];
   resultTypes: PendingResultType[];
@@ -193,6 +203,25 @@ export async function fetchAdminLogs(pb: PocketBase): Promise<AdminLogEntry[]> {
     action: r.action,
     entityType: r.entity_type,
     entityId: r.entity_id ?? "",
+    createdAt: r.created,
+  }));
+}
+
+// Журнал входов (кто и когда заходил) — отдельная вкладка "Входы" в /admin.
+// Последние 300 записей достаточно для статистики без пагинации в UI;
+// саму коллекцию см. pocketbase/pb_migrations/1755000047_login_logs.js.
+export async function fetchLoginLogs(pb: PocketBase): Promise<LoginLogEntry[]> {
+  const records = await pb.collection("login_logs").getList(1, 300, {
+    expand: "user_id,actor_id",
+    sort: "-created",
+  });
+  return records.items.map((r) => ({
+    id: r.id,
+    userName: r.expand?.user_id?.name ?? r.expand?.user_id?.email ?? "—",
+    userEmail: r.expand?.user_id?.email ?? "",
+    isImpersonation: Boolean(r.is_impersonation),
+    actorName: r.expand?.actor_id?.name ?? r.expand?.actor_id?.email ?? "",
+    ip: r.ip ?? "",
     createdAt: r.created,
   }));
 }

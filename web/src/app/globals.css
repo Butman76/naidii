@@ -101,6 +101,27 @@ textarea,
   transform: rotateY(180deg);
 }
 
+/* Бегущая лента партнёрской рекламы (курсы/агентства автоматизации, не
+   свои специалисты) — см. PartnerAdsCarousel.tsx. Дорожка в разметке
+   дублирована дважды подряд, анимация сдвигает ровно на половину общей
+   ширины — переход между копиями бесшовный, дальше цикл повторяется.
+   Пауза при наведении/фокусе, чтобы можно было успеть кликнуть/прочитать. */
+@keyframes partner-ads-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.partner-ads-track {
+  animation: partner-ads-scroll 32s linear infinite;
+}
+.partner-ads-track:hover,
+.partner-ads-track:focus-within {
+  animation-play-state: paused;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .plate-3d,
   .plate-3d:hover {
@@ -113,5 +134,8 @@ textarea,
   }
   .order-flip-card {
     transition: none;
+  }
+  .partner-ads-track {
+    animation: none;
   }
 }

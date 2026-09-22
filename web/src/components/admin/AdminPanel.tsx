@@ -19,8 +19,9 @@ import { fetchDisputedDeals, formatMoney, type DisputedDealSummary } from "@/lib
 import { countPendingLandingItems } from "@/lib/landing";
 import LeadChat from "@/components/dashboard/LeadChat";
 import LandingModerationTab from "./LandingModerationTab";
+import PartnerAdsTab from "./PartnerAdsTab";
 
-type Tab = "profiles" | "types" | "reviews" | "landing" | "users" | "disputes" | "plans" | "log" | "logins";
+type Tab = "profiles" | "types" | "reviews" | "landing" | "users" | "disputes" | "plans" | "log" | "logins" | "ads";
 
 function formatDate(iso: string): string {
   if (!iso) return "—";
@@ -384,6 +385,7 @@ export default function AdminPanel() {
     ...(isAdmin ? [{ id: "plans" as Tab, label: "Тарифы", count: plans?.length }] : []),
     ...(isAdmin ? [{ id: "log" as Tab, label: "Журнал" }] : []),
     ...(isAdmin ? [{ id: "logins" as Tab, label: "Входы", count: loginLogs?.length }] : []),
+    ...(isAdmin ? [{ id: "ads" as Tab, label: "Реклама" }] : []),
   ];
 
   if (error) {
@@ -917,6 +919,8 @@ export default function AdminPanel() {
               </tbody>
             </table>
           )}
+
+          {tab === "ads" && isAdmin && <PartnerAdsTab />}
         </div>
       )}
     </div>

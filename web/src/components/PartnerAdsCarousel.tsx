@@ -28,13 +28,16 @@ export default function PartnerAdsCarousel({ ads }: { ads: PartnerAd[] }) {
               href={`/api/ad-click/${ad.id}`}
               target="_blank"
               rel="noopener noreferrer nofollow sponsored"
-              className="flex w-64 shrink-0 flex-col overflow-hidden rounded-xl border border-zinc-200 transition-shadow hover:shadow-md"
+              className="flex w-48 shrink-0 flex-col overflow-hidden rounded-xl border border-zinc-200 transition-shadow hover:shadow-md"
             >
+              {/* Портретный формат ~3:4 — под него и просим готовые
+                  креативы у рекламодателей (см. PartnerAdsTab.tsx), не
+                  тянем произвольные пропорции под альбомную рамку. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={ad.imageUrl}
                 alt={ad.companyName}
-                className="h-32 w-full object-cover"
+                className="aspect-[3/4] w-full object-cover"
                 loading="lazy"
               />
               <p className="truncate bg-zinc-50 px-3 py-2 text-xs font-medium text-zinc-700">

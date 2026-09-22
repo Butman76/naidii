@@ -121,7 +121,7 @@ export default function PartnerAdsTab() {
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-            Картинка баннера
+            Картинка баннера (портрет, ~3:4, например 600×800)
           </label>
           <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="text-xs" />
         </div>
@@ -160,7 +160,7 @@ export default function PartnerAdsTab() {
               <td className="px-3 py-2 align-top">
                 <div className="flex items-center gap-2">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={ad.imageUrl} alt="" className="h-10 w-16 rounded border border-zinc-200 object-cover" />
+                  <img src={ad.imageUrl} alt="" className="h-14 w-11 rounded border border-zinc-200 object-cover" />
                   <span className="font-medium text-zinc-800">{ad.companyName}</span>
                 </div>
               </td>

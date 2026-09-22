@@ -10,6 +10,18 @@ import type { PartnerAd } from "@/lib/partner-ads";
 // дорожка, то же время на проход), а с большим — бежала бы слишком быстро.
 const PIXELS_PER_SECOND = 55;
 
+// Высота карточки фиксирована, ширина — нет: рекламодатели присылают и
+// портретные, и альбомные креативы (см. PartnerAdsTab.tsx — там больше не
+// требуют конкретную пропорцию), а раньше жёсткая рамка aspect-[3/4] с
+// object-cover обрезала у альбомного баннера верх и низ. Вместо этого
+// высота блока под картинку задана константой ниже (192px), ширина у
+// <img> — auto: браузер сам считает её из реальных пропорций файла, поэтому и портрет, и
+// альбом, и любой другой формат в будущем показываются целиком, без обрезки.
+// max-width/min-width — только подстраховка от совсем экстремальных
+// пропорций (панорама или узкая полоса), на этот случай object-contain с
+// серым полем — компромисс "лучше поля по бокам, чем обрезанный логотип".
+const CARD_HEIGHT_PX = 192;
+
 function AdCard({ ad }: { ad: PartnerAd }) {
   // Обычная HTML-форма (POST), не <a href>: см. api/ad-click/route.ts —
   // GET-роут с редиректом на основе id не может статически собраться под
@@ -17,23 +29,21 @@ function AdCard({ ad }: { ad: PartnerAd }) {
   // ссылка (открывается в новой вкладке через target на форме) и не
   // требует JS.
   return (
-    <form action="/api/ad-click" method="POST" target="_blank" className="w-48 shrink-0">
+    <form action="/api/ad-click" method="POST" target="_blank" className="shrink-0">
       <input type="hidden" name="id" value={ad.id} />
       <button
         type="submit"
-        className="flex w-full flex-col overflow-hidden rounded-xl border border-zinc-200 text-left transition-shadow hover:shadow-md"
+        className="flex flex-col overflow-hidden rounded-xl border border-zinc-200 text-left transition-shadow hover:shadow-md"
       >
-        {/* Портретный формат ~3:4 — под него и просим готовые креативы у
-            рекламодателей (см. PartnerAdsTab.tsx), не тянем произвольные
-            пропорции под альбомную рамку. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={ad.imageUrl}
           alt={ad.companyName}
-          className="aspect-[3/4] w-full object-cover"
+          style={{ height: CARD_HEIGHT_PX }}
+          className="w-auto min-w-[120px] max-w-[340px] bg-zinc-100 object-contain"
           loading="lazy"
         />
-        <p className="truncate bg-zinc-50 px-3 py-2 text-xs font-medium text-zinc-700">
+        <p className="max-w-[340px] truncate bg-zinc-50 px-3 py-2 text-xs font-medium text-zinc-700">
           {ad.companyName}
         </p>
       </button>

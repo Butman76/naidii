@@ -121,7 +121,7 @@ export default function PartnerAdsTab() {
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-            Картинка баннера (портрет, ~3:4, например 600×800)
+            Картинка баннера (любая пропорция — портрет или альбом, покажется целиком)
           </label>
           <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="text-xs" />
         </div>

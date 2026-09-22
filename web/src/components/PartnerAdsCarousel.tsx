@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { PartnerAd } from "@/lib/partner-ads";
 
 // Скорость ленты в пикселях/сек — длительность анимации считается из
@@ -20,6 +20,10 @@ const CARD_HEIGHT_PX = 192;
 const MIN_WIDTH_PX = 120;
 const MAX_WIDTH_PX = 340;
 const FALLBACK_ASPECT = 3 / 4;
+// Тот же зазор, что и className="gap-4" на дорожке ниже (Tailwind
+// gap-4 = 1rem) — нужен числом отдельно для подсчёта repeatCount
+// (см. PartnerAdsCarousel), не только как CSS-класс.
+const GAP_PX = 16;
 
 function clampWidth(aspect: number): number {
   return Math.round(Math.max(MIN_WIDTH_PX, Math.min(MAX_WIDTH_PX, CARD_HEIGHT_PX * aspect)));
@@ -105,9 +109,37 @@ function usePreloadedWidths(ads: PartnerAd[]): { widths: Record<string, number>;
 export default function PartnerAdsCarousel({ ads }: { ads: PartnerAd[] }) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [duration, setDuration] = useState(20);
+  const [viewportWidth, setViewportWidth] = useState(0);
   const { widths, ready } = usePreloadedWidths(ads);
 
-  const doubled = ads.length > 1 ? [...ads, ...ads] : ads;
+  useEffect(() => {
+    function onResize() {
+      setViewportWidth(window.innerWidth);
+    }
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  // С 1-2 баннерами один проход по дорожке намного уже экрана — если
+  // просто удвоить его для бесшовной петли (как раньше), вся анимация
+  // (translateX от -50% до 0%) проигрывается в узкой полосе у левого края
+  // и до правого края монитора баннеры физически не доезжают: кажется, что
+  // лента едет только до середины и обрывается. Поэтому список баннеров
+  // сначала повторяется, пока один проход не станет не уже окна, и только
+  // потом этот проход дублируется целиком — вот то дублирование и даёт
+  // бесшовную петлю (см. .partner-ads-track в globals.css).
+  const oneSetWidth = useMemo(() => {
+    if (ads.length === 0) return 0;
+    const sum = ads.reduce((acc, ad) => acc + (widths[ad.id] ?? clampWidth(FALLBACK_ASPECT)), 0);
+    return sum + Math.max(0, ads.length - 1) * GAP_PX;
+  }, [ads, widths]);
+
+  const repeatCount =
+    ads.length > 1 && oneSetWidth > 0 ? Math.max(1, Math.ceil(viewportWidth / oneSetWidth)) : 1;
+
+  const oneSet = ads.length > 1 ? Array.from({ length: repeatCount }, () => ads).flat() : ads;
+  const doubled = ads.length > 1 ? [...oneSet, ...oneSet] : oneSet;
 
   // Длительность пересчитывается только когда все ширины уже известны
   // (ready) — иначе дорожка меряется по ещё не готовому layout'у и
@@ -118,7 +150,7 @@ export default function PartnerAdsCarousel({ ads }: { ads: PartnerAd[] }) {
     if (!trackRef.current || ads.length <= 1 || !ready) return;
     const distance = trackRef.current.scrollWidth / 2;
     setDuration(Math.max(8, distance / PIXELS_PER_SECOND));
-  }, [ads, ready]);
+  }, [ads, ready, repeatCount]);
 
   if (ads.length === 0) return null;
 
@@ -134,7 +166,10 @@ export default function PartnerAdsCarousel({ ads }: { ads: PartnerAd[] }) {
           <div
             ref={trackRef}
             className="partner-ads-track flex w-max gap-4"
-            style={{ animationDuration: `${duration}s`, visibility: ready ? "visible" : "hidden" }}
+            style={{
+              animationDuration: `${duration}s`,
+              visibility: ready && viewportWidth > 0 ? "visible" : "hidden",
+            }}
           >
             {doubled.map((ad, i) => (
               <AdCard key={`${ad.id}-${i}`} ad={ad} width={widths[ad.id] ?? clampWidth(FALLBACK_ASPECT)} />

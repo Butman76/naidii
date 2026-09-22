@@ -71,6 +71,7 @@ export interface LoginLogEntry {
   isImpersonation: boolean;
   actorName: string;
   ip: string;
+  region: string;
   createdAt: string;
 }
 
@@ -222,6 +223,7 @@ export async function fetchLoginLogs(pb: PocketBase): Promise<LoginLogEntry[]> {
     isImpersonation: Boolean(r.is_impersonation),
     actorName: r.expand?.actor_id?.name ?? r.expand?.actor_id?.email ?? "",
     ip: r.ip ?? "",
+    region: r.region ?? "",
     createdAt: r.created,
   }));
 }

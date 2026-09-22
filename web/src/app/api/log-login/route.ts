@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import PocketBase from "pocketbase";
 import { PB_URL } from "@/lib/pocketbase";
 import { getSuperuserClient } from "@/lib/pb-superuser";
+import { lookupRegion } from "@/lib/geo-ip";
 
 // Записывает "обычный" вход (логин/регистрация) в login_logs — вызывается
 // клиентом (LoginPage/RegisterPage) сразу после успешного authWithPassword.
@@ -26,10 +27,12 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "";
     const superuser = await getSuperuserClient();
     await superuser.collection("login_logs").create({
       user_id: callerId,
-      ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "",
+      ip,
+      region: await lookupRegion(ip),
       user_agent: request.headers.get("user-agent") ?? "",
     });
   } catch {

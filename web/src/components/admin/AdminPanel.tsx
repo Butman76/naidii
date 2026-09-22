@@ -876,7 +876,7 @@ export default function AdminPanel() {
                 <tr className="border-b border-zinc-300 bg-zinc-50">
                   <Th>Пользователь</Th>
                   <Th>Как вошли</Th>
-                  <Th>IP</Th>
+                  <Th>Откуда</Th>
                   <Th>Когда</Th>
                 </tr>
               </thead>
@@ -896,7 +896,16 @@ export default function AdminPanel() {
                         <span className="text-emerald-700">Обычный вход</span>
                       )}
                     </Td>
-                    <Td className="text-zinc-500">{entry.ip || "—"}</Td>
+                    <Td className="text-zinc-500">
+                      {entry.region || entry.ip ? (
+                        <>
+                          {entry.region || "регион неизвестен"}
+                          {entry.ip && <span className="text-zinc-400"> · {entry.ip}</span>}
+                        </>
+                      ) : (
+                        "—"
+                      )}
+                    </Td>
                     <Td className="whitespace-nowrap text-zinc-500">{formatDate(entry.createdAt)}</Td>
                   </tr>
                 ))}

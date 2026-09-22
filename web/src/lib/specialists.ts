@@ -115,7 +115,7 @@ export async function fetchSpecialists(): Promise<Specialist[]> {
       title: o.expand?.result_type_id?.title ?? "Услуга",
       priceFrom: formatOfferPrice(o.price_type, o.price_from),
       durationFrom: o.duration_from,
-      imageUrl: o.preview_images?.[0] ? pb.files.getURL(o, o.preview_images[0]) : undefined,
+      imageUrl: o.preview_images?.[0] ? pb.files.getURL(o, o.preview_images[0], { thumb: "800x0" }) : undefined,
     }));
 
     const badges: SpecialistBadge[] = promotedProfileIds.has(p.id) ? ["promoted"] : [];
@@ -135,8 +135,8 @@ export async function fetchSpecialists(): Promise<Specialist[]> {
         ? {
             tagline: p.title || p.short_description || "",
             coverGradient: `bg-gradient-to-br ${getCategoryStyle(category).gradient}`,
-            coverImageUrl: cover?.image ? pb.files.getURL(cover, cover.image) : undefined,
-            logoImageUrl: logo?.image ? pb.files.getURL(logo, logo.image) : undefined,
+            coverImageUrl: cover?.image ? pb.files.getURL(cover, cover.image, { thumb: "1600x0" }) : undefined,
+            logoImageUrl: logo?.image ? pb.files.getURL(logo, logo.image, { thumb: "400x0" }) : undefined,
             gallery: myLanding
               .filter((i) => i.kind === "photo" && i.image)
               .map((i) => ({

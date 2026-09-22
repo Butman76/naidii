@@ -1,17 +1,68 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import type { PartnerAd } from "@/lib/partner-ads";
+
+// Скорость ленты в пикселях/сек — длительность анимации считается из
+// реально измеренной ширины дорожки (см. useEffect ниже), а не задаётся
+// фиксированным числом секунд: при фиксированной длительности лента с
+// малым числом баннеров "ползла" бы неестественно медленно (короткая
+// дорожка, то же время на проход), а с большим — бежала бы слишком быстро.
+const PIXELS_PER_SECOND = 55;
+
+function AdCard({ ad }: { ad: PartnerAd }) {
+  // Обычная HTML-форма (POST), не <a href>: см. api/ad-click/route.ts —
+  // GET-роут с редиректом на основе id не может статически собраться под
+  // STATIC_EXPORT (GitHub Pages), а форма с POST работает как обычная
+  // ссылка (открывается в новой вкладке через target на форме) и не
+  // требует JS.
+  return (
+    <form action="/api/ad-click" method="POST" target="_blank" className="w-48 shrink-0">
+      <input type="hidden" name="id" value={ad.id} />
+      <button
+        type="submit"
+        className="flex w-full flex-col overflow-hidden rounded-xl border border-zinc-200 text-left transition-shadow hover:shadow-md"
+      >
+        {/* Портретный формат ~3:4 — под него и просим готовые креативы у
+            рекламодателей (см. PartnerAdsTab.tsx), не тянем произвольные
+            пропорции под альбомную рамку. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={ad.imageUrl}
+          alt={ad.companyName}
+          className="aspect-[3/4] w-full object-cover"
+          loading="lazy"
+        />
+        <p className="truncate bg-zinc-50 px-3 py-2 text-xs font-medium text-zinc-700">
+          {ad.companyName}
+        </p>
+      </button>
+    </form>
+  );
+}
 
 // Бегущая лента рекламы сторонних контор (курсы по ИИ, агентства
 // автоматизации) — не наши специалисты, отдельная монетизация вдобавок к
 // тарифам (см. STATUS.md). Ничего не рендерит, если баннеров нет — рекламы
 // пока нет ни на одной странице (площадка молодая), пустая лента выглядела
 // бы как баг, а не как "здесь могла быть ваша реклама".
+//
+// С одним баннером бежать нечему (дублировать один и тот же ради петли —
+// только путает: "я разместил один, а вижу два одинаковых") — тогда просто
+// показываем статичную карточку без анимации.
 export default function PartnerAdsCarousel({ ads }: { ads: PartnerAd[] }) {
-  if (ads.length === 0) return null;
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [duration, setDuration] = useState(20);
 
-  // Дублируем ленту — анимация в globals.css (.partner-ads-track) сдвигает
-  // ровно на -50%, так что конец первой копии бесшовно стыкуется с началом
-  // второй, и цикл выглядит бесконечным.
-  const doubled = [...ads, ...ads];
+  const doubled = ads.length > 1 ? [...ads, ...ads] : ads;
+
+  useEffect(() => {
+    if (!trackRef.current || ads.length <= 1) return;
+    const distance = trackRef.current.scrollWidth / 2;
+    setDuration(Math.max(8, distance / PIXELS_PER_SECOND));
+  }, [ads]);
+
+  if (ads.length === 0) return null;
 
   return (
     <div className="border-y border-zinc-200 bg-white py-4">
@@ -21,31 +72,21 @@ export default function PartnerAdsCarousel({ ads }: { ads: PartnerAd[] }) {
         </p>
       </div>
       <div className="overflow-hidden">
-        <div className="partner-ads-track flex w-max gap-4">
-          {doubled.map((ad, i) => (
-            <a
-              key={`${ad.id}-${i}`}
-              href={`/api/ad-click/${ad.id}`}
-              target="_blank"
-              rel="noopener noreferrer nofollow sponsored"
-              className="flex w-48 shrink-0 flex-col overflow-hidden rounded-xl border border-zinc-200 transition-shadow hover:shadow-md"
-            >
-              {/* Портретный формат ~3:4 — под него и просим готовые
-                  креативы у рекламодателей (см. PartnerAdsTab.tsx), не
-                  тянем произвольные пропорции под альбомную рамку. */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={ad.imageUrl}
-                alt={ad.companyName}
-                className="aspect-[3/4] w-full object-cover"
-                loading="lazy"
-              />
-              <p className="truncate bg-zinc-50 px-3 py-2 text-xs font-medium text-zinc-700">
-                {ad.companyName}
-              </p>
-            </a>
-          ))}
-        </div>
+        {ads.length > 1 ? (
+          <div
+            ref={trackRef}
+            className="partner-ads-track flex w-max gap-4"
+            style={{ animationDuration: `${duration}s` }}
+          >
+            {doubled.map((ad, i) => (
+              <AdCard key={`${ad.id}-${i}`} ad={ad} />
+            ))}
+          </div>
+        ) : (
+          <div className="mx-auto flex max-w-7xl px-4 sm:px-6 lg:px-8">
+            <AdCard ad={ads[0]} />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -29,7 +29,7 @@ export default function HeroDealsBadge() {
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- static export, no image optimizer */}
         <img
-          src={withBasePath("/badges/tut-novye-zakazy.png")}
+          src={withBasePath("/badges/tut-novye-zakazy.webp")}
           alt="Тут новые заказы"
           className="h-full w-full"
         />
@@ -47,7 +47,7 @@ export default function HeroDealsBadge() {
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- static export, no image optimizer */}
         <img
-          src={withBasePath("/badges/tut-novye-zakazy.png")}
+          src={withBasePath("/badges/tut-novye-zakazy.webp")}
           alt="Тут новые заказы"
           className="h-full w-full"
         />

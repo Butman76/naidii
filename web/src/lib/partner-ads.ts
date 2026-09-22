@@ -26,7 +26,10 @@ export async function fetchActivePartnerAds(): Promise<PartnerAd[]> {
   return records.map((r) => ({
     id: r.id,
     companyName: r.company_name,
-    imageUrl: pb.files.getURL(r, r.image),
+    // thumb, не оригинал — карточка в ленте шириной ~192px, а рекламодатель
+    // может прислать креатив в полном разрешении (см. STATUS.md, 2026-09-22
+    // про то же самое с баннерами/обложками в public/).
+    imageUrl: pb.files.getURL(r, r.image, { thumb: "400x0" }),
     linkUrl: r.link_url,
     clickCount: r.click_count ?? 0,
   }));
@@ -38,7 +41,7 @@ export async function fetchAllPartnerAds(pb: PocketBase): Promise<AdminPartnerAd
   return records.map((r) => ({
     id: r.id,
     companyName: r.company_name,
-    imageUrl: pb.files.getURL(r, r.image),
+    imageUrl: pb.files.getURL(r, r.image, { thumb: "400x0" }),
     linkUrl: r.link_url,
     clickCount: r.click_count ?? 0,
     active: Boolean(r.active),

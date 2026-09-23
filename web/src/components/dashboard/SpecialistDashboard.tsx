@@ -10,6 +10,7 @@ import LeadChat from "./LeadChat";
 import OrdersTab from "./OrdersTab";
 import SpecialistJobBoard from "./SpecialistJobBoard";
 import PremiumLandingEditor from "./PremiumLandingEditor";
+import PlanPaymentPanel from "./PlanPaymentPanel";
 import { getCategoryStyle, getCategoryAccent } from "@/data/category-style";
 import { PLANS } from "@/data/plans";
 import type { SpecialistDashboardOffer } from "@/lib/dashboard";
@@ -70,7 +71,7 @@ export default function SpecialistDashboard({
   data: SpecialistDashboardData;
   refresh: () => void;
 }) {
-  const { specialist, profileStatus, viewsCount, leadsCount, offers, leads, cases, planCode } = data;
+  const { specialist, profileStatus, viewsCount, leadsCount, offers, leads, cases, planCode, planActiveUntil, planCodeRaw } = data;
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const requestedTab = searchParams.get("tab");
@@ -437,10 +438,9 @@ export default function SpecialistDashboard({
                 Комиссия площадки с подтверждённой сделки: {currentPlan.commissionPercent}%
                 {currentPlan.customLanding && " · включён профиль-лендинг вместо обычной карточки"}
               </p>
-              <p className="mt-1 text-[11px] text-zinc-400">
-                Тариф назначает команда площадки вручную — оплата online ещё не подключена.
-              </p>
             </div>
+
+            <PlanPaymentPanel planCodeRaw={planCodeRaw} activeUntil={planActiveUntil} refresh={refresh} />
 
             {!currentPlan.customLanding && (
               <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">

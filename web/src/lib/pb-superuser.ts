@@ -21,6 +21,11 @@ export async function getSuperuserClient(): Promise<PocketBase> {
   }
 
   const pb = new PocketBase(PB_URL);
+  // Клиент общий на весь процесс: по умолчанию SDK отменяет предыдущий из
+  // двух одновременных запросов с одним ключом (метод + путь), и запрос
+  // одного посетителя падал бы из-за запроса другого (например, два
+  // одновременных создания заказа или две записи в журнал входов).
+  pb.autoCancellation(false);
   await pb.collection("_superusers").authWithPassword(email, password);
   cachedClient = pb;
   return pb;

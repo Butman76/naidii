@@ -51,6 +51,10 @@ export interface SpecialistDashboardData {
   // basic/pro/enterprise (web/src/data/plans.ts) — назначает вручную admin
   // в /admin, см. AdminPanel.tsx. Отсутствие значения = "basic".
   planCode: string;
+  /** ISO-дата конца оплаченного периода Pro/Enterprise; пусто — тариф без срока. */
+  planActiveUntil: string;
+  /** plan_code как в базе: пусто = тариф ещё не оплачен/не назначен (planCode тогда показывает "basic"). */
+  planCodeRaw: string;
 }
 
 export async function fetchOwnSpecialistDashboard(
@@ -155,6 +159,8 @@ export async function fetchOwnSpecialistDashboard(
     leads,
     cases,
     planCode: profile.plan_code || "basic",
+    planActiveUntil: profile.active_until || "",
+    planCodeRaw: profile.plan_code || "",
   };
 }
 

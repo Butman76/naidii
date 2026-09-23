@@ -99,7 +99,10 @@ export async function fetchModerationData(pb: PocketBase): Promise<ModerationDat
       expand: "specialist_profile_id,customer_id",
       sort: "created",
     }),
-    pb.collection("users").getFullList({ sort: "-created" }),
+    // Аккаунты с ролью admin в списке не показываем — владелец площадки не
+    // должен светиться в списке пользователей у модераторов (и случайно
+    // попадать под "block"/"delete"/"войти как").
+    pb.collection("users").getFullList({ filter: 'role != "admin"', sort: "-created" }),
   ]);
 
   const profiles: PendingProfile[] = profileRecords.map((p) => ({

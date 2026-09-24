@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { PLANS, PLAN_FEATURE_ROWS, type Plan } from "@/data/plans";
+import { PaymentsNotice, PlanChooseButton } from "@/components/TariffsActions";
 
 export const metadata: Metadata = {
   title: "Тарифы для специалистов — НайдИИ",
@@ -40,10 +41,7 @@ export default function TariffsPage() {
         </div>
 
         <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            Оплата на площадке ещё не подключена — это витрина тарифов,
-            оформление заказа появится позже.
-          </div>
+          <PaymentsNotice />
 
           <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
             {PLANS.map((plan) => (
@@ -78,15 +76,7 @@ export default function TariffsPage() {
                     {plan.volumeDiscount.minDeals}+ сделках
                   </p>
                 )}
-                <button
-                  className={`mt-5 rounded-full px-4 py-2.5 text-sm font-medium transition-colors ${
-                    plan.recommended
-                      ? "bg-zinc-900 text-white hover:bg-zinc-700"
-                      : "border border-zinc-300 text-zinc-700 hover:bg-zinc-50"
-                  }`}
-                >
-                  Выбрать тариф
-                </button>
+                <PlanChooseButton recommended={plan.recommended} />
               </div>
             ))}
           </div>

@@ -484,6 +484,8 @@ export interface ResultTypeSummary extends ResultType {
   minPrice: number;
   bestRating: number;
   hasPromoted: boolean;
+  /** Наибольший promotionRank среди предложений типа результата (lib/promotion.ts). */
+  promotionRank?: number;
 }
 
 export function getOffersForType(resultTypeSlug: string): ServiceOffer[] {

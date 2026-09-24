@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import StandardSpecialistProfile from "@/components/StandardSpecialistProfile";
 import PremiumSpecialistProfile from "@/components/PremiumSpecialistProfile";
+import ViewTracker from "@/components/ViewTracker";
 import { fetchSpecialists } from "@/lib/specialists";
 
 // generateStaticParams тоже на живых данных - см. web/src/lib/specialists.ts
@@ -47,6 +48,7 @@ export default async function SpecialistProfilePage({
   return (
     <>
       <Header />
+      <ViewTracker slug={specialist.slug} />
       <main className="flex-1 bg-zinc-50">
         {specialist.premium ? (
           <PremiumSpecialistProfile specialist={specialist} />

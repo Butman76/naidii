@@ -58,6 +58,8 @@ export interface ServiceOffer {
   revisionsIncluded?: number;
   tags: ServiceCardTag[];
   promoted?: boolean;
+  /** 0 — не продвигается; 1 Pro, 2 Enterprise, 3 ручное продвижение админом (см. lib/promotion.ts). */
+  promotionRank?: number;
   // Реальный id записи specialist_profiles (не слаг) — нужен, чтобы отправить
   // заявку (leads.specialist_profile_id — relation, ждёт id, не слаг).
   specialistProfileId: string;

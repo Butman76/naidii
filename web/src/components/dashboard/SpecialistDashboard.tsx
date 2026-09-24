@@ -11,6 +11,8 @@ import OrdersTab from "./OrdersTab";
 import SpecialistJobBoard from "./SpecialistJobBoard";
 import PremiumLandingEditor from "./PremiumLandingEditor";
 import PlanPaymentPanel from "./PlanPaymentPanel";
+import AnalyticsPanel from "./AnalyticsPanel";
+import { planPromotionRank } from "@/lib/promotion";
 import { getCategoryStyle, getCategoryAccent } from "@/data/category-style";
 import { PLANS } from "@/data/plans";
 import type { SpecialistDashboardOffer } from "@/lib/dashboard";
@@ -18,7 +20,7 @@ import { LEAD_STATUS_LABELS, LEAD_STATUS_STYLES } from "@/data/dashboard-mock";
 import type { SpecialistDashboardData } from "@/lib/dashboard";
 import { useAuth } from "@/lib/use-auth";
 
-type Tab = "overview" | "profile" | "services" | "leads" | "jobboard" | "orders" | "archive" | "reviews" | "plan" | "landing";
+type Tab = "overview" | "profile" | "services" | "leads" | "jobboard" | "orders" | "archive" | "reviews" | "analytics" | "plan" | "landing";
 
 const TABS: Array<{ id: Tab; label: string }> = [
   { id: "overview", label: "Обзор" },
@@ -29,6 +31,7 @@ const TABS: Array<{ id: Tab; label: string }> = [
   { id: "orders", label: "Заказы" },
   { id: "archive", label: "Архив" },
   { id: "reviews", label: "Отзывы" },
+  { id: "analytics", label: "Аналитика" },
   { id: "plan", label: "Тариф" },
 ];
 
@@ -426,6 +429,10 @@ export default function SpecialistDashboard({
           </div>
         )}
 
+        {tab === "analytics" && (
+          <AnalyticsPanel planCodeRaw={planCodeRaw} activeUntil={planActiveUntil} onOpenPlan={() => setTab("plan")} />
+        )}
+
         {tab === "plan" && (
           <div className="flex flex-col gap-4">
             <div className="rounded-2xl border border-zinc-200 bg-white p-5">
@@ -438,6 +445,13 @@ export default function SpecialistDashboard({
                 Комиссия площадки с подтверждённой сделки: {currentPlan.commissionPercent}%
                 {currentPlan.customLanding && " · включён профиль-лендинг вместо обычной карточки"}
               </p>
+              {planPromotionRank({ plan_code: planCodeRaw, active_until: planActiveUntil }) > 0 && (
+                <p className="mt-1 text-xs text-zinc-500">
+                  Продвижение включено: ваши услуги показываются выше в каталоге и в сетке «Топ-20» с меткой
+                  «Продвигается». Среди платных тарифов порядок меняется каждые сутки, чтобы верхние места
+                  доставались всем поровну; Enterprise показывается выше Pro.
+                </p>
+              )}
             </div>
 
             <PlanPaymentPanel planCodeRaw={planCodeRaw} activeUntil={planActiveUntil} refresh={refresh} />

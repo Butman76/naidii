@@ -5,10 +5,12 @@ import SpecialistCard from "./SpecialistCard";
 import { CATEGORIES } from "@/data/categories";
 import { getCategory3D } from "@/data/category-style";
 import type { Specialist } from "@/types/specialist";
+import { compareByPromotion } from "@/lib/promotion";
 
-type SortOption = "rating" | "priceAsc" | "reviews";
+type SortOption = "relevance" | "rating" | "priceAsc" | "reviews";
 
 const SORT_LABELS: Record<SortOption, string> = {
+  relevance: "Рекомендуемые",
   rating: "По рейтингу",
   priceAsc: "Сначала дешевле",
   reviews: "По числу отзывов",
@@ -27,7 +29,7 @@ export default function SpecialistsCatalog({
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [remoteOnly, setRemoteOnly] = useState(false);
-  const [sortBy, setSortBy] = useState<SortOption>("rating");
+  const [sortBy, setSortBy] = useState<SortOption>("relevance");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -46,6 +48,14 @@ export default function SpecialistsCatalog({
       if (sortBy === "priceAsc")
         return parsePriceFrom(a.priceFrom) - parsePriceFrom(b.priceFrom);
       if (sortBy === "reviews") return b.reviewsCount - a.reviewsCount;
+      if (sortBy === "relevance") {
+        // Продвигаемые по тарифу выше (Enterprise выше Pro, внутри уровня —
+        // суточная рулетка), остальные по рейтингу — см. lib/promotion.ts.
+        return compareByPromotion(
+          { id: a.id, rank: a.promotionRank ?? 0, rating: a.rating },
+          { id: b.id, rank: b.promotionRank ?? 0, rating: b.rating }
+        );
+      }
       return b.rating - a.rating;
     });
   }, [query, activeCategory, remoteOnly, sortBy, specialists]);

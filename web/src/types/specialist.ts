@@ -91,6 +91,8 @@ export interface Specialist {
   reviewsCount: number;
   location: string;
   badges: SpecialistBadge[];
+  /** 0 — не продвигается; 1 Pro, 2 Enterprise, 3 ручное продвижение админом (lib/promotion.ts). */
+  promotionRank?: number;
   avatarInitials: string;
   services: SpecialistService[];
   reviews: SpecialistReview[];

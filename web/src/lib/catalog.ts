@@ -2,6 +2,7 @@ import { createPocketBase } from "./pocketbase";
 import { getCoverImagePath } from "@/data/cover-manifest";
 import type { ResultType, ServiceOffer } from "@/types/service-card";
 import type { ResultTypeSummary } from "@/data/mock-services";
+import { MANUAL_PROMOTION_RANK, compareByPromotion, planPromotionRank } from "./promotion";
 
 // Живые данные из PocketBase — форма результата совпадает с mock-services.ts
 // специально (ResultType/ServiceOffer/ResultTypeSummary), чтобы компоненты
@@ -40,7 +41,12 @@ export async function fetchCatalogData(): Promise<CatalogData> {
     pb.collection("promotions").getFullList({ filter: "status = \"active\"" }),
   ]);
 
-  const promotedServiceIds = new Set(promotionRecords.map((p) => p.service_id));
+  // Ручное продвижение админом (коллекция promotions) привязано к профилю,
+  // а не к услуге — раньше здесь читался несуществующий service_id, и метка
+  // "Продвигается" не срабатывала ни у кого. Продвижение по тарифу (Pro и
+  // Enterprise) — см. promotion.ts.
+  const manuallyPromotedProfileIds = new Set(promotionRecords.map((p) => p.specialist_profile_id));
+  const now = new Date();
 
   const resultTypes: ResultType[] = resultTypeRecords.map((r) => ({
     id: r.id,
@@ -57,6 +63,9 @@ export async function fetchCatalogData(): Promise<CatalogData> {
     .map((o) => {
       const specialist = o.expand!.specialist_profile_id;
       const resultType = o.expand!.result_type_id;
+      const promotionRank = manuallyPromotedProfileIds.has(specialist.id)
+        ? MANUAL_PROMOTION_RANK
+        : planPromotionRank(specialist, now);
       return {
         id: o.id,
         resultTypeSlug: resultType.slug,
@@ -67,7 +76,8 @@ export async function fetchCatalogData(): Promise<CatalogData> {
         scopeLabel: o.scope_label,
         revisionsIncluded: o.revisions_included || undefined,
         tags: o.tags ?? [],
-        promoted: promotedServiceIds.has(o.id),
+        promoted: promotionRank > 0,
+        promotionRank,
         specialistProfileId: specialist.id,
         specialistSlug: specialist.slug,
         specialistName: specialist.public_name,
@@ -83,12 +93,12 @@ export async function fetchCatalogData(): Promise<CatalogData> {
 export function getOffersForType(offers: ServiceOffer[], resultTypeSlug: string): ServiceOffer[] {
   return offers
     .filter((o) => o.resultTypeSlug === resultTypeSlug)
-    .sort((a, b) => {
-      if (Boolean(b.promoted) !== Boolean(a.promoted)) {
-        return Number(Boolean(b.promoted)) - Number(Boolean(a.promoted));
-      }
-      return b.specialistRating - a.specialistRating;
-    });
+    .sort((a, b) =>
+      compareByPromotion(
+        { id: a.id, rank: a.promotionRank ?? 0, rating: a.specialistRating },
+        { id: b.id, rank: b.promotionRank ?? 0, rating: b.specialistRating }
+      )
+    );
 }
 
 export function summarizeResultTypes(
@@ -96,7 +106,7 @@ export function summarizeResultTypes(
   offers: ServiceOffer[]
 ): ResultTypeSummary[] {
   return resultTypes
-    .map((type) => {
+    .map((type): ResultTypeSummary | null => {
       const typeOffers = getOffersForType(offers, type.slug);
       if (typeOffers.length === 0) return null;
       return {
@@ -105,14 +115,21 @@ export function summarizeResultTypes(
         minPrice: Math.min(...typeOffers.map((o) => o.priceValue)),
         bestRating: Math.max(...typeOffers.map((o) => o.specialistRating)),
         hasPromoted: typeOffers.some((o) => o.promoted),
+        promotionRank: Math.max(...typeOffers.map((o) => o.promotionRank ?? 0)),
       };
     })
     .filter((s): s is ResultTypeSummary => s !== null);
 }
 
 export function sortByPromotedThenRating(summaries: ResultTypeSummary[]): ResultTypeSummary[] {
-  return [...summaries].sort((a, b) => {
-    if (b.hasPromoted !== a.hasPromoted) return Number(b.hasPromoted) - Number(a.hasPromoted);
-    return b.bestRating - a.bestRating;
-  });
+  // Сетка "Топ-20": сначала типы результата, где есть продвигаемая услуга
+  // (Enterprise выше Pro, ручное продвижение выше обоих), между ними —
+  // суточная рулетка, чтобы верхние места доставались не одним и тем же;
+  // остальные — по рейтингу.
+  return [...summaries].sort((a, b) =>
+    compareByPromotion(
+      { id: a.slug, rank: a.promotionRank ?? Number(a.hasPromoted), rating: a.bestRating },
+      { id: b.slug, rank: b.promotionRank ?? Number(b.hasPromoted), rating: b.bestRating }
+    )
+  );
 }

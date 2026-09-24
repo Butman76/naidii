@@ -6,6 +6,7 @@ import type {
   SpecialistService,
 } from "@/types/specialist";
 import { getCategoryStyle } from "@/data/category-style";
+import { MANUAL_PROMOTION_RANK, planPromotionRank } from "./promotion";
 
 // Живые данные специалистов из PocketBase. Форма результата совпадает с
 // Specialist (mock-specialists.ts), чтобы SpecialistCard/StandardSpecialistProfile
@@ -118,7 +119,10 @@ export async function fetchSpecialists(): Promise<Specialist[]> {
       imageUrl: o.preview_images?.[0] ? pb.files.getURL(o, o.preview_images[0], { thumb: "800x0" }) : undefined,
     }));
 
-    const badges: SpecialistBadge[] = promotedProfileIds.has(p.id) ? ["promoted"] : [];
+    // Метка "Продвигается": ручное продвижение админом или платный тариф
+    // Pro/Enterprise (см. lib/promotion.ts).
+    const promotionRank = promotedProfileIds.has(p.id) ? MANUAL_PROMOTION_RANK : planPromotionRank(p);
+    const badges: SpecialistBadge[] = promotionRank > 0 ? ["promoted"] : [];
 
     const myLanding = landingRecords.filter((i) => i.specialist_profile_id === p.id);
     // Обложка/логотип/видео — по одному экземпляру; после одобрения новой
@@ -187,6 +191,7 @@ export async function fetchSpecialists(): Promise<Specialist[]> {
       reviewsCount: p.reviews_count,
       location: formatLocation(p.city, p.remote_work),
       badges,
+      promotionRank,
       avatarInitials: computeInitials(p.public_name),
       services,
       reviews: [],

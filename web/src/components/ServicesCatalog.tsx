@@ -6,6 +6,7 @@ import { CATEGORIES } from "@/data/categories";
 import { getCategory3D } from "@/data/category-style";
 import { SERVICE_TAG_LABELS, type ServiceCardTag, type ServiceOffer } from "@/types/service-card";
 import type { ResultTypeSummary } from "@/data/mock-services";
+import { compareByPromotion } from "@/lib/promotion";
 
 type SortOption = "relevance" | "priceAsc" | "rating";
 
@@ -66,13 +67,14 @@ export default function ServicesCatalog({
     return [...list].sort((a, b) => {
       if (sortBy === "priceAsc") return a.minPrice - b.minPrice;
       if (sortBy === "rating") return b.bestRating - a.bestRating;
-      // relevance: продвигаемые сначала, дальше по рейтингу — упрощённая
+      // relevance: продвигаемые по тарифу сначала (Enterprise выше Pro,
+      // внутри уровня — суточная рулетка), дальше по рейтингу — упрощённая
       // версия формулы ранжирования из раздела 6 правки ТЗ (полнота
-      // карточки, конверсия и т.д. пока не считаем).
-      if (b.hasPromoted !== a.hasPromoted) {
-        return Number(b.hasPromoted) - Number(a.hasPromoted);
-      }
-      return b.bestRating - a.bestRating;
+      // карточки, конверсия и т.д. пока не считаем). См. lib/promotion.ts.
+      return compareByPromotion(
+        { id: a.slug, rank: a.promotionRank ?? Number(a.hasPromoted), rating: a.bestRating },
+        { id: b.slug, rank: b.promotionRank ?? Number(b.hasPromoted), rating: b.bestRating }
+      );
     });
   }, [query, activeCategory, activeTags, sortBy, resultTypes, offersByType]);
 

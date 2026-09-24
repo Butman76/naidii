@@ -154,7 +154,9 @@ export async function fetchOwnSpecialistDashboard(
     specialist,
     profileStatus: profile.profile_status,
     viewsCount: profile.views_count ?? 0,
-    leadsCount: profile.leads_count ?? 0,
+    // Реальное число заявок, а не поле profile.leads_count: его никто не
+    // обновляет, оно всегда 0.
+    leadsCount: leads.length,
     offers,
     leads,
     cases,

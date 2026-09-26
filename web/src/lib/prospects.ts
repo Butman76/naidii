@@ -18,11 +18,30 @@ export const STATUS_LABELS: Record<ProspectStatus, string> = {
 
 export const STATUS_ORDER: ProspectStatus[] = ["new", "contacted", "replied", "working", "not_working"];
 
+// Слаги направлений площадки (web/src/data/categories.ts) — девять групп и "other".
+export const DIRECTION_SLUGS = [
+  "ai-agents", "rag", "orchestration", "chatbots", "voice-ai",
+  "ai-video", "crm-ai", "prompt-engineering", "ai-analytics", "other",
+] as const;
+
+function parseDirections(value: string): string[] {
+  return Array.from(
+    new Set(
+      value
+        .split(/[;,]/)
+        .map((v) => v.trim())
+        .filter((v) => (DIRECTION_SLUGS as readonly string[]).includes(v))
+    )
+  );
+}
+
 export interface Prospect {
   id: string;
   domain: string;
   name: string;
   direction: string;
+  /** В каких направлениях работает (несколько); правится вручную в админке. */
+  directions: string[];
   website: string;
   companyType: string;
   city: string;
@@ -58,6 +77,7 @@ type DataField = (typeof DATA_FIELDS)[number];
 export interface ImportRow {
   domain: string;
   name: string;
+  directions?: string[];
   data: Partial<Record<DataField, string>>;
   status?: ProspectStatus;
   notes?: string;
@@ -142,6 +162,7 @@ export function csvToImportRows(text: string): { rows: ImportRow[]; problems: st
       domain,
       name,
       data,
+      directions: parseDirections(get("directions")),
       status: STATUS_ORDER.includes(status) ? status : undefined,
       notes: get("notes") || undefined,
     });
@@ -159,15 +180,21 @@ export interface ImportResult {
 // только непустыми значениями из файла и никогда не теряет статус,
 // примечание и дату контакта.
 export async function importProspects(pb: PocketBase, rows: ImportRow[]): Promise<ImportResult> {
-  const existing = await pb.collection("prospects").getFullList({ fields: "id,domain,notes", batch: 500 });
+  const existing = await pb.collection("prospects").getFullList({ fields: "id,domain,notes,directions,directions_manual", batch: 500 });
   const byDomain = new Map(existing.map((r) => [String(r.domain), r]));
   const result: ImportResult = { created: 0, updated: 0, failed: [] };
   for (const row of rows) {
     try {
       const found = byDomain.get(row.domain);
       if (found) {
-        const patch: Record<string, string> = { name: row.name, ...(row.data as Record<string, string>) };
+        const patch: Record<string, string | string[]> = { name: row.name, ...(row.data as Record<string, string>) };
         if (row.notes && !String(found.notes ?? "").trim()) patch.notes = row.notes;
+        // Направления из файла — автоматические; пока админ не правил их
+        // вручную (directions_manual), импорт может их обновить. После ручной
+        // правки они защищены.
+        if (row.directions?.length && !found.directions_manual) {
+          patch.directions = row.directions;
+        }
         await pb.collection("prospects").update(found.id, patch);
         result.updated++;
       } else {
@@ -176,6 +203,7 @@ export async function importProspects(pb: PocketBase, rows: ImportRow[]): Promis
           name: row.name,
           website: `https://${row.domain}/`,
           ...row.data,
+          directions: row.directions?.length ? row.directions : parseDirections(row.data.direction ?? ""),
           status: row.status ?? "new",
           notes: row.notes ?? "",
         });
@@ -195,6 +223,7 @@ export async function fetchProspects(pb: PocketBase): Promise<Prospect[]> {
     domain: r.domain ?? "",
     name: r.name ?? "",
     direction: r.direction ?? "",
+    directions: Array.isArray(r.directions) ? r.directions : [],
     website: r.website ?? "",
     companyType: r.company_type ?? "",
     city: r.city ?? "",
@@ -218,7 +247,7 @@ export async function fetchProspects(pb: PocketBase): Promise<Prospect[]> {
   }));
 }
 
-export async function updateProspect(pb: PocketBase, id: string, patch: Record<string, string>): Promise<void> {
+export async function updateProspect(pb: PocketBase, id: string, patch: Record<string, string | string[] | boolean>): Promise<void> {
   await pb.collection("prospects").update(id, patch);
 }
 
@@ -236,6 +265,7 @@ export async function createProspect(
     name: params.name.trim(),
     website: `https://${domain}/`,
     direction: params.direction,
+    directions: parseDirections(params.direction),
     status: "new",
   });
 }
@@ -244,6 +274,7 @@ export async function createProspect(
 export function prospectsToCsv(list: Prospect[]): string {
   const columns: Array<[string, (p: Prospect) => string]> = [
     ["direction", (p) => p.direction],
+    ["directions", (p) => p.directions.join("; ")],
     ["name", (p) => p.name],
     ["website", (p) => p.website],
     ["company_type", (p) => p.companyType],

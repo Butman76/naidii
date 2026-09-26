@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { pbClient } from "@/lib/auth-client";
 import { CATEGORIES } from "@/data/categories";
 import {
+  DIRECTION_SLUGS,
   STATUS_LABELS,
   STATUS_ORDER,
   createProspect,
@@ -51,11 +52,13 @@ function ProspectRow({
   prospect,
   onStatus,
   onNotes,
+  onDirections,
   onDelete,
 }: {
   prospect: Prospect;
   onStatus: (p: Prospect, status: ProspectStatus) => void;
   onNotes: (p: Prospect, notes: string) => void;
+  onDirections: (p: Prospect, directions: string[]) => void;
   onDelete: (p: Prospect) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -77,7 +80,19 @@ function ProspectRow({
             {open ? "скрыть" : "подробнее"}
           </button>
         </td>
-        <td className="px-3 py-2 text-zinc-600">{directionName(prospect.direction)}</td>
+        <td className="max-w-[180px] px-3 py-2 text-zinc-600">
+          {prospect.directions.length === 0 ? (
+            <span className="text-zinc-300">—</span>
+          ) : (
+            <div className="flex flex-wrap gap-1">
+              {prospect.directions.map((d) => (
+                <span key={d} className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[11px] text-zinc-700">
+                  {directionName(d)}
+                </span>
+              ))}
+            </div>
+          )}
+        </td>
         <td className="max-w-[260px] px-3 py-2 text-zinc-700">
           {contactLines.length === 0 ? (
             <span className="text-zinc-300">контактов нет</span>
@@ -137,6 +152,28 @@ function ProspectRow({
       {open && (
         <tr className="border-b border-zinc-100 bg-zinc-50">
           <td colSpan={7} className="px-3 py-3 text-xs text-zinc-600">
+            <div className="mb-3">
+              <p className="mb-1 text-zinc-400">В каких направлениях работает (отметьте вручную, если автоматика ошиблась):</p>
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                {DIRECTION_SLUGS.map((slug) => (
+                  <label key={slug} className="flex items-center gap-1">
+                    <input
+                      type="checkbox"
+                      checked={prospect.directions.includes(slug)}
+                      onChange={(e) =>
+                        onDirections(
+                          prospect,
+                          e.target.checked
+                            ? DIRECTION_SLUGS.filter((s) => s === slug || prospect.directions.includes(s))
+                            : prospect.directions.filter((s) => s !== slug)
+                        )
+                      }
+                    />
+                    {directionName(slug)}
+                  </label>
+                ))}
+              </div>
+            </div>
             <div className="grid gap-x-8 gap-y-1 sm:grid-cols-2">
               {prospect.services && <p><span className="text-zinc-400">Чем занимается: </span>{prospect.services}</p>}
               {prospect.priceNote && <p><span className="text-zinc-400">Цены: </span>{prospect.priceNote}</p>}
@@ -198,15 +235,15 @@ export default function ProspectsTab() {
     return c;
   }, [list]);
 
-  const directions = useMemo(
-    () => Array.from(new Set((list ?? []).map((p) => p.direction).filter(Boolean))),
-    [list]
-  );
+  const directions = useMemo(() => {
+    const present = new Set((list ?? []).flatMap((p) => p.directions));
+    return DIRECTION_SLUGS.filter((s) => present.has(s));
+  }, [list]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return (list ?? []).filter((p) => {
-      if (direction && p.direction !== direction) return false;
+      if (direction && !p.directions.includes(direction)) return false;
       if (statusFilter && p.status !== statusFilter) return false;
       if (noContacts && (p.emails || p.phones || p.telegram)) return false;
       if (!q) return true;
@@ -239,6 +276,16 @@ export default function ProspectsTab() {
       patchLocal(p.id, { notes });
     } catch {
       setError("Не удалось сохранить примечание.");
+    }
+  }
+
+  async function changeDirections(p: Prospect, next: string[]) {
+    try {
+      // directions_manual — чтобы повторный импорт CSV не перезаписал эту правку.
+      await updateProspect(pbClient, p.id, { directions: next, directions_manual: true });
+      patchLocal(p.id, { directions: next });
+    } catch {
+      setError("Не удалось сохранить направления.");
     }
   }
 
@@ -430,7 +477,14 @@ export default function ProspectsTab() {
           </thead>
           <tbody>
             {filtered.map((p) => (
-              <ProspectRow key={p.id} prospect={p} onStatus={changeStatus} onNotes={changeNotes} onDelete={remove} />
+              <ProspectRow
+                key={p.id}
+                prospect={p}
+                onStatus={changeStatus}
+                onNotes={changeNotes}
+                onDirections={changeDirections}
+                onDelete={remove}
+              />
             ))}
             {list === null && !error && (
               <tr><td className="px-3 py-3 text-zinc-400" colSpan={7}>Загружаем…</td></tr>

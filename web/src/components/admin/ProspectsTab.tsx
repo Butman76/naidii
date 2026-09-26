@@ -50,12 +50,14 @@ function formatDate(iso: string): string {
 }
 
 function ProspectRow({
+  index,
   prospect,
   onStatus,
   onNotes,
   onDirections,
   onDelete,
 }: {
+  index: number;
   prospect: Prospect;
   onStatus: (p: Prospect, status: ProspectStatus) => void;
   onNotes: (p: Prospect, notes: string) => void;
@@ -69,6 +71,7 @@ function ProspectRow({
   return (
     <>
       <tr className="border-b border-zinc-100 align-top">
+        <td className="px-3 py-2 text-xs tabular-nums text-zinc-400">{index}</td>
         <td className="px-3 py-2">
           <a href={prospect.website} target="_blank" rel="noopener noreferrer" className="font-medium text-zinc-900 underline">
             {prospect.name}
@@ -152,7 +155,7 @@ function ProspectRow({
       </tr>
       {open && (
         <tr className="border-b border-zinc-100 bg-zinc-50">
-          <td colSpan={7} className="px-3 py-3 text-xs text-zinc-600">
+          <td colSpan={8} className="px-3 py-3 text-xs text-zinc-600">
             <div className="mb-3">
               <p className="mb-1 text-zinc-400">В каких направлениях работает (отметьте вручную, если автоматика ошиблась):</p>
               <div className="flex flex-wrap gap-x-4 gap-y-1">
@@ -468,6 +471,7 @@ export default function ProspectsTab() {
         <table className="w-full min-w-[980px] border-collapse text-xs">
           <thead>
             <tr className="border-b border-zinc-300 bg-zinc-50 text-left font-mono text-[11px] uppercase tracking-wide text-zinc-500">
+              <th className="px-3 py-2 font-medium">№</th>
               <th className="px-3 py-2 font-medium">Контора</th>
               <th className="px-3 py-2 font-medium">Направление</th>
               <th className="px-3 py-2 font-medium">Контакты</th>
@@ -478,9 +482,10 @@ export default function ProspectsTab() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((p) => (
+            {filtered.map((p, i) => (
               <ProspectRow
                 key={p.id}
+                index={i + 1}
                 prospect={p}
                 onStatus={changeStatus}
                 onNotes={changeNotes}
@@ -489,11 +494,11 @@ export default function ProspectsTab() {
               />
             ))}
             {list === null && !error && (
-              <tr><td className="px-3 py-3 text-zinc-400" colSpan={7}>Загружаем…</td></tr>
+              <tr><td className="px-3 py-3 text-zinc-400" colSpan={8}>Загружаем…</td></tr>
             )}
             {list && filtered.length === 0 && (
               <tr>
-                <td className="px-3 py-3 text-zinc-400" colSpan={7}>
+                <td className="px-3 py-3 text-zinc-400" colSpan={8}>
                   {list.length === 0 ? "База пока пуста: загрузите CSV кнопкой «Импорт CSV»." : "Под фильтр ничего не подошло."}
                 </td>
               </tr>

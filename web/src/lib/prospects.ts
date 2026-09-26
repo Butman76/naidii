@@ -18,10 +18,10 @@ export const STATUS_LABELS: Record<ProspectStatus, string> = {
 
 export const STATUS_ORDER: ProspectStatus[] = ["new", "contacted", "replied", "working", "not_working"];
 
-// Слаги направлений площадки (web/src/data/categories.ts) — девять групп и "other".
+// Слаги направлений площадки (web/src/data/categories.ts) — девять групп, десятая "education" (обучение AI, только в базе контрагентов) и "other".
 export const DIRECTION_SLUGS = [
   "ai-agents", "rag", "orchestration", "chatbots", "voice-ai",
-  "ai-video", "crm-ai", "prompt-engineering", "ai-analytics", "other",
+  "ai-video", "crm-ai", "prompt-engineering", "ai-analytics", "education", "other",
 ] as const;
 
 function parseDirections(value: string): string[] {

@@ -40,6 +40,7 @@ const CONFIDENCE_STYLES: Record<string, string> = {
 };
 
 function directionName(slug: string): string {
+  if (slug === "education") return "Обучение AI и автоматизации";
   return CATEGORIES.find((c) => c.slug === slug)?.name ?? (slug || "—");
 }
 
@@ -454,6 +455,7 @@ export default function ProspectsTab() {
             {CATEGORIES.map((c) => (
               <option key={c.slug} value={c.slug}>{c.name}</option>
             ))}
+            <option value="education">Обучение AI и автоматизации</option>
           </select>
           <button type="submit" className="rounded bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-zinc-700">Добавить в базу</button>
         </form>

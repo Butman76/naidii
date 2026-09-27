@@ -1,5 +1,6 @@
 import Link from "next/link";
 import ResultTypePlate from "./ResultTypePlate";
+import EventsSidebar from "./events/EventsSidebar";
 import { fetchCatalogData, summarizeResultTypes, sortByPromotedThenRating } from "@/lib/catalog";
 
 // Главный объект первого экрана каталога — плашка типа результата, а не
@@ -21,10 +22,13 @@ export default async function TopServices() {
         </p>
       </div>
 
-      <div className="mt-8 grid grid-cols-1 gap-4 min-[640px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-        {top.map((type) => (
-          <ResultTypePlate key={type.id} type={type} />
-        ))}
+      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
+        <div className="grid grid-cols-1 gap-4 min-[640px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          {top.map((type) => (
+            <ResultTypePlate key={type.id} type={type} />
+          ))}
+        </div>
+        <EventsSidebar />
       </div>
 
       <div className="mt-8 text-center">

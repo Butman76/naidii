@@ -84,8 +84,14 @@ export function isBasicPromoActive(now: Date = new Date()): boolean {
   return now.getTime() < new Date(BASIC_PROMO_END_ISO).getTime();
 }
 
+// kind: "check" — строка про наличие/отсутствие возможности (в таблице на
+// /tariffs рисуется галочкой/прочерком, а не словом "Есть"); без kind —
+// произвольный текст (например, цена). Карточка/кейсы/заявки не зависят от
+// поля Plan — они есть на любом тарифе, но не помешает показать это в
+// сравнении явно (см. /tariffs).
 export const PLAN_FEATURE_ROWS: Array<{
   label: string;
+  kind?: "check";
   getValue: (plan: Plan) => string;
 }> = [
   {
@@ -93,23 +99,43 @@ export const PLAN_FEATURE_ROWS: Array<{
     getValue: (p) => (p.monthlyFee > 0 ? `${p.monthlyFee.toLocaleString("ru-RU")} ₽/мес` : "—"),
   },
   {
+    label: "Карточка специалиста",
+    kind: "check",
+    getValue: () => "Есть",
+  },
+  {
+    label: "Кейсы и портфолио",
+    kind: "check",
+    getValue: () => "Есть",
+  },
+  {
+    label: "Приём заявок",
+    kind: "check",
+    getValue: () => "Есть",
+  },
+  {
     label: "Аналитика профиля",
+    kind: "check",
     getValue: (p) => (p.analyticsEnabled ? "Есть" : "—"),
   },
   {
     label: "Продвижение в топ-20",
+    kind: "check",
     getValue: (p) => (p.promotionAccess ? "Есть" : "—"),
   },
   {
     label: "Выделенный менеджер",
+    kind: "check",
     getValue: (p) => (p.dedicatedManager ? "Есть" : "—"),
   },
   {
     label: "Приоритетная поддержка",
+    kind: "check",
     getValue: (p) => (p.prioritySupport ? "Есть" : "—"),
   },
   {
     label: "Собственный лендинг",
+    kind: "check",
     getValue: (p) => (p.customLanding ? "Есть" : "—"),
   },
 ];

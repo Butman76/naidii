@@ -31,12 +31,14 @@ export async function generateMetadata({
 }
 
 // Профиль неподтверждённой карточки (см. STATUS.md, «claim your business»,
-// 2026-09-28) — по просьбе пользователя карточка в каталоге больше не несёт
-// прямых кнопок и внешней ссылки на сайт компании, а ведёт сюда: тут видно
-// ровно то, что мы нашли в открытых источниках (без выдумок). Форма "это
-// моя компания" (ClaimSection.tsx) сама прячется за кнопкой с тем же
-// названием — не показывается сразу. noindex в метаданных: страниц много,
-// данных на них мало, размножать в поиске такие карточки незачем.
+// 2026-09-28). По просьбе пользователя — ни здесь, ни в карточке в каталоге
+// нет ни сайта компании, ни юрлица/ИНН: иначе мы бы напрямую сводили
+// заказчика с конторой мимо площадки. Эти поля вообще не покидают сервер
+// для анонимного посетителя (см. lib/unclaimed.ts, fields на запросе) —
+// видны только админу. Форма "это моя компания" (ClaimSection.tsx) сама
+// прячется за кнопкой с тем же названием — не показывается сразу. noindex
+// в метаданных: страниц много, данных на них мало, размножать в поиске
+// такие карточки незачем.
 export default async function UnclaimedProfilePage({
   params,
 }: {
@@ -71,23 +73,9 @@ export default async function UnclaimedProfilePage({
             {listing.blurb && <p className="text-sm leading-relaxed text-zinc-700">{listing.blurb}</p>}
 
             <dl className={`space-y-2 text-sm ${listing.blurb ? "mt-4 border-t border-zinc-100 pt-4" : ""}`}>
-              {listing.legalName && (
-                <div className="flex gap-2">
-                  <dt className="w-28 shrink-0 text-xs text-zinc-400">Юрлицо</dt>
-                  <dd className="text-zinc-700">{listing.legalName}{listing.inn ? `, ИНН ${listing.inn}` : ""}</dd>
-                </div>
-              )}
               <div className="flex gap-2">
                 <dt className="w-28 shrink-0 text-xs text-zinc-400">Направления</dt>
                 <dd className="text-zinc-700">{listing.categories.map((slug) => CATEGORIES.find((c) => c.slug === slug)?.name ?? slug).join(", ") || "—"}</dd>
-              </div>
-              <div className="flex gap-2">
-                <dt className="w-28 shrink-0 text-xs text-zinc-400">Сайт</dt>
-                <dd>
-                  <a href={listing.website} target="_blank" rel="noopener noreferrer nofollow" className="text-blue-700 underline">
-                    {listing.domain}
-                  </a>
-                </dd>
               </div>
             </dl>
           </div>

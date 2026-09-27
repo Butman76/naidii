@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { PLANS, PLAN_FEATURE_ROWS, BASIC_PROMO_MONTHS, isBasicPromoActive } from "@/data/plans";
+import { PLAN_SHELL, PLAN_TAGLINE } from "@/data/plan-style";
 import { PlanChooseButton, PromoCountdown } from "@/components/TariffsActions";
 
 export const metadata: Metadata = {
@@ -28,26 +29,17 @@ function CheckIcon({ className }: { className?: string }) {
 // (см. STATUS.md, 2026-09-27).
 const HERO_HIGHLIGHTS = ["Карточка специалиста и кейсы", "Прямые обращения от бизнеса", "AI-сообщество и события"];
 
-// Визуал тарифов — здесь, не в data/plans.ts (там модель цен). Оформление
-// по брифу пользователя (2026-09-28, премиальный редизайн): Базовый —
-// светлая карточка с голубым акцентом, Pro — тёмная с градиентной рамкой,
-// Enterprise — светлая с фиолетово-золотым акцентом. features — не то же
-// самое, что plan.description: тут отдельные пункты списком, а не одна
-// фраза.
-const PLAN_CONTENT: Record<
-  string,
-  { tagline: string; taglineColor: string; features: string[]; ctaLabel: string; ctaHint?: string; shell: string }
-> = {
+// Контент карточек тарифов — здесь, не в data/plans.ts (там модель цен).
+// Цвета/градиенты (PLAN_SHELL/PLAN_TAGLINE) — в data/plan-style.ts, общие
+// с кабинетом специалиста (PlanPaymentPanel.tsx), чтобы дизайн не разъезжался.
+// features — не то же самое, что plan.description: тут отдельные пункты
+// списком, а не одна фраза.
+const PLAN_CONTENT: Record<string, { features: string[]; ctaLabel: string; ctaHint?: string }> = {
   basic: {
-    tagline: "Чтобы начать и показать свою экспертизу",
-    taglineColor: "text-blue-600",
     features: ["Карточка в каталоге НайдИИ", "Услуги и специализации", "Кейсы и портфолио", "Приём прямых заявок"],
     ctaLabel: "Выбрать Базовый",
-    shell: "bg-gradient-to-b from-blue-400 via-blue-100 to-transparent",
   },
   pro: {
-    tagline: "Для специалистов, которым нужна заметность",
-    taglineColor: "text-zinc-400",
     features: [
       "Всё из тарифа «Базовый»",
       "Аналитика профиля",
@@ -56,11 +48,8 @@ const PLAN_CONTENT: Record<
     ],
     ctaLabel: "Выбрать PRO",
     ctaHint: "Лучший вариант для активного продвижения",
-    shell: "bg-gradient-to-br from-blue-500 via-violet-500 to-cyan-400",
   },
   enterprise: {
-    tagline: "Для студий, агентств и команд с объёмом",
-    taglineColor: "text-violet-600",
     features: [
       "Всё из тарифа PRO",
       "Выделенный менеджер",
@@ -68,7 +57,6 @@ const PLAN_CONTENT: Record<
       "Собственный мини-лендинг вместо карточки",
     ],
     ctaLabel: "Выбрать Enterprise",
-    shell: "bg-gradient-to-br from-violet-300 via-zinc-200 to-amber-300",
   },
 };
 
@@ -147,12 +135,15 @@ export default function TariffsPage() {
               const inverted = Boolean(plan.recommended);
               const content = PLAN_CONTENT[plan.code];
 
+              const shell = PLAN_SHELL[plan.code] ?? "";
+              const tagline = PLAN_TAGLINE[plan.code];
+
               return (
                 <div
                   key={plan.code}
                   className={`rounded-[20px] p-[1.5px] shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${
                     inverted ? "shadow-violet-900/10 hover:shadow-violet-500/20" : "hover:shadow-zinc-300/60"
-                  } ${content.shell}`}
+                  } ${shell}`}
                 >
                   <div
                     className={`flex h-full flex-col rounded-[18.5px] p-6 ${
@@ -173,7 +164,7 @@ export default function TariffsPage() {
                       )}
                     </div>
 
-                    <p className={`mt-1.5 text-xs font-medium ${content.taglineColor}`}>{content.tagline}</p>
+                    {tagline && <p className={`mt-1.5 text-xs font-medium ${tagline.color}`}>{tagline.text}</p>}
 
                     {showPromo ? (
                       <div className="mt-4 flex items-baseline gap-2">
@@ -206,7 +197,12 @@ export default function TariffsPage() {
                     </ul>
 
                     <div className="mt-auto pt-6">
-                      <PlanChooseButton recommended={plan.recommended} inverted={inverted} label={content.ctaLabel} />
+                      <PlanChooseButton
+                        planCode={plan.code}
+                        recommended={plan.recommended}
+                        inverted={inverted}
+                        label={content.ctaLabel}
+                      />
                       {content.ctaHint && (
                         <p className={`mt-2 text-center text-[11px] ${inverted ? "text-zinc-500" : "text-zinc-400"}`}>
                           {content.ctaHint}

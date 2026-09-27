@@ -15,6 +15,7 @@ import AnalyticsPanel from "./AnalyticsPanel";
 import { planPromotionRank } from "@/lib/promotion";
 import { getCategoryStyle, getCategoryAccent } from "@/data/category-style";
 import { PLANS } from "@/data/plans";
+import { PLAN_SHELL } from "@/data/plan-style";
 import type { SpecialistDashboardOffer } from "@/lib/dashboard";
 import { LEAD_STATUS_LABELS, LEAD_STATUS_STYLES } from "@/data/dashboard-mock";
 import type { SpecialistDashboardData } from "@/lib/dashboard";
@@ -448,7 +449,11 @@ export default function SpecialistDashboard({
 
         {tab === "plan" && (
           <div className="flex flex-col gap-4">
-            <div className="rounded-2xl border border-zinc-200 bg-white p-5">
+            <div className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5">
+              <span
+                className={`absolute inset-x-0 top-0 h-1 ${PLAN_SHELL[planCodeRaw] ?? "bg-zinc-200"}`}
+                aria-hidden="true"
+              />
               <p className="text-xs text-zinc-500">Текущий тариф</p>
               <p className="mt-1 text-lg font-semibold text-zinc-900">
                 {currentPlan.title}

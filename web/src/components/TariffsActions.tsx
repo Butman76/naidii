@@ -3,37 +3,46 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/use-auth";
+import { pbClient } from "@/lib/auth-client";
 import { BASIC_PROMO_END_ISO, BASIC_PROMO_MONTHS } from "@/data/plans";
 
 // Клиентские части страницы /tariffs (сама страница — серверный
-// компонент): кнопка выбора тарифа и баннер акции. Оплата происходит не
-// здесь, а в кабинете специалиста на вкладке "Тариф"
-// (dashboard/PlanPaymentPanel.tsx) — кнопка только ведёт туда.
+// компонент): кнопка выбора тарифа и баннер акции.
 //
 // Редизайн 2026-09-28 (премиальный вид по брифу пользователя) менял только
-// разметку/классы: href, роль-проверка и таймер (state/effect) — те же, что
-// были, ничего в механике оплаты и роутинге не тронуто.
+// разметку/классы, ничего в механике оплаты и роутинге не трогал. Отдельная
+// правка 2026-09-28 (по фидбэку "не хочу проваливаться в кабинет, хочу сразу
+// на оплату") — специалист теперь создаёт платёж прямо с этой кнопки, тем же
+// запросом (`POST /api/payments/create`), что и `pay()` в
+// dashboard/PlanPaymentPanel.tsx: тот же эндпоинт, тот же заголовок
+// Authorization, тот же ответ {url} от ЮKassa. Ничего на сервере не
+// дублировали и не меняли — только вызвали существующий API из нового места.
 
 const BASE_CLASS =
-  "mt-6 flex w-full items-center justify-center gap-1.5 rounded-xl px-4 py-3 text-center text-sm font-semibold transition-all duration-200 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2";
+  "mt-6 flex w-full items-center justify-center gap-1.5 rounded-xl px-4 py-3 text-center text-sm font-semibold transition-all duration-200 motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60";
 
 // inverted — карточка тарифа сама тёмная (Pro), поэтому кнопку красим
 // наоборот: светлая кнопка на тёмном фоне.
 //
-// Кнопка всегда активна, не серая заметка (по просьбе пользователя — раньше
-// не-специалист видел неживой текст "Тарифы оплачивают специалисты", это
-// выглядело как тупик). Специалист попадает на реальную оплату в кабинете;
-// кто угодно ещё (аноним, заказчик) — на регистрацию, там путь и начинается.
+// Не-специалист (аноним, заказчик) уходит на регистрацию — обычная ссылка.
+// Специалист жмёт и сразу создаёт платёж по этому тарифу; если что-то
+// пошло не так (оплата ещё не подключена, сбой сети, тариф недоступен —
+// например попытка понизиться, её блокирует сервер) — уходим в кабинет на
+// вкладку "Тариф", там та же оплата плюс понятные сообщения об ошибках и
+// история платежей.
 export function PlanChooseButton({
+  planCode,
   recommended,
   inverted,
   label = "Оплатить",
 }: {
+  planCode: string;
   recommended?: boolean;
   inverted?: boolean;
   label?: string;
 }) {
   const { user } = useAuth();
+  const [busy, setBusy] = useState(false);
   const style = inverted
     ? "bg-white text-zinc-900 shadow-lg shadow-black/30 hover:bg-zinc-100 hover:shadow-xl focus-visible:ring-white"
     : recommended
@@ -42,11 +51,39 @@ export function PlanChooseButton({
 
   const isSpecialist = user?.role === "specialist";
 
+  if (!isSpecialist) {
+    return (
+      <Link href="/register" className={`${BASE_CLASS} ${style}`}>
+        {label}
+        <span aria-hidden="true">→</span>
+      </Link>
+    );
+  }
+
+  async function handleClick() {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/payments/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: pbClient.authStore.token },
+        body: JSON.stringify({ planCode }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && typeof data.url === "string") {
+        window.location.href = data.url;
+        return;
+      }
+    } catch {
+      // сеть недоступна — уходим в кабинет ниже, как и при любой другой ошибке
+    }
+    window.location.href = "/dashboard?tab=plan";
+  }
+
   return (
-    <Link href={isSpecialist ? "/dashboard?tab=plan" : "/register"} className={`${BASE_CLASS} ${style}`}>
-      {label}
-      <span aria-hidden="true">→</span>
-    </Link>
+    <button type="button" onClick={handleClick} disabled={busy} className={`${BASE_CLASS} ${style}`}>
+      {busy ? "Переходим к оплате…" : label}
+      {!busy && <span aria-hidden="true">→</span>}
+    </button>
   );
 }
 

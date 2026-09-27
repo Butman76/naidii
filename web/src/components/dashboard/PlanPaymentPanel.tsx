@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { pbClient } from "@/lib/auth-client";
 import { PLANS, BASIC_PROMO_MONTHS, isBasicPromoActive, type Plan } from "@/data/plans";
+import { PLAN_SHELL, PLAN_TAGLINE } from "@/data/plan-style";
 
 // Оплата тарифа на вкладке "Тариф" кабинета специалиста (через ЮKassa, см.
 // lib/payments.ts и app/api/payments/*). Кнопки здесь — только удобство:
@@ -191,31 +192,43 @@ export default function PlanPaymentPanel({
       {paymentsEnabled && purchasable.length > 0 && (
         <div className="rounded-2xl border border-zinc-200 bg-white p-5">
           <p className="text-sm font-semibold text-zinc-900">Подключить или продлить тариф</p>
-          <div className="mt-3 flex flex-col gap-2">
+          <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
             {purchasable.map((plan) => {
               const renew = plan.code === planCodeRaw;
+              const inverted = plan.code === "pro";
+              const shell = PLAN_SHELL[plan.code] ?? "";
+              const tagline = PLAN_TAGLINE[plan.code];
               return (
                 <div
                   key={plan.code}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 px-4 py-3"
+                  className={`rounded-[18px] p-[1.5px] shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-xl motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${shell}`}
                 >
-                  <div>
-                    <p className="text-sm font-medium text-zinc-900">{plan.title}</p>
-                    <p className="text-xs text-zinc-500">{priceLabel(plan)}</p>
-                  </div>
-                  <button
-                    type="button"
-                    disabled={busyPlan !== null}
-                    onClick={() => pay(plan)}
-                    className="rounded-full bg-zinc-900 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
+                  <div
+                    className={`flex h-full flex-col rounded-[16.5px] p-4 ${
+                      inverted ? "bg-zinc-900 text-white" : "bg-white"
+                    }`}
                   >
-                    {busyPlan === plan.code ? "Переходим к оплате…" : renew ? "Продлить на 30 дней" : "Оплатить"}
-                  </button>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-400">{plan.title}</p>
+                    {tagline && <p className={`mt-1 text-[11px] font-medium ${tagline.color}`}>{tagline.text}</p>}
+                    <p className={`mt-3 text-lg font-bold ${inverted ? "text-white" : "text-zinc-900"}`}>
+                      {priceLabel(plan)}
+                    </p>
+                    <button
+                      type="button"
+                      disabled={busyPlan !== null}
+                      onClick={() => pay(plan)}
+                      className={`mt-4 w-full rounded-xl px-4 py-2.5 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                        inverted ? "bg-white text-zinc-900 hover:bg-zinc-200" : "bg-zinc-900 text-white hover:bg-zinc-700"
+                      }`}
+                    >
+                      {busyPlan === plan.code ? "Переходим к оплате…" : renew ? "Продлить" : "Оплатить"}
+                    </button>
+                  </div>
                 </div>
               );
             })}
           </div>
-          <p className="mt-3 text-[11px] text-zinc-400">
+          <p className="mt-4 text-[11px] text-zinc-400">
             Оплата картой или через СБП на защищённой странице ЮKassa. Подписка не продлевается сама —
             перед окончанием срока её нужно оплатить снова.
           </p>

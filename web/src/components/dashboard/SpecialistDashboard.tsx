@@ -74,7 +74,7 @@ export default function SpecialistDashboard({
   data: SpecialistDashboardData;
   refresh: () => void;
 }) {
-  const { specialist, profileStatus, viewsCount, leadsCount, offers, leads, cases, planCode, planActiveUntil, planCodeRaw } = data;
+  const { specialist, profileStatus, viewsCount, leadsCount, offers, leads, cases, allSkills, mySkills, planCode, planActiveUntil, planCodeRaw } = data;
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const requestedTab = searchParams.get("tab");
@@ -149,15 +149,26 @@ export default function SpecialistDashboard({
               </p>
               <div className="mt-3 flex flex-col gap-2 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-zinc-600">Описание и навыки</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTab("profile");
+                      setEditingProfile(true);
+                    }}
+                    className="text-zinc-600 underline-offset-2 hover:text-zinc-900 hover:underline"
+                  >
+                    Описание и навыки
+                  </button>
                   <span
                     className={
-                      specialist.shortDescription
+                      specialist.shortDescription && specialist.skills.length > 0
                         ? "text-emerald-600"
                         : "text-amber-600"
                     }
                   >
-                    {specialist.shortDescription ? "Готово" : "Пока не заполнено"}
+                    {specialist.shortDescription && specialist.skills.length > 0
+                      ? "Готово"
+                      : "Пока не заполнено"}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -204,6 +215,8 @@ export default function SpecialistDashboard({
             {editingProfile ? (
               <ProfileEditForm
                 specialist={specialist}
+                allSkills={allSkills}
+                mySkills={mySkills}
                 onSaved={refresh}
                 onCancel={() => setEditingProfile(false)}
               />

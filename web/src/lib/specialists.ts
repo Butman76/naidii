@@ -14,9 +14,8 @@ import { MANUAL_PROMOTION_RANK, planPromotionRank } from "./promotion";
 // STATUS.md, переход с моков на живые данные, 2026-08-24).
 //
 // Упрощения относительно моков:
-// - `skills` — пустой массив: в схему БД теги навыков ещё не занесены
-//   (specialist_skills пока не наполнен сид-данными), а не отсутствуют
-//   в принципе — см. TODO ниже.
+// - `skills` — из specialist_skills (2026-09-28, ProfileEditForm.tsx:
+//   специалист выбирает теги из общего справочника skills сам в кабинете).
 // - `reviews` — пустой массив: коллекция reviews в БД пока не наполнена,
 //   это честно, а не баг — вместо выдумывания демо-отзывов.
 // - `category` — в specialist_profiles нет своего поля категории (это
@@ -29,8 +28,8 @@ import { MANUAL_PROMOTION_RANK, planPromotionRank } from "./promotion";
 //   (обложка, логотип, видео, карточки услуг, портфолио, презентации) —
 //   никаких выдуманных галерей/команды/сертификатов, соответствующие блоки
 //   PremiumSpecialistProfile.tsx не показываются, пока их не заполнят.
-// TODO: занести specialist_skills, реальные отзывы, поле категории на
-// профиле — по мере появления соответствующих данных.
+// TODO: реальные отзывы, поле категории на профиле — по мере появления
+// соответствующих данных.
 
 function computeInitials(name: string): string {
   return name
@@ -73,7 +72,7 @@ export async function fetchSpecialists(): Promise<Specialist[]> {
   const pb = createPocketBase();
   pb.autoCancellation(false);
 
-  const [profiles, offerRecords, promotionRecords, landingRecords] = await Promise.all([
+  const [profiles, offerRecords, promotionRecords, skillRecords, landingRecords] = await Promise.all([
     pb.collection("specialist_profiles").getFullList({
       filter: "profile_status = \"published\"",
     }),
@@ -82,6 +81,12 @@ export async function fetchSpecialists(): Promise<Specialist[]> {
       expand: "result_type_id.category_id",
     }),
     pb.collection("promotions").getFullList({ filter: "status = \"active\"" }),
+    // Навыки-теги (specialist_skills — связка с общим справочником skills,
+    // см. 1755000005/1755000003) — заполняются специалистом в кабинете
+    // (ProfileEditForm.tsx). Публичное правило коллекции открыто (listRule
+    // ""), поэтому забираем всё разом и группируем в памяти, как offers
+    // выше, а не отдельным запросом на каждого специалиста.
+    pb.collection("specialist_skills").getFullList({ expand: "skill_id" }).catch(() => []),
     // Только ОДОБРЕННОЕ модерацией содержимое лендингов (landing_items,
     // см. web/src/lib/landing.ts) — обложка, логотип, видео, карточки
     // услуг, портфолио, презентации. Небольшая таблица (строки есть только
@@ -101,6 +106,10 @@ export async function fetchSpecialists(): Promise<Specialist[]> {
   const promotedProfileIds = new Set(promotionRecords.map((p) => p.specialist_profile_id));
 
   return profiles.map((p) => {
+    const mySkills = skillRecords
+      .filter((s) => s.specialist_profile_id === p.id)
+      .map((s) => s.expand?.skill_id?.name)
+      .filter((name): name is string => Boolean(name));
     const myOffers = offerRecords.filter((o) => o.specialist_profile_id === p.id);
     const firstResultType = myOffers[0]?.expand?.result_type_id;
     const category = firstResultType?.expand?.category_id?.slug ?? "other";
@@ -183,7 +192,7 @@ export async function fetchSpecialists(): Promise<Specialist[]> {
       fullDescription: p.full_description,
       category,
       categories,
-      skills: [],
+      skills: mySkills,
       priceFrom: formatPriceFrom(p.project_rate_from),
       experienceYears: p.experience_years,
       responseTime: formatResponseTime(p.response_time),

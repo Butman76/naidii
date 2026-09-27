@@ -40,6 +40,20 @@ export type SpecialistDashboardOffer = ServiceOffer & {
   categoryName: string;
 };
 
+export interface SkillOption {
+  id: string;
+  name: string;
+  category: string;
+}
+
+// Текущий выбор специалиста: skillId — что выбрано (для чекбоксов),
+// recordId — id самой строки specialist_skills (чтобы удалить именно её,
+// не гадая по паре specialist/skill — см. updateSpecialistSkills ниже).
+export interface MySkill {
+  recordId: string;
+  skillId: string;
+}
+
 export interface SpecialistDashboardData {
   specialist: Specialist;
   profileStatus: string;
@@ -48,6 +62,10 @@ export interface SpecialistDashboardData {
   offers: SpecialistDashboardOffer[];
   leads: SpecialistDashboardLead[];
   cases: DashboardCase[];
+  /** Весь активный справочник тегов (skills) — варианты для выбора в ProfileEditForm.tsx. */
+  allSkills: SkillOption[];
+  /** Что уже выбрано этим специалистом. */
+  mySkills: MySkill[];
   // basic/pro/enterprise (web/src/data/plans.ts) — назначает вручную admin
   // в /admin, см. AdminPanel.tsx. Отсутствие значения = "basic".
   planCode: string;
@@ -65,7 +83,7 @@ export async function fetchOwnSpecialistDashboard(
     .collection("specialist_profiles")
     .getFirstListItem(pb.filter("user_id = {:id}", { id: userId }));
 
-  const [offerRecords, leadRecords, reviewRecords, caseRecords] = await Promise.all([
+  const [offerRecords, leadRecords, reviewRecords, caseRecords, skillOptionRecords, mySkillRecords] = await Promise.all([
     pb.collection("services").getFullList({
       filter: pb.filter("specialist_profile_id = {:id}", { id: profile.id }),
       expand: "result_type_id.category_id",
@@ -83,7 +101,19 @@ export async function fetchOwnSpecialistDashboard(
       filter: pb.filter("specialist_profile_id = {:id}", { id: profile.id }),
       sort: "-created",
     }),
+    pb.collection("skills").getFullList({ filter: 'status = "active"', sort: "category,name" }),
+    pb.collection("specialist_skills").getFullList({
+      filter: pb.filter("specialist_profile_id = {:id}", { id: profile.id }),
+    }),
   ]);
+
+  const allSkills: SkillOption[] = skillOptionRecords.map((s) => ({
+    id: s.id,
+    name: s.name,
+    category: s.category ?? "",
+  }));
+  const mySkills: MySkill[] = mySkillRecords.map((s) => ({ recordId: s.id, skillId: s.skill_id }));
+  const skillNameById = new Map(allSkills.map((s) => [s.id, s.name]));
 
   const offers: SpecialistDashboardOffer[] = offerRecords.map((o) => ({
     id: o.id,
@@ -120,7 +150,7 @@ export async function fetchOwnSpecialistDashboard(
     shortDescription: profile.short_description ?? "",
     fullDescription: profile.full_description ?? "",
     category: "",
-    skills: [],
+    skills: mySkills.map((s) => skillNameById.get(s.skillId)).filter((n): n is string => Boolean(n)),
     priceFrom: "",
     experienceYears: profile.experience_years ?? 0,
     responseTime: "",
@@ -160,10 +190,46 @@ export async function fetchOwnSpecialistDashboard(
     offers,
     leads,
     cases,
+    allSkills,
+    mySkills,
     planCode: profile.plan_code || "basic",
     planActiveUntil: profile.active_until || "",
     planCodeRaw: profile.plan_code || "",
   };
+}
+
+// specialist_skills — связка (junction table), не одно поле на профиле, так
+// что "сохранить выбор" — это диф между тем, что было (current), и тем, что
+// отметил специалист сейчас (nextSkillIds): недостающие строки создаём,
+// снятые — удаляем. Вызывается из ProfileEditForm.tsx вместе с обновлением
+// specialist_profiles.
+export async function updateSpecialistSkills(
+  pb: PocketBase,
+  profileId: string,
+  current: MySkill[],
+  nextSkillIds: string[]
+): Promise<void> {
+  const currentIds = new Set(current.map((s) => s.skillId));
+  const nextIds = new Set(nextSkillIds);
+  const toAdd = nextSkillIds.filter((id) => !currentIds.has(id));
+  const toRemove = current.filter((s) => !nextIds.has(s.skillId));
+
+  // requestKey — иначе несколько одновременных запросов на один и тот же
+  // путь (POST .../specialist_skills/records) SDK по умолчанию считает
+  // дублями и отменяет все, кроме последнего (autoCancellation, см.
+  // pb-superuser.ts) — при выборе больше одного нового навыка сохранялся
+  // бы только последний, а остальные тихо падали с "request was aborted".
+  await Promise.all([
+    ...toAdd.map((skillId) =>
+      pb.collection("specialist_skills").create(
+        { specialist_profile_id: profileId, skill_id: skillId },
+        { requestKey: `specialist_skills:create:${skillId}` }
+      )
+    ),
+    ...toRemove.map((s) =>
+      pb.collection("specialist_skills").delete(s.recordId, { requestKey: `specialist_skills:delete:${s.recordId}` })
+    ),
+  ]);
 }
 
 export interface CustomerDashboardData {

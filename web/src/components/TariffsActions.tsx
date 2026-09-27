@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/use-auth";
+import { BASIC_PROMO_END_ISO, BASIC_PROMO_MONTHS } from "@/data/plans";
 
 // Клиентские части страницы /tariffs (сама страница — серверный
 // компонент): кнопка выбора тарифа и плашка про оплату. Оплата
@@ -32,6 +33,44 @@ export function PlanChooseButton({ recommended }: { recommended?: boolean }) {
     >
       {user ? "Оплатить в кабинете" : "Зарегистрироваться и выбрать"}
     </Link>
+  );
+}
+
+function remaining(): number {
+  return new Date(BASIC_PROMO_END_ISO).getTime() - Date.now();
+}
+
+// Баннер акции на Базовый (500 ₽ сразу за BASIC_PROMO_MONTHS месяцев) с
+// обратным отсчётом до BASIC_PROMO_END_ISO (см. data/plans.ts — та же
+// дата, что реально считает lib/payments.ts при оплате). Часы и минуты, не
+// дни — так просил пользователь. Дальше рендера на сервере: без этого при
+// заходе ровно в момент истечения акции секундная гонка клиент/сервер дала
+// бы на миг несовпадающий HTML; проще посчитать всё в браузере при
+// монтировании. Как только время вышло — компонент перестаёт рисовать
+// баннер сам, без правки кода/деплоя.
+export function PromoCountdown() {
+  const [ms, setMs] = useState<number | null>(null);
+
+  useEffect(() => {
+    setMs(remaining());
+    const id = setInterval(() => setMs(remaining()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  if (ms === null || ms <= 0) return null;
+
+  const hours = Math.floor(ms / 3_600_000);
+  const minutes = Math.floor((ms % 3_600_000) / 60_000);
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+      <span>
+        Акция на тариф «Базовый»: 500 ₽ сразу за {BASIC_PROMO_MONTHS} месяца — 2 месяца в подарок.
+      </span>
+      <span className="font-medium tabular-nums">
+        Осталось {hours} ч {String(minutes).padStart(2, "0")} мин
+      </span>
+    </div>
   );
 }
 

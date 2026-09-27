@@ -1,6 +1,6 @@
 import type PocketBase from "pocketbase";
 import type { RecordModel } from "pocketbase";
-import { PLANS, type Plan } from "@/data/plans";
+import { PLANS, BASIC_PROMO_MONTHS, isBasicPromoActive, type Plan } from "@/data/plans";
 import { createPayment, getPayment } from "./yookassa";
 
 // Оплата тарифов специалистов через ЮKassa — серверная логика (используется
@@ -10,14 +10,18 @@ import { createPayment, getPayment } from "./yookassa";
 // после подтверждённой оплаты — специалист сам не может, это держит
 // pocketbase/pb_hooks/plan_guard.pb.js.
 //
-// Модель (договорённость 2026-08-29, см. plans.ts):
-//  - basic: разовый вход 500 ₽, без срока;
-//  - pro / enterprise: подписка 990 / 2900 ₽ на 30 дней; оплата вручную
-//    каждый месяц (автосписание — отдельный шаг), при повторной оплате того
-//    же тарифа срок продлевается от текущего конца. Когда срок вышел,
-//    pocketbase/pb_hooks/plan_expiry.pb.js возвращает профиль на basic.
+// Модель (договорённость 2026-08-29, поправлено 2026-09-28 — Базовый стал
+// подпиской, см. plans.ts):
+//  - basic / pro / enterprise: подписка 500 / 990 / 2900 ₽ на 30 дней;
+//    оплата вручную каждый месяц (автосписание — отдельный шаг), при
+//    повторной оплате того же тарифа срок продлевается от текущего конца.
+//    Когда срок вышел, pocketbase/pb_hooks/plan_expiry.pb.js возвращает
+//    Pro/Enterprise на basic (сам basic там не трогают — падать ниже
+//    некуда, см. комментарий в хуке).
 //  - апгрейд оплачивается полной ценой нового тарифа на 30 дней с момента
 //    оплаты (без пересчёта остатка старого).
+//  - до BASIC_PROMO_END_ISO первая оплата Базового даёт не 30, а
+//    BASIC_PROMO_MONTHS * 30 дней — тот же счётчик, что на /tariffs.
 
 const PERIOD_DAYS = 30;
 const PLAN_RANK: Record<string, number> = { "": 0, basic: 1, pro: 2, enterprise: 3 };
@@ -37,9 +41,9 @@ export function checkPurchase(profile: RecordModel, planCode: string): PurchaseC
   if ((PLAN_RANK[plan.code] ?? 0) < (PLAN_RANK[currentCode] ?? 0)) {
     return { ok: false, reason: "У вас уже подключён более высокий тариф.", status: 409 };
   }
-  if (plan.code === "basic" && currentCode === "basic") {
-    return { ok: false, reason: "Базовый тариф уже подключён.", status: 409 };
-  }
+  // Тариф своего же уровня — это продление (basic тоже подписка теперь),
+  // не блокируем: applyPaidOrder ниже сам продлит active_until от текущего
+  // конца, а не от нуля.
   return { ok: true, plan, amountRub };
 }
 
@@ -55,6 +59,9 @@ function newOrderNumber(): string {
 }
 
 function paymentDescription(plan: Plan): string {
+  if (plan.code === "basic" && isBasicPromoActive()) {
+    return `НайдИИ: тариф «${plan.title}», ${BASIC_PROMO_MONTHS} мес по акции`;
+  }
   return plan.monthlyFee > 0
     ? `НайдИИ: тариф «${plan.title}», 30 дней`
     : `НайдИИ: вход на площадку, тариф «${plan.title}»`;
@@ -198,7 +205,8 @@ async function applyPaidOrder(su: PocketBase, order: RecordModel): Promise<void>
     const currentEnd =
       profile.plan_code === plan.code && profile.active_until ? new Date(profile.active_until) : null;
     serviceStart = currentEnd && currentEnd > now ? currentEnd : now;
-    serviceEnd = addDays(serviceStart, PERIOD_DAYS);
+    const periodDays = plan.code === "basic" && isBasicPromoActive(now) ? PERIOD_DAYS * BASIC_PROMO_MONTHS : PERIOD_DAYS;
+    serviceEnd = addDays(serviceStart, periodDays);
   }
 
   await su.collection("specialist_profiles").update(profile.id, {

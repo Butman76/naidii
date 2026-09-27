@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { pbClient } from "@/lib/auth-client";
-import { PLANS, type Plan } from "@/data/plans";
+import { PLANS, BASIC_PROMO_MONTHS, isBasicPromoActive, type Plan } from "@/data/plans";
 
 // Оплата тарифа на вкладке "Тариф" кабинета специалиста (через ЮKassa, см.
 // lib/payments.ts и app/api/payments/*). Кнопки здесь — только удобство:
@@ -33,6 +33,9 @@ function formatDate(iso: string): string {
 }
 
 function priceLabel(plan: Plan): string {
+  if (plan.code === "basic" && isBasicPromoActive()) {
+    return `${plan.monthlyFee.toLocaleString("ru-RU")} ₽ / ${BASIC_PROMO_MONTHS} мес по акции`;
+  }
   return plan.monthlyFee > 0
     ? `${plan.monthlyFee.toLocaleString("ru-RU")} ₽ / 30 дней`
     : `${plan.entryFee.toLocaleString("ru-RU")} ₽ разово`;
@@ -155,12 +158,9 @@ export default function PlanPaymentPanel({
   }
 
   const currentRank = PLAN_RANK[planCodeRaw] ?? 0;
-  const purchasable = PLANS.filter((p) => {
-    const rank = PLAN_RANK[p.code] ?? 0;
-    if (rank < currentRank) return false;
-    if (p.code === "basic" && planCodeRaw === "basic") return false;
-    return true;
-  });
+  // Тариф своего уровня остаётся покупаемым — это продление (basic теперь
+  // тоже подписка, см. lib/payments.ts), не блокируем.
+  const purchasable = PLANS.filter((p) => (PLAN_RANK[p.code] ?? 0) >= currentRank);
 
   return (
     <div className="flex flex-col gap-4">

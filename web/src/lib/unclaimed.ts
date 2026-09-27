@@ -21,8 +21,6 @@ export interface UnclaimedListing {
   categories: string[];
 }
 
-const PUBLIC_FIELDS = "id,name,domain,city,blurb,categories";
-
 // Различает UnclaimedListing от Specialist в общей сетке карточек (у
 // Specialist нет поля domain) — см. mixIn ниже.
 export function isUnclaimedListing(v: unknown): v is UnclaimedListing {
@@ -58,18 +56,20 @@ function mapListing(r: Record<string, unknown>): UnclaimedListing {
   };
 }
 
-// Публичный список: без коллекции/при сбое просто пустой список, страница
-// каталога не должна из-за этого падать (та же логика, что у
-// fetchPublishedEvents). fields — не просто экономия трафика: viewRule
-// коллекции открывает анонимам всю строку целиком (status = "active"), а
-// не отдельные поля — без явного fields PocketBase честно отдал бы в ответе
-// и сайт, и ИНН, и приватные source_email/source_phone кому угодно, кто
-// откроет вкладку "Сеть" или дёрнет API напрямую, даже если наш интерфейс
-// их никогда не рисует.
+// Публичный список: читает unclaimed_specialists_public — view-коллекцию
+// (миграция 1755000062), которая физически содержит только безопасные
+// столбцы. Базовая таблица unclaimed_specialists с ИНН/юрлицом/сайтом и
+// приватными source_email/source_phone анонимам больше не листается вообще
+// (listRule = только admin) — раньше казалось, что достаточно не рисовать
+// эти поля в интерфейсе, но параметр `fields` в запросе ограничивает только
+// то, что просит наш код, а не то, что может запросить кто угодно, дёрнув
+// API напрямую (см. обсуждение с пользователем 2026-09-28). Без
+// коллекции/при сбое — пустой список, страница каталога не должна из-за
+// этого падать (та же логика, что у fetchPublishedEvents).
 export async function fetchActiveUnclaimedListings(): Promise<UnclaimedListing[]> {
   try {
     const pb = createPocketBase();
-    const records = await pb.collection("unclaimed_specialists").getFullList({ filter: 'status = "active"', sort: "name", fields: PUBLIC_FIELDS, batch: 500 });
+    const records = await pb.collection("unclaimed_specialists_public").getFullList({ filter: 'status = "active"', sort: "name", batch: 500 });
     return records.map((r) => mapListing(r as unknown as Record<string, unknown>));
   } catch {
     return [];
@@ -79,9 +79,8 @@ export async function fetchActiveUnclaimedListings(): Promise<UnclaimedListing[]
 export async function fetchUnclaimedListingByDomain(domain: string): Promise<UnclaimedListing | null> {
   try {
     const pb = createPocketBase();
-    const r = await pb.collection("unclaimed_specialists").getFirstListItem(
-      pb.filter('domain = {:domain} && status = "active"', { domain }),
-      { fields: PUBLIC_FIELDS }
+    const r = await pb.collection("unclaimed_specialists_public").getFirstListItem(
+      pb.filter('domain = {:domain} && status = "active"', { domain })
     );
     return mapListing(r as unknown as Record<string, unknown>);
   } catch {

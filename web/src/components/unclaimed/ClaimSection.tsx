@@ -6,8 +6,10 @@ import type { UnclaimedListing } from "@/lib/unclaimed";
 // Форма "это моя компания" на странице профиля неподтверждённой карточки
 // (см. app/unclaimed/[domain]/page.tsx) — раньше открывалась модалкой прямо
 // из карточки в каталоге; по просьбе пользователя 2026-09-28 карточка ведёт
-// на профиль, и форма живёт там, а не поверх сетки.
+// на профиль, и форма живёт там. Сама форма не видна сразу — сначала кнопка
+// "Это моя компания", по клику разворачивается (тоже по просьбе).
 export default function ClaimSection({ listing }: { listing: UnclaimedListing }) {
+  const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -54,6 +56,18 @@ export default function ClaimSection({ listing }: { listing: UnclaimedListing })
     );
   }
 
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-zinc-700"
+      >
+        Это моя компания
+      </button>
+    );
+  }
+
   return (
     <div className="rounded-2xl border border-zinc-200 bg-white p-5">
       <p className="text-sm font-semibold text-zinc-900">Это ваша компания?</p>
@@ -70,9 +84,14 @@ export default function ClaimSection({ listing }: { listing: UnclaimedListing })
         <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Комментарий (необязательно)" rows={2} maxLength={2000} className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm" />
         <input type="text" tabIndex={-1} autoComplete="off" value={trap} onChange={(e) => setTrap(e.target.value)} className="hidden" aria-hidden="true" />
         {error && <p className="text-xs text-red-600">{error}</p>}
-        <button type="submit" disabled={busy} className="mt-1 self-start rounded-full bg-zinc-900 px-4 py-1.5 text-xs font-medium text-white hover:bg-zinc-700 disabled:opacity-50">
-          {busy ? "Отправляем…" : "Отправить"}
-        </button>
+        <div className="mt-1 flex gap-2">
+          <button type="submit" disabled={busy} className="self-start rounded-full bg-zinc-900 px-4 py-1.5 text-xs font-medium text-white hover:bg-zinc-700 disabled:opacity-50">
+            {busy ? "Отправляем…" : "Отправить"}
+          </button>
+          <button type="button" onClick={() => setOpen(false)} className="self-start rounded-full border border-zinc-300 px-4 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50">
+            Отмена
+          </button>
+        </div>
       </form>
     </div>
   );

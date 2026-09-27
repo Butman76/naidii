@@ -33,9 +33,10 @@ export async function generateMetadata({
 // Профиль неподтверждённой карточки (см. STATUS.md, «claim your business»,
 // 2026-09-28) — по просьбе пользователя карточка в каталоге больше не несёт
 // прямых кнопок и внешней ссылки на сайт компании, а ведёт сюда: тут видно
-// ровно то, что мы нашли в открытых источниках (без выдумок), и тут же —
-// форма "это моя компания". noindex в метаданных: страниц много, данных на
-// них мало, размножать в поиске такие карточки незачем.
+// ровно то, что мы нашли в открытых источниках (без выдумок). Форма "это
+// моя компания" (ClaimSection.tsx) сама прячется за кнопкой с тем же
+// названием — не показывается сразу. noindex в метаданных: страниц много,
+// данных на них мало, размножать в поиске такие карточки незачем.
 export default async function UnclaimedProfilePage({
   params,
 }: {
@@ -67,13 +68,9 @@ export default async function UnclaimedProfilePage({
           <CategoryDots categories={listing.categories} />
 
           <div className="mt-6 rounded-2xl border border-dashed border-zinc-300 bg-white p-5">
-            <p className="text-xs font-medium text-amber-700">
-              Карточка не подтверждена: компания ещё не регистрировалась на НайдИИ. Ниже — только то, что нашлось в открытых источниках.
-            </p>
+            {listing.blurb && <p className="text-sm leading-relaxed text-zinc-700">{listing.blurb}</p>}
 
-            {listing.blurb && <p className="mt-3 text-sm leading-relaxed text-zinc-700">{listing.blurb}</p>}
-
-            <dl className="mt-4 space-y-2 border-t border-zinc-100 pt-4 text-sm">
+            <dl className={`space-y-2 text-sm ${listing.blurb ? "mt-4 border-t border-zinc-100 pt-4" : ""}`}>
               {listing.legalName && (
                 <div className="flex gap-2">
                   <dt className="w-28 shrink-0 text-xs text-zinc-400">Юрлицо</dt>

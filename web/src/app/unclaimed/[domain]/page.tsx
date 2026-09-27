@@ -4,7 +4,7 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CategoryDots from "@/components/CategoryDots";
-import ClaimSection from "@/components/unclaimed/ClaimSection";
+import ClaimModal from "@/components/unclaimed/ClaimModal";
 import AdminDetails from "@/components/unclaimed/AdminDetails";
 import { CATEGORIES } from "@/data/categories";
 import { fetchActiveUnclaimedListings, fetchUnclaimedListingByDomain } from "@/lib/unclaimed";
@@ -35,11 +35,11 @@ export async function generateMetadata({
 // 2026-09-28). По просьбе пользователя — ни здесь, ни в карточке в каталоге
 // нет ни сайта компании, ни юрлица/ИНН: иначе мы бы напрямую сводили
 // заказчика с конторой мимо площадки. Эти поля вообще не покидают сервер
-// для анонимного посетителя (см. lib/unclaimed.ts, fields на запросе) —
-// видны только админу. Форма "это моя компания" (ClaimSection.tsx) сама
-// прячется за кнопкой с тем же названием — не показывается сразу. noindex
-// в метаданных: страниц много, данных на них мало, размножать в поиске
-// такие карточки незачем.
+// для анонимного посетителя (см. lib/unclaimed.ts) — видны только админу
+// (AdminDetails.tsx). "Это моя компания" (ClaimModal.tsx) открывает
+// модалку с инструкцией написать на claim@naidii.ru — без формы на сайте.
+// noindex в метаданных: страниц много, данных на них мало, размножать в
+// поиске такие карточки незачем.
 export default async function UnclaimedProfilePage({
   params,
 }: {
@@ -84,7 +84,7 @@ export default async function UnclaimedProfilePage({
           <AdminDetails id={listing.id} />
 
           <div className="mt-6">
-            <ClaimSection listing={listing} />
+            <ClaimModal />
           </div>
         </div>
       </main>

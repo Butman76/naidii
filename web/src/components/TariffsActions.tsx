@@ -13,7 +13,12 @@ import { BASIC_PROMO_END_ISO, BASIC_PROMO_MONTHS } from "@/data/plans";
 const BASE_CLASS = "mt-5 block rounded-full px-4 py-2.5 text-center text-sm font-medium transition-colors";
 
 // inverted — карточка тарифа сама тёмная (вариант В для Pro), поэтому кнопку
-// и заметку "не специалист" красим наоборот: светлая кнопка на тёмном фоне.
+// красим наоборот: светлая кнопка на тёмном фоне.
+//
+// Кнопка всегда активна, не серая заметка (по просьбе пользователя — раньше
+// не-специалист видел неживой текст "Тарифы оплачивают специалисты", это
+// выглядело как тупик). Специалист попадает на реальную оплату в кабинете;
+// кто угодно ещё (аноним, заказчик) — на регистрацию, там путь и начинается.
 export function PlanChooseButton({ recommended, inverted }: { recommended?: boolean; inverted?: boolean }) {
   const { user } = useAuth();
   const style = inverted
@@ -22,24 +27,14 @@ export function PlanChooseButton({ recommended, inverted }: { recommended?: bool
       ? "bg-zinc-900 text-white hover:bg-zinc-700"
       : "border border-zinc-300 text-zinc-700 hover:bg-zinc-50";
 
-  if (user && user.role !== "specialist") {
-    return (
-      <p
-        className={`mt-5 rounded-full border px-4 py-2.5 text-center text-xs ${
-          inverted ? "border-white/20 text-zinc-400" : "border-zinc-200 text-zinc-400"
-        }`}
-      >
-        Тарифы оплачивают специалисты
-      </p>
-    );
-  }
+  const isSpecialist = user?.role === "specialist";
 
   return (
     <Link
-      href={user ? "/dashboard?tab=plan" : "/register"}
+      href={isSpecialist ? "/dashboard?tab=plan" : "/register"}
       className={`${BASE_CLASS} ${style}`}
     >
-      {user ? "Оплатить в кабинете" : "Зарегистрироваться и выбрать"}
+      Оплатить
     </Link>
   );
 }

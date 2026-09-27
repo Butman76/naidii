@@ -14,6 +14,15 @@ function formatMoney(value: number) {
   return `${value.toLocaleString("ru-RU")} ₽`;
 }
 
+// Подсветка колонок в таблице возможностей — иначе три одинаковые по цвету
+// колонки сливаются в один серый прямоугольник. Цвета повторяют смысловые
+// акценты тарифов на карточках выше (Pro — синий, Enterprise — фиолетовый).
+const COLUMN_TINT: Record<string, string> = {
+  basic: "bg-zinc-100/70",
+  pro: "bg-blue-50",
+  enterprise: "bg-violet-100/70",
+};
+
 export default function TariffsPage() {
   const basicPromo = isBasicPromoActive();
 
@@ -50,7 +59,7 @@ export default function TariffsPage() {
               return (
                 <div
                   key={plan.code}
-                  className={`flex flex-col rounded-2xl p-5 ${
+                  className={`flex flex-col rounded-2xl p-5 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-xl ${
                     inverted ? "bg-zinc-900 text-white" : "border border-zinc-200 bg-white"
                   }`}
                 >
@@ -108,7 +117,7 @@ export default function TariffsPage() {
             })}
           </div>
 
-          <div className="mt-10 overflow-x-auto rounded-2xl border border-zinc-200 bg-white">
+          <div className="mt-10 overflow-x-auto rounded-2xl border border-zinc-200 bg-white shadow-md">
             <table className="w-full min-w-[480px] text-left text-sm">
               <thead>
                 <tr className="border-b border-zinc-200">
@@ -118,7 +127,7 @@ export default function TariffsPage() {
                   {PLANS.map((plan) => (
                     <th
                       key={plan.code}
-                      className="px-4 py-3 font-medium text-zinc-900"
+                      className={`px-4 py-3 font-medium text-zinc-900 ${COLUMN_TINT[plan.code] ?? ""}`}
                     >
                       {plan.title}
                     </th>
@@ -130,7 +139,7 @@ export default function TariffsPage() {
                   <tr key={row.label} className="border-b border-zinc-100 last:border-0">
                     <td className="px-4 py-3 text-zinc-600">{row.label}</td>
                     {PLANS.map((plan) => (
-                      <td key={plan.code} className="px-4 py-3 text-zinc-900">
+                      <td key={plan.code} className={`px-4 py-3 text-zinc-900 ${COLUMN_TINT[plan.code] ?? ""}`}>
                         {row.getValue(plan)}
                       </td>
                     ))}

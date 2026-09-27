@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CategoryDots from "@/components/CategoryDots";
 import ClaimSection from "@/components/unclaimed/ClaimSection";
+import AdminDetails from "@/components/unclaimed/AdminDetails";
 import { CATEGORIES } from "@/data/categories";
 import { fetchActiveUnclaimedListings, fetchUnclaimedListingByDomain } from "@/lib/unclaimed";
 
@@ -79,6 +80,8 @@ export default async function UnclaimedProfilePage({
               </div>
             </dl>
           </div>
+
+          <AdminDetails id={listing.id} />
 
           <div className="mt-6">
             <ClaimSection listing={listing} />

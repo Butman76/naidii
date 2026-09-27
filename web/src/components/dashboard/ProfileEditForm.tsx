@@ -4,6 +4,7 @@ import { useState } from "react";
 import { pbClient } from "@/lib/auth-client";
 import type { Specialist } from "@/types/specialist";
 import { updateSpecialistSkills, type MySkill, type SkillOption } from "@/lib/dashboard";
+import SpecialistCard from "@/components/SpecialistCard";
 
 // Раньше "Редактировать" в профиле кабинета ничего не делал (кнопка без
 // обработчика) — публичный профиль нельзя было заполнить иначе, чем через
@@ -51,6 +52,17 @@ export default function ProfileEditForm({
     skillsByCategory.set(s.category, list);
   }
 
+  // Живой превью карточки в каталоге (см. SpecialistCard.tsx) — остальные
+  // поля (рейтинг, отзывы, услуги и т.п.) берём как есть у specialist, тут
+  // редактируются только title/описания/навыки.
+  const previewSkills = allSkills.filter((s) => selectedSkillIds.has(s.id)).map((s) => s.name);
+  const preview: Specialist = {
+    ...specialist,
+    title: title.trim() || specialist.title,
+    shortDescription: shortDescription.trim(),
+    skills: previewSkills,
+  };
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
@@ -74,7 +86,8 @@ export default function ProfileEditForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-4">
+    <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div>
         <label className="text-xs font-medium text-zinc-500">
           Заголовок профиля
@@ -97,7 +110,7 @@ export default function ProfileEditForm({
 
         <div className="mt-3">
           <label className="text-xs font-medium text-zinc-500">
-            Краткое описание (видно в карточке каталога)
+            Краткое описание — на карточку специалиста в каталоге
           </label>
           <input
             type="text"
@@ -176,5 +189,13 @@ export default function ProfileEditForm({
         </button>
       </div>
     </form>
+
+    <div className="self-start lg:sticky lg:top-4">
+      <p className="text-xs font-medium text-zinc-500">Так карточка выглядит в каталоге</p>
+      <div className="pointer-events-none mt-2">
+        <SpecialistCard specialist={preview} />
+      </div>
+    </div>
+    </div>
   );
 }

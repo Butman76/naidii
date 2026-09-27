@@ -229,7 +229,7 @@ export default function SpecialistDashboard({
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-zinc-500">Краткое описание</dt>
+                <dt className="text-xs text-zinc-500">Краткое описание (на карточке специалиста в каталоге)</dt>
                 <dd className="text-zinc-900">
                   {specialist.shortDescription || "—"}
                 </dd>

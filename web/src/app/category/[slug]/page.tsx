@@ -50,7 +50,7 @@ export default async function CategoryPage({
   return (
     <>
       <Header />
-      <main className="flex-1 bg-zinc-50">
+      <main className="flex-1 bg-[var(--page-bg)]">
         <div className="border-b border-zinc-200 bg-white">
           <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
             <p className="text-sm text-zinc-500">

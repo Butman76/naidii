@@ -58,7 +58,7 @@ export default async function ResultTypePage({
   return (
     <>
       <Header />
-      <main className="flex-1 bg-zinc-50">
+      <main className="flex-1 bg-[var(--page-bg)]">
         <div
           className={`relative overflow-hidden text-white ${
             type.coverImageUrl ? "bg-zinc-900" : `bg-gradient-to-br ${style.gradient}`

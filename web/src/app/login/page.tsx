@@ -35,7 +35,7 @@ export default function LoginPage() {
   return (
     <>
       <Header />
-      <main className="flex flex-1 items-center justify-center bg-zinc-50 px-4 py-16">
+      <main className="flex flex-1 items-center justify-center bg-[var(--page-bg)] px-4 py-16">
         <form
           onSubmit={handleSubmit}
           className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-6"

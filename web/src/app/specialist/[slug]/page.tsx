@@ -49,7 +49,7 @@ export default async function SpecialistProfilePage({
     <>
       <Header />
       <ViewTracker slug={specialist.slug} />
-      <main className="flex-1 bg-zinc-50">
+      <main className="flex-1 bg-[var(--page-bg)]">
         {specialist.premium ? (
           <PremiumSpecialistProfile specialist={specialist} />
         ) : (

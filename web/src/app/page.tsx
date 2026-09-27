@@ -19,7 +19,7 @@ export default async function Home() {
   return (
     <>
       <Header />
-      <main className="flex-1 bg-zinc-50">
+      <main className="flex-1 bg-[var(--page-bg)]">
         <HeroCarousel />
         <DirectionsStrip />
         <TrustStats />

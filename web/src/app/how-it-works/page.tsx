@@ -103,7 +103,7 @@ export default function HowItWorksPage() {
   return (
     <>
       <Header />
-      <main className="flex-1 bg-zinc-50">
+      <main className="flex-1 bg-[var(--page-bg)]">
         {/* Верхний блок — примерно две трети экрана, яркое описание сути
             площадки. Полоса направлений ниже — та же 3D-плашка, что и на
             главной (DirectionsStrip) и на /categories, для единообразия. */}

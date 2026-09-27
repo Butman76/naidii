@@ -20,7 +20,7 @@ export default async function EventsPage() {
   return (
     <>
       <Header />
-      <main className="flex-1 bg-zinc-50">
+      <main className="flex-1 bg-[var(--page-bg)]">
         <div className="border-b border-zinc-200 bg-white">
           <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
             <h1 className="text-2xl font-bold text-zinc-900 sm:text-3xl">AI-события и форумы</h1>

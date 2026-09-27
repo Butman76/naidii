@@ -3,6 +3,12 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  /* Фон страниц сайта (вариант «Б» из обсуждения 2026-09-28) — лёгкая
+     тонировка в цвет синего градиента лого/акцентов (Header.tsx,
+     category-style.ts), вместо нейтрального bg-zinc-50. Белые карточки
+     поверх (bg-white) читаются так же чётко, разница едва заметна и не
+     мешает контрасту текста. */
+  --page-bg: #f4f8fc;
 }
 
 @theme inline {
@@ -22,7 +28,11 @@
 }
 
 body {
-  background: var(--background);
+  /* Не var(--background, #fff) — этот селектор специфичнее, чем класс
+     Tailwind bg-[var(--page-bg)] на самом теге <body> (см. layout.tsx),
+     и раньше побеждал в каскаде, оставляя body белым под тонированным
+     main. */
+  background: var(--page-bg);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }

@@ -1,11 +1,17 @@
 // Источник цен для /tariffs, кабинета специалиста и живой оплаты через
 // ЮKassa (web/src/lib/payments.ts читает именно эти цифры, не берёт их из
-// запроса клиента) — см. STATUS.md. Модель — вход/подписка + процент с
-// подтверждённой сделки (эскроу), договорённость от 2026-08-29.
+// запроса клиента) — см. STATUS.md. Модель — только подписка.
 // PocketBase-коллекция pocketbase/pb_migrations/1755000008_plans.js под
 // старую модель фронтендом не используется (данные всегда шли из этого
 // файла), поэтому её схему не трогаем — почему это безопасно, см.
 // комментарий в самой миграции.
+//
+// Комиссия с подтверждённой сделки (эскроу/«безопасная сделка») временно
+// убрана из тарифов (2026-09-27): у ЮKassa такой механизм доступен только
+// при обороте площадки от 800 000 ₽/мес, у нас пока меньше. Поле
+// commissionPercent убрано из Plan — вернуть вместе с реальной интеграцией,
+// когда оборот это позволит; commissionPercent в pb_migrations/1755000008
+// не трогаем, он и так не используется фронтендом.
 //
 // Базовый — подписка 500 ₽/мес (2026-09-28: раньше по ошибке был
 // разовый вход 500 ₽ без подписки, поправлено по просьбе пользователя).
@@ -20,10 +26,6 @@ export interface Plan {
   entryFee: number;
   /** Абонентская плата, ₽/мес. 0, если тариф без подписки. */
   monthlyFee: number;
-  /** Комиссия площадки с суммы подтверждённой сделки (безопасная сделка/эскроу), %. */
-  commissionPercent: number;
-  /** Снижение комиссии при объёме — например, для Enterprise. */
-  volumeDiscount?: { minDeals: number; commissionPercent: number };
   analyticsEnabled: boolean;
   promotionAccess: boolean;
   dedicatedManager: boolean;
@@ -39,26 +41,24 @@ export const PLANS: Plan[] = [
     title: "Базовый",
     entryFee: 0,
     monthlyFee: 500,
-    commissionPercent: 12,
     analyticsEnabled: false,
     promotionAccess: false,
     dedicatedManager: false,
     prioritySupport: false,
     customLanding: false,
-    description: "Карточка в каталоге и приём заявок. Комиссия — только с подтверждённых сделок.",
+    description: "Карточка в каталоге и приём заявок.",
   },
   {
     code: "pro",
     title: "Pro",
     entryFee: 0,
     monthlyFee: 990,
-    commissionPercent: 10,
     analyticsEnabled: true,
     promotionAccess: true,
     dedicatedManager: false,
     prioritySupport: false,
     customLanding: false,
-    description: "Ниже комиссия с каждой сделки, плюс аналитика профиля и продвижение в топ-20 каталога.",
+    description: "Аналитика профиля и продвижение в топ-20 каталога.",
     recommended: true,
   },
   {
@@ -66,8 +66,6 @@ export const PLANS: Plan[] = [
     title: "Enterprise",
     entryFee: 0,
     monthlyFee: 2900,
-    commissionPercent: 8,
-    volumeDiscount: { minDeals: 50, commissionPercent: 5 },
     analyticsEnabled: true,
     promotionAccess: true,
     dedicatedManager: true,
@@ -93,13 +91,6 @@ export const PLAN_FEATURE_ROWS: Array<{
   {
     label: "Подписка",
     getValue: (p) => (p.monthlyFee > 0 ? `${p.monthlyFee.toLocaleString("ru-RU")} ₽/мес` : "—"),
-  },
-  {
-    label: "Комиссия с сделки",
-    getValue: (p) =>
-      p.volumeDiscount
-        ? `${p.commissionPercent}% (от ${p.volumeDiscount.minDeals} сделок — ${p.volumeDiscount.commissionPercent}%)`
-        : `${p.commissionPercent}%`,
   },
   {
     label: "Аналитика профиля",

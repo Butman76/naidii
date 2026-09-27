@@ -7,7 +7,7 @@ import { PaymentsNotice, PlanChooseButton, PromoCountdown } from "@/components/T
 export const metadata: Metadata = {
   title: "Тарифы для специалистов — НайдИИ",
   description:
-    "Тарифы размещения на НайдИИ: подписка плюс процент с подтверждённой сделки — от Базового до Enterprise с выделенным менеджером.",
+    "Тарифы размещения на НайдИИ: подписка на карточку в каталоге — от Базового до Enterprise с выделенным менеджером.",
 };
 
 function formatMoney(value: number) {
@@ -36,8 +36,8 @@ export default function TariffsPage() {
               Тарифы для специалистов
             </h1>
             <p className="mt-2 max-w-2xl text-sm text-zinc-600">
-              Подписка — и процент с каждой подтверждённой сделки через
-              безопасную сделку. Чем выше тариф, тем ниже комиссия.
+              Подписка на размещение в каталоге и приём заявок. Чем выше тариф,
+              тем больше инструментов продвижения.
             </p>
           </div>
         </div>
@@ -52,8 +52,7 @@ export default function TariffsPage() {
             {PLANS.map((plan) => {
               const showPromo = plan.code === "basic" && basicPromo;
               // Вариант В (выбран пользователем вместо изначально сделанного Б):
-              // крупная цена вместо мелкого заголовка, комиссия — отдельным
-              // блоком-метрикой, а не строкой текста, у Pro вместо цветной
+              // крупная цена вместо мелкого заголовка, у Pro вместо цветной
               // рамки — инвертированная тёмная карточка.
               const inverted = Boolean(plan.recommended);
               return (
@@ -88,24 +87,6 @@ export default function TariffsPage() {
                       </span>
                     </p>
                   )}
-
-                  <div
-                    className={`mt-3 rounded-xl px-3 py-2 text-xs ${
-                      inverted ? "bg-white/10 text-zinc-300" : "bg-zinc-50 text-zinc-500"
-                    }`}
-                  >
-                    Комиссия{" "}
-                    <b className={inverted ? "text-white" : "text-zinc-900"}>{plan.commissionPercent}%</b>
-                    {" "}со сделки
-                    {plan.volumeDiscount && (
-                      <>
-                        , от {plan.volumeDiscount.minDeals} сделок —{" "}
-                        <b className={inverted ? "text-white" : "text-zinc-900"}>
-                          {plan.volumeDiscount.commissionPercent}%
-                        </b>
-                      </>
-                    )}
-                  </div>
 
                   <p className={`mt-3 text-sm ${inverted ? "text-zinc-300" : "text-zinc-600"}`}>
                     {plan.description}

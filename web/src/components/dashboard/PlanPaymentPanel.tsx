@@ -201,9 +201,7 @@ export default function PlanPaymentPanel({
                 >
                   <div>
                     <p className="text-sm font-medium text-zinc-900">{plan.title}</p>
-                    <p className="text-xs text-zinc-500">
-                      {priceLabel(plan)} · комиссия со сделки {plan.commissionPercent}%
-                    </p>
+                    <p className="text-xs text-zinc-500">{priceLabel(plan)}</p>
                   </div>
                   <button
                     type="button"

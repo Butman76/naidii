@@ -454,10 +454,9 @@ export default function SpecialistDashboard({
                 {currentPlan.title}
               </p>
               <p className="mt-2 text-sm text-zinc-600">{currentPlan.description}</p>
-              <p className="mt-3 text-xs text-zinc-500">
-                Комиссия площадки с подтверждённой сделки: {currentPlan.commissionPercent}%
-                {currentPlan.customLanding && " · включён профиль-лендинг вместо обычной карточки"}
-              </p>
+              {currentPlan.customLanding && (
+                <p className="mt-3 text-xs text-zinc-500">Включён профиль-лендинг вместо обычной карточки</p>
+              )}
               {planPromotionRank({ plan_code: planCodeRaw, active_until: planActiveUntil }) > 0 && (
                 <p className="mt-1 text-xs text-zinc-500">
                   Продвижение включено: ваши услуги показываются выше в каталоге и в сетке «Топ-20» с меткой
@@ -475,7 +474,7 @@ export default function SpecialistDashboard({
                   Хотите тариф выше?
                 </p>
                 <p className="mt-1 text-sm text-amber-800">
-                  На старших тарифах ниже комиссия, продвижение в каталоге, а на
+                  На старших тарифах — продвижение в каталоге и аналитика профиля, а на
                   максимальном — профиль-лендинг вместо обычной карточки.
                 </p>
                 <Link

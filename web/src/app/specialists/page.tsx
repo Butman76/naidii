@@ -3,7 +3,6 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SpecialistsCatalog from "@/components/SpecialistsCatalog";
 import PartnerAdsCarousel from "@/components/PartnerAdsCarousel";
-import UnclaimedSection from "@/components/unclaimed/UnclaimedSection";
 import { fetchSpecialists } from "@/lib/specialists";
 import { fetchActivePartnerAds } from "@/lib/partner-ads";
 import { fetchActiveUnclaimedListings } from "@/lib/unclaimed";
@@ -42,8 +41,7 @@ export default async function SpecialistsPage() {
           </div>
         </div>
         <PartnerAdsCarousel ads={partnerAds} />
-        <SpecialistsCatalog specialists={specialists} />
-        <UnclaimedSection listings={unclaimed} />
+        <SpecialistsCatalog specialists={specialists} unclaimed={unclaimed} />
       </main>
       <Footer />
     </>

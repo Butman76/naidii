@@ -2,10 +2,12 @@
 
 import { useMemo, useState } from "react";
 import SpecialistCard from "./SpecialistCard";
+import UnclaimedCard from "./unclaimed/UnclaimedCard";
 import { CATEGORIES } from "@/data/categories";
 import { getCategory3D } from "@/data/category-style";
 import type { Specialist } from "@/types/specialist";
 import { compareByPromotion } from "@/lib/promotion";
+import { isUnclaimedListing, mixIn, type UnclaimedListing } from "@/lib/unclaimed";
 
 type SortOption = "relevance" | "rating" | "priceAsc" | "reviews";
 
@@ -23,8 +25,10 @@ function parsePriceFrom(priceFrom: string): number {
 
 export default function SpecialistsCatalog({
   specialists,
+  unclaimed = [],
 }: {
   specialists: Specialist[];
+  unclaimed?: UnclaimedListing[];
 }) {
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -59,6 +63,21 @@ export default function SpecialistsCatalog({
       return b.rating - a.rating;
     });
   }, [query, activeCategory, remoteOnly, sortBy, specialists]);
+
+  // Неподтверждённые карточки (добавлены редакцией, см. lib/unclaimed.ts) —
+  // под те же категорию и поиск, что и обычные специалисты. "Только
+  // удалённо" их прячет: удалённая работа у них не подтверждена никем.
+  const filteredUnclaimed = useMemo(() => {
+    if (remoteOnly) return [];
+    const q = query.trim().toLowerCase();
+    return unclaimed.filter((l) => {
+      if (activeCategory && !l.categories.includes(activeCategory)) return false;
+      if (!q) return true;
+      return `${l.name} ${l.blurb}`.toLowerCase().includes(q);
+    });
+  }, [unclaimed, activeCategory, remoteOnly, query]);
+
+  const mixed = useMemo(() => mixIn(filtered, filteredUnclaimed), [filtered, filteredUnclaimed]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -130,11 +149,15 @@ export default function SpecialistsCatalog({
         Найдено специалистов: {filtered.length}
       </p>
 
-      {filtered.length > 0 ? (
+      {mixed.length > 0 ? (
         <div className="mt-4 grid grid-cols-1 gap-4 min-[640px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {filtered.map((specialist) => (
-            <SpecialistCard key={specialist.id} specialist={specialist} />
-          ))}
+          {mixed.map((item) =>
+            isUnclaimedListing(item) ? (
+              <UnclaimedCard key={item.id} listing={item} />
+            ) : (
+              <SpecialistCard key={item.id} specialist={item} />
+            )
+          )}
         </div>
       ) : (
         <p className="mt-12 text-center text-sm text-zinc-500">

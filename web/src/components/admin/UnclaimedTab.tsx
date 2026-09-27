@@ -162,7 +162,12 @@ export default function UnclaimedTab() {
                           <span className="font-medium">{c.kind === "claim" ? "Это моя компания" : "Просят убрать"}</span>
                           {c.status === "new" ? <span className="ml-1 text-amber-700">· новая</span> : <span className="ml-1 text-emerald-700">· обработана</span>}
                         </p>
-                        <p>{c.contactName}, {c.contactEmail}{c.contactPhone ? `, ${c.contactPhone}` : ""}</p>
+                        <p>
+                          {c.contactName}, {c.contactEmail}{c.contactPhone ? `, ${c.contactPhone}` : ""}
+                          {c.contactEmail.toLowerCase().endsWith("@" + l.domain.toLowerCase()) && (
+                            <span className="ml-1 font-medium text-emerald-700">· почта с домена компании</span>
+                          )}
+                        </p>
                         {c.message && <p className="mt-1">{c.message}</p>}
                         {c.status === "new" && (
                           <button type="button" onClick={() => markHandled(c)} className="mt-1 rounded border border-zinc-300 bg-white px-2 py-1 text-[11px] hover:bg-zinc-100">

@@ -17,6 +17,29 @@ export interface UnclaimedListing {
   categories: string[];
 }
 
+// Различает UnclaimedListing от Specialist в общей сетке карточек (у
+// Specialist нет поля domain) — см. mixIn ниже.
+export function isUnclaimedListing(v: unknown): v is UnclaimedListing {
+  return typeof v === "object" && v !== null && "domain" in v;
+}
+
+// Вмешивает неподтверждённые карточки в уже отсортированный список
+// специалистов, а не показывает отдельным блоком снизу (по просьбе
+// пользователя, 2026-09-28) — каждая вставляется через `step` карточек,
+// чтобы не столпились в конце и не перебивали первые (часто продвигаемые)
+// позиции настоящих специалистов.
+export function mixIn<A>(main: A[], extra: UnclaimedListing[], step = 4): Array<A | UnclaimedListing> {
+  if (extra.length === 0) return main;
+  const out: Array<A | UnclaimedListing> = [];
+  let e = 0;
+  main.forEach((item, i) => {
+    out.push(item);
+    if ((i + 1) % step === 0 && e < extra.length) out.push(extra[e++]);
+  });
+  while (e < extra.length) out.push(extra[e++]);
+  return out;
+}
+
 function mapListing(r: Record<string, unknown>): UnclaimedListing {
   const s = (k: string) => (typeof r[k] === "string" ? (r[k] as string) : "");
   return {

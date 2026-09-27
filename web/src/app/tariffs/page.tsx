@@ -27,7 +27,7 @@ export default function TariffsPage() {
   return (
     <>
       <Header />
-      <main className="flex-1 bg-[var(--page-bg)]">
+      <main className="flex-1">
         <div className="border-b border-zinc-200 bg-white">
           <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
             <h1 className="text-2xl font-bold text-zinc-900 sm:text-3xl">

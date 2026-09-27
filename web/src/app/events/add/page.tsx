@@ -14,7 +14,7 @@ export default function AddEventPage() {
   return (
     <>
       <Header />
-      <main className="flex-1 bg-[var(--page-bg)]">
+      <main className="flex-1">
         <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
           <p className="text-sm text-zinc-500">
             <Link href="/events" className="hover:text-zinc-900">AI-события</Link> / Добавить событие

@@ -29,7 +29,7 @@ export default function LegalDocument({
   return (
     <>
       <Header />
-      <main className="flex-1 bg-[var(--page-bg)]">
+      <main className="flex-1">
         <div className="border-b border-zinc-200 bg-white">
           <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
             <Link

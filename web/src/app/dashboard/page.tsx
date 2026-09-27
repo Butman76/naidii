@@ -14,7 +14,7 @@ export default function DashboardPage() {
   return (
     <>
       <Header />
-      <main className="flex-1 bg-[var(--page-bg)]">
+      <main className="flex-1">
         <RequireAuth role="specialist">
           {/* SpecialistDashboard reads ?tab= (see HeroDealsBadge deep link)
               via useSearchParams — Next.js requires a Suspense boundary

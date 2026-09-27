@@ -13,7 +13,7 @@ export default function AdminPage() {
   return (
     <>
       <Header />
-      <main className="flex-1 bg-[var(--page-bg)]">
+      <main className="flex-1">
         <RequireAuth role={["admin", "moderator"]}>
           <AdminPanel />
         </RequireAuth>

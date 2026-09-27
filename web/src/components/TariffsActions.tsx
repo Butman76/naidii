@@ -12,15 +12,23 @@ import { BASIC_PROMO_END_ISO, BASIC_PROMO_MONTHS } from "@/data/plans";
 
 const BASE_CLASS = "mt-5 block rounded-full px-4 py-2.5 text-center text-sm font-medium transition-colors";
 
-export function PlanChooseButton({ recommended }: { recommended?: boolean }) {
+// inverted — карточка тарифа сама тёмная (вариант В для Pro), поэтому кнопку
+// и заметку "не специалист" красим наоборот: светлая кнопка на тёмном фоне.
+export function PlanChooseButton({ recommended, inverted }: { recommended?: boolean; inverted?: boolean }) {
   const { user } = useAuth();
-  const style = recommended
-    ? "bg-zinc-900 text-white hover:bg-zinc-700"
-    : "border border-zinc-300 text-zinc-700 hover:bg-zinc-50";
+  const style = inverted
+    ? "bg-white text-zinc-900 hover:bg-zinc-200"
+    : recommended
+      ? "bg-zinc-900 text-white hover:bg-zinc-700"
+      : "border border-zinc-300 text-zinc-700 hover:bg-zinc-50";
 
   if (user && user.role !== "specialist") {
     return (
-      <p className="mt-5 rounded-full border border-zinc-200 px-4 py-2.5 text-center text-xs text-zinc-400">
+      <p
+        className={`mt-5 rounded-full border px-4 py-2.5 text-center text-xs ${
+          inverted ? "border-white/20 text-zinc-400" : "border-zinc-200 text-zinc-400"
+        }`}
+      >
         Тарифы оплачивают специалисты
       </p>
     );

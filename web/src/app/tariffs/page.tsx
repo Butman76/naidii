@@ -14,16 +14,6 @@ function formatMoney(value: number) {
   return `${value.toLocaleString("ru-RU")} ₽`;
 }
 
-// Оформление по коду тарифа — здесь, не в data/plans.ts: там модель цен,
-// тут только визуал (та же логика разделения, что у data/categories.ts и
-// data/category-style.ts). accent — цветная полоса слева карточки, card —
-// фон самой карточки (у рекомендуемого он ощутимо ярче остальных).
-const PLAN_STYLE: Record<string, { icon: string; accent: string; card: string }> = {
-  basic: { icon: "🚀", accent: "bg-zinc-300", card: "border-zinc-200 bg-white" },
-  pro: { icon: "⭐", accent: "bg-gradient-to-b from-blue-600 to-cyan-500", card: "border-blue-200 bg-blue-50/60" },
-  enterprise: { icon: "🏢", accent: "bg-violet-600", card: "border-zinc-200 bg-white" },
-};
-
 export default function TariffsPage() {
   const basicPromo = isBasicPromoActive();
 
@@ -51,58 +41,68 @@ export default function TariffsPage() {
 
           <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
             {PLANS.map((plan) => {
-              const style = PLAN_STYLE[plan.code] ?? PLAN_STYLE.basic;
               const showPromo = plan.code === "basic" && basicPromo;
+              // Вариант В (выбран пользователем вместо изначально сделанного Б):
+              // крупная цена вместо мелкого заголовка, комиссия — отдельным
+              // блоком-метрикой, а не строкой текста, у Pro вместо цветной
+              // рамки — инвертированная тёмная карточка.
+              const inverted = Boolean(plan.recommended);
               return (
                 <div
                   key={plan.code}
-                  className={`relative flex flex-col overflow-hidden rounded-2xl border pl-5 pr-5 py-5 ${style.card} ${
-                    plan.recommended ? "ring-1 ring-blue-300" : ""
+                  className={`flex flex-col rounded-2xl p-5 ${
+                    inverted ? "bg-zinc-900 text-white" : "border border-zinc-200 bg-white"
                   }`}
                 >
-                  <span className={`absolute inset-y-0 left-0 w-1.5 ${style.accent}`} aria-hidden="true" />
-                  <div className="flex items-center justify-between">
-                    <span className="text-xl" aria-hidden="true">{style.icon}</span>
-                    {plan.recommended && (
-                      <span className="rounded-full bg-blue-600 px-2 py-0.5 text-[11px] font-medium text-white">
-                        Рекомендуем
-                      </span>
-                    )}
-                  </div>
-                  <p className="mt-2 text-base font-semibold text-zinc-900">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-400">
                     {plan.title}
+                    {plan.recommended ? " · Рекомендуем" : ""}
                   </p>
 
                   {showPromo ? (
                     <>
-                      <p className="mt-1 text-2xl font-bold text-zinc-900">
+                      <p className="mt-1.5 text-[26px] font-semibold leading-none text-inherit">
                         {formatMoney(plan.monthlyFee)}
-                        <span className="text-sm font-medium text-zinc-500"> за 3 месяца</span>
+                        <span className={`ml-1 text-sm font-medium ${inverted ? "text-zinc-400" : "text-zinc-500"}`}>
+                          за 3 месяца
+                        </span>
                       </p>
-                      <p className="text-xs font-medium text-amber-700">
+                      <p className="mt-1.5 text-xs font-medium text-amber-500">
                         по акции — вместо {formatMoney(plan.monthlyFee * 3)}
                       </p>
                     </>
                   ) : (
-                    <p className="mt-1 text-2xl font-bold text-zinc-900">
+                    <p className="mt-1.5 text-[26px] font-semibold leading-none text-inherit">
                       {formatMoney(plan.monthlyFee)}
-                      <span className="text-sm font-medium text-zinc-500">/мес</span>
+                      <span className={`ml-1 text-sm font-medium ${inverted ? "text-zinc-400" : "text-zinc-500"}`}>
+                        в месяц
+                      </span>
                     </p>
                   )}
 
-                  <p className="mt-1 text-sm font-medium text-zinc-600">
-                    + {plan.commissionPercent}% с подтверждённой сделки
-                  </p>
-                  <p className="mt-2 text-sm text-zinc-600">
+                  <div
+                    className={`mt-3 rounded-xl px-3 py-2 text-xs ${
+                      inverted ? "bg-white/10 text-zinc-300" : "bg-zinc-50 text-zinc-500"
+                    }`}
+                  >
+                    Комиссия{" "}
+                    <b className={inverted ? "text-white" : "text-zinc-900"}>{plan.commissionPercent}%</b>
+                    {" "}со сделки
+                    {plan.volumeDiscount && (
+                      <>
+                        , от {plan.volumeDiscount.minDeals} сделок —{" "}
+                        <b className={inverted ? "text-white" : "text-zinc-900"}>
+                          {plan.volumeDiscount.commissionPercent}%
+                        </b>
+                      </>
+                    )}
+                  </div>
+
+                  <p className={`mt-3 text-sm ${inverted ? "text-zinc-300" : "text-zinc-600"}`}>
                     {plan.description}
                   </p>
-                  {plan.volumeDiscount && (
-                    <p className="mt-2 text-xs text-emerald-600">
-                      Комиссия снижается до {plan.volumeDiscount.commissionPercent}% при{" "}
-                      {plan.volumeDiscount.minDeals}+ сделках
-                    </p>
-                  )}
-                  <PlanChooseButton recommended={plan.recommended} />
+
+                  <PlanChooseButton recommended={plan.recommended} inverted={inverted} />
                 </div>
               );
             })}

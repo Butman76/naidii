@@ -12,6 +12,7 @@ export interface UnclaimedListing {
   domain: string;
   website: string;
   legalName: string;
+  inn: string;
   city: string;
   blurb: string;
   categories: string[];
@@ -48,6 +49,7 @@ function mapListing(r: Record<string, unknown>): UnclaimedListing {
     domain: s("domain"),
     website: s("website"),
     legalName: s("legal_name"),
+    inn: s("inn"),
     city: s("city"),
     blurb: s("blurb"),
     categories: Array.isArray(r.categories) ? (r.categories as string[]) : [],
@@ -66,10 +68,19 @@ export async function fetchActiveUnclaimedListings(): Promise<UnclaimedListing[]
   }
 }
 
+export async function fetchUnclaimedListingByDomain(domain: string): Promise<UnclaimedListing | null> {
+  try {
+    const pb = createPocketBase();
+    const r = await pb.collection("unclaimed_specialists").getFirstListItem(pb.filter('domain = {:domain} && status = "active"', { domain }));
+    return mapListing(r as unknown as Record<string, unknown>);
+  } catch {
+    return null;
+  }
+}
+
 // ---------- админка ----------
 
 export interface AdminUnclaimedListing extends UnclaimedListing {
-  inn: string;
   sourceEmail: string;
   sourcePhone: string;
   status: "active" | "claimed" | "removed";
@@ -93,7 +104,6 @@ export async function fetchAdminUnclaimedListings(pb: PocketBase): Promise<Admin
   const records = await pb.collection("unclaimed_specialists").getFullList({ sort: "-created", batch: 500 });
   return records.map((r) => ({
     ...mapListing(r as unknown as Record<string, unknown>),
-    inn: String(r.inn ?? ""),
     sourceEmail: String(r.source_email ?? ""),
     sourcePhone: String(r.source_phone ?? ""),
     status: (r.status as AdminUnclaimedListing["status"]) || "active",

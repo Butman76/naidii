@@ -3,8 +3,10 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SpecialistsCatalog from "@/components/SpecialistsCatalog";
 import PartnerAdsCarousel from "@/components/PartnerAdsCarousel";
+import UnclaimedSection from "@/components/unclaimed/UnclaimedSection";
 import { fetchSpecialists } from "@/lib/specialists";
 import { fetchActivePartnerAds } from "@/lib/partner-ads";
+import { fetchActiveUnclaimedListings } from "@/lib/unclaimed";
 
 // Без этого страница была полностью статической (собранной один раз при
 // билде) и не видела изменений в PocketBase (публикацию профиля админом)
@@ -18,9 +20,10 @@ export const metadata: Metadata = {
 };
 
 export default async function SpecialistsPage() {
-  const [specialists, partnerAds] = await Promise.all([
+  const [specialists, partnerAds, unclaimed] = await Promise.all([
     fetchSpecialists(),
     fetchActivePartnerAds(),
+    fetchActiveUnclaimedListings(),
   ]);
 
   return (
@@ -40,6 +43,7 @@ export default async function SpecialistsPage() {
         </div>
         <PartnerAdsCarousel ads={partnerAds} />
         <SpecialistsCatalog specialists={specialists} />
+        <UnclaimedSection listings={unclaimed} />
       </main>
       <Footer />
     </>

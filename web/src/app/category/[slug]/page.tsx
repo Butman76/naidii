@@ -4,8 +4,10 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SpecialistCard from "@/components/SpecialistCard";
+import UnclaimedSection from "@/components/unclaimed/UnclaimedSection";
 import { CATEGORIES } from "@/data/categories";
 import { fetchSpecialists } from "@/lib/specialists";
+import { fetchActiveUnclaimedListings } from "@/lib/unclaimed";
 
 function getCategory(slug: string) {
   return CATEGORIES.find((c) => c.slug === slug);
@@ -44,8 +46,9 @@ export default async function CategoryPage({
   const category = getCategory(slug);
   if (!category) notFound();
 
-  const allSpecialists = await fetchSpecialists();
+  const [allSpecialists, allUnclaimed] = await Promise.all([fetchSpecialists(), fetchActiveUnclaimedListings()]);
   const specialists = allSpecialists.filter((s) => s.category === slug);
+  const unclaimed = allUnclaimed.filter((l) => l.categories.includes(slug));
 
   return (
     <>
@@ -90,6 +93,8 @@ export default async function CategoryPage({
             </p>
           )}
         </div>
+
+        <UnclaimedSection listings={unclaimed} />
 
         {category.faq.length > 0 && (
           <div className="mx-auto max-w-3xl px-4 pb-16 sm:px-6 lg:px-8">

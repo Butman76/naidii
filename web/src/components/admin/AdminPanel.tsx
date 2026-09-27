@@ -22,8 +22,9 @@ import LandingModerationTab from "./LandingModerationTab";
 import PartnerAdsTab from "./PartnerAdsTab";
 import ProspectsTab from "./ProspectsTab";
 import EventsTab from "./EventsTab";
+import UnclaimedTab from "./UnclaimedTab";
 
-type Tab = "profiles" | "types" | "reviews" | "landing" | "users" | "disputes" | "plans" | "log" | "logins" | "ads" | "prospects" | "events";
+type Tab = "profiles" | "types" | "reviews" | "landing" | "users" | "disputes" | "plans" | "log" | "logins" | "ads" | "prospects" | "events" | "unclaimed";
 
 function formatDate(iso: string): string {
   if (!iso) return "—";
@@ -390,6 +391,7 @@ export default function AdminPanel() {
     ...(isAdmin ? [{ id: "ads" as Tab, label: "Реклама" }] : []),
     ...(isAdmin ? [{ id: "prospects" as Tab, label: "База исполнителей" }] : []),
     ...(isAdmin ? [{ id: "events" as Tab, label: "AI-события" }] : []),
+    ...(isAdmin ? [{ id: "unclaimed" as Tab, label: "Неподтверждённые карточки" }] : []),
   ];
 
   if (error) {
@@ -938,6 +940,8 @@ export default function AdminPanel() {
           {tab === "prospects" && isAdmin && <ProspectsTab />}
 
           {tab === "events" && isAdmin && <EventsTab />}
+
+          {tab === "unclaimed" && isAdmin && <UnclaimedTab />}
         </div>
       )}
     </div>

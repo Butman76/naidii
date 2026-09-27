@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { PLANS, PLAN_FEATURE_ROWS, isBasicPromoActive } from "@/data/plans";
-import { PaymentsNotice, PlanChooseButton, PromoCountdown } from "@/components/TariffsActions";
+import { PlanChooseButton, PromoCountdown } from "@/components/TariffsActions";
 
 export const metadata: Metadata = {
   title: "Тарифы для специалистов — НайдИИ",
@@ -35,18 +35,11 @@ export default function TariffsPage() {
             <h1 className="text-2xl font-bold text-zinc-900 sm:text-3xl">
               Тарифы для специалистов
             </h1>
-            <p className="mt-2 max-w-2xl text-sm text-zinc-600">
-              Подписка на размещение в каталоге и приём заявок. Чем выше тариф,
-              тем больше инструментов продвижения.
-            </p>
           </div>
         </div>
 
         <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-3">
-            <PaymentsNotice />
-            {basicPromo && <PromoCountdown />}
-          </div>
+          {basicPromo && <PromoCountdown />}
 
           <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
             {PLANS.map((plan) => {

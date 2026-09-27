@@ -6,9 +6,9 @@ import { useAuth } from "@/lib/use-auth";
 import { BASIC_PROMO_END_ISO, BASIC_PROMO_MONTHS } from "@/data/plans";
 
 // Клиентские части страницы /tariffs (сама страница — серверный
-// компонент): кнопка выбора тарифа и плашка про оплату. Оплата
-// происходит не здесь, а в кабинете специалиста на вкладке "Тариф"
-// (dashboard/PlanPaymentPanel.tsx) — эти элементы только ведут туда.
+// компонент): кнопка выбора тарифа и баннер акции. Оплата происходит не
+// здесь, а в кабинете специалиста на вкладке "Тариф"
+// (dashboard/PlanPaymentPanel.tsx) — кнопка только ведёт туда.
 
 const BASE_CLASS = "mt-5 block rounded-full px-4 py-2.5 text-center text-sm font-medium transition-colors";
 
@@ -73,34 +73,6 @@ export function PromoCountdown() {
       <span className="font-medium tabular-nums">
         Осталось {hours} ч {String(minutes).padStart(2, "0")} мин
       </span>
-    </div>
-  );
-}
-
-// Пока в окружении сервера нет ключей ЮKassa (или страница отдана
-// статическим экспортом без сервера), показываем прежнюю честную
-// заметку; как только оплата включена, плашка про "не подключено"
-// пропадает.
-export function PaymentsNotice() {
-  const [enabled, setEnabled] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    fetch("/api/payments/config", { method: "POST" })
-      .then((res) => (res.ok ? res.json() : { enabled: false }))
-      .then((data) => setEnabled(data.enabled === true))
-      .catch(() => setEnabled(false));
-  }, []);
-
-  if (enabled === null) return null;
-
-  return enabled ? (
-    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-      Оплата картой или через СБП на защищённой странице ЮKassa. Зарегистрируйтесь как специалист и
-      подключите тариф во вкладке «Тариф» личного кабинета.
-    </div>
-  ) : (
-    <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-      Оплата на площадке ещё не подключена — это витрина тарифов, оформление заказа появится позже.
     </div>
   );
 }

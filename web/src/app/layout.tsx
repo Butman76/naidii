@@ -1,7 +1,22 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Golos_Text, Unbounded } from "next/font/google";
 import ImpersonationBanner from "@/components/ImpersonationBanner";
+import YandexMetrika from "@/components/YandexMetrika";
+import { METRIKA_ID } from "@/lib/metrika";
 import "./globals.css";
+
+// Метрика только на реальном домене (сборка на VPS). Статический экспорт для
+// GitHub Pages (STATIC_EXPORT=true) — это временная витрина на другом хосте,
+// её просмотры не должны попадать в счётчик naidii.ru.
+const metrikaEnabled = process.env.STATIC_EXPORT !== "true";
+
+const METRIKA_INIT = `(function(m,e,t,r,i,k,a){
+  m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+  m[i].l=1*new Date();
+  for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+  k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+})(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=${METRIKA_ID}', 'ym');
+ym(${METRIKA_ID}, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});`;
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,7 +57,25 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="ru"
       className={`${geistSans.variable} ${geistMono.variable} ${unbounded.variable} ${golosText.variable} h-full antialiased`}
     >
+      <head>
+        {metrikaEnabled && <script dangerouslySetInnerHTML={{ __html: METRIKA_INIT }} />}
+      </head>
       <body className="min-h-full flex flex-col text-zinc-900">
+        {metrikaEnabled && (
+          <>
+            <noscript>
+              <div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`https://mc.yandex.ru/watch/${METRIKA_ID}`}
+                  style={{ position: "absolute", left: "-9999px" }}
+                  alt=""
+                />
+              </div>
+            </noscript>
+            <YandexMetrika />
+          </>
+        )}
         <ImpersonationBanner />
         {children}
       </body>

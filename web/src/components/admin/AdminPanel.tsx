@@ -22,9 +22,10 @@ import LandingModerationTab from "./LandingModerationTab";
 import PartnerAdsTab from "./PartnerAdsTab";
 import ProspectsTab from "./ProspectsTab";
 import EventsTab from "./EventsTab";
+import NewsTab from "./NewsTab";
 import UnclaimedTab from "./UnclaimedTab";
 
-type Tab = "profiles" | "types" | "reviews" | "landing" | "users" | "disputes" | "plans" | "log" | "logins" | "ads" | "prospects" | "events" | "unclaimed";
+type Tab = "profiles" | "types" | "reviews" | "landing" | "users" | "disputes" | "plans" | "log" | "logins" | "ads" | "prospects" | "events" | "news" | "unclaimed";
 
 function formatDate(iso: string): string {
   if (!iso) return "—";
@@ -391,6 +392,7 @@ export default function AdminPanel() {
     ...(isAdmin ? [{ id: "ads" as Tab, label: "Реклама" }] : []),
     ...(isAdmin ? [{ id: "prospects" as Tab, label: "База исполнителей" }] : []),
     ...(isAdmin ? [{ id: "events" as Tab, label: "AI-события" }] : []),
+    ...(isAdmin ? [{ id: "news" as Tab, label: "Новости" }] : []),
     ...(isAdmin ? [{ id: "unclaimed" as Tab, label: "Неподтверждённые карточки" }] : []),
   ];
 
@@ -940,6 +942,8 @@ export default function AdminPanel() {
           {tab === "prospects" && isAdmin && <ProspectsTab />}
 
           {tab === "events" && isAdmin && <EventsTab />}
+
+          {tab === "news" && isAdmin && <NewsTab />}
 
           {tab === "unclaimed" && isAdmin && <UnclaimedTab />}
         </div>

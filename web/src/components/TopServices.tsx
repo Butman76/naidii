@@ -1,6 +1,7 @@
 import Link from "next/link";
 import ResultTypePlate from "./ResultTypePlate";
 import EventsSidebar from "./events/EventsSidebar";
+import NewsSidebar from "./news/NewsSidebar";
 import { fetchCatalogData, summarizeResultTypes, sortByPromotedThenRating } from "@/lib/catalog";
 
 // Главный объект первого экрана каталога — плашка типа результата, а не
@@ -28,7 +29,10 @@ export default async function TopServices() {
             <ResultTypePlate key={type.id} type={type} />
           ))}
         </div>
-        <EventsSidebar />
+        <div className="flex flex-col gap-4 self-start">
+          <EventsSidebar />
+          <NewsSidebar />
+        </div>
       </div>
 
       <div className="mt-8 text-center">

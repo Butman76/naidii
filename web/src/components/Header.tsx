@@ -10,6 +10,7 @@ const NAV_LINKS = [
   { href: "/specialists", label: "Специалисты" },
   { href: "/categories", label: "Категории" },
   { href: "/events", label: "AI-события" },
+  { href: "/news", label: "Новости" },
   { href: "/how-it-works", label: "Как это работает" },
   { href: "/tariffs", label: "Тарифы" },
 ];

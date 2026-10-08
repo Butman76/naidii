@@ -12,7 +12,7 @@ export default async function EventsSidebar() {
   const upcoming = sortUpcoming(events.filter((e) => !isPast(e, today))).slice(0, 6);
 
   return (
-    <aside className="flex flex-col self-start rounded-2xl border border-zinc-200 bg-white p-4">
+    <aside className="flex flex-col rounded-2xl border border-zinc-200 bg-white p-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-zinc-900">AI-события</h3>
         <Link href="/events" className="text-xs font-medium text-blue-700 hover:underline">

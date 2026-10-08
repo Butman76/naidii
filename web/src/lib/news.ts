@@ -54,6 +54,22 @@ export function formatNewsDate(iso: string): string {
   return `${day} ${MONTHS[m - 1]} ${y}`;
 }
 
+// Короткий текст-превью для колонок и плиток: анонс, а если его нет — начало
+// самого текста без Markdown-разметки.
+export function newsSnippet(post: NewsPost, max = 160): string {
+  const source =
+    post.excerpt.trim() ||
+    post.body
+      .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
+      .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+      .replace(/^[#>\-\s*\d.]+/gm, " ")
+      .replace(/[*_`~|]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  if (source.length <= max) return source;
+  return source.slice(0, max).replace(/\s+\S*$/, "") + "…";
+}
+
 export function readingMinutes(body: string): number {
   const words = body.replace(/!\[[^\]]*\]\([^)]*\)/g, " ").split(/\s+/).filter(Boolean).length;
   return Math.max(1, Math.round(words / 180));

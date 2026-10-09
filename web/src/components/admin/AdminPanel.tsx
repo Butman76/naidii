@@ -424,12 +424,36 @@ export default function AdminPanel() {
 
   // Вкладки в несколько ярусов по смыслу (вместо одной длинной прокручиваемой
   // строки). Модератор видит только «Модерацию» и «Пользователей».
-  const TAB_GROUPS: Array<{ label: string; ids: Tab[] }> = [
-    { label: "Модерация", ids: ["profiles", "types", "reviews", "landing", "disputes"] },
-    { label: "Люди", ids: ["users", "prospects", "unclaimed", "logins"] },
-    { label: "Контент", ids: ["news", "events", "ads"] },
-    { label: "Система", ids: ["plans", "log"] },
+  // colors — переменные CSS для 3D-клавиш группы (см. .adm-key в globals.css):
+  // два цвета градиента, тёмный «бортик» снизу и цвет тени.
+  const TAB_GROUPS: Array<{ label: string; ids: Tab[]; colors: Record<string, string> }> = [
+    {
+      label: "Модерация",
+      ids: ["profiles", "types", "reviews", "landing", "disputes"],
+      colors: { "--c1": "#3b82f6", "--c2": "#06b6d4", "--cd": "#1e3a8a", "--cs": "rgba(59,130,246,0.7)" },
+    },
+    {
+      label: "Люди",
+      ids: ["users", "prospects", "unclaimed", "logins"],
+      colors: { "--c1": "#10b981", "--c2": "#84cc16", "--cd": "#065f46", "--cs": "rgba(16,185,129,0.7)" },
+    },
+    {
+      label: "Контент",
+      ids: ["news", "events", "ads"],
+      colors: { "--c1": "#d946ef", "--c2": "#8b5cf6", "--cd": "#581c87", "--cs": "rgba(217,70,239,0.7)" },
+    },
+    {
+      label: "Система",
+      ids: ["plans", "log"],
+      colors: { "--c1": "#f59e0b", "--c2": "#f43f5e", "--cd": "#7c2d12", "--cs": "rgba(245,158,11,0.7)" },
+    },
   ];
+  const TAB_ICONS: Record<Tab, string> = {
+    profiles: "🧑‍💼", types: "🧩", reviews: "⭐", landing: "🚀", disputes: "⚖️",
+    users: "👥", prospects: "🎯", unclaimed: "🏷️", logins: "🔑",
+    news: "📰", events: "📅", ads: "📣",
+    plans: "💎", log: "📜",
+  };
 
   if (error) {
     return (
@@ -446,31 +470,29 @@ export default function AdminPanel() {
         {user?.email} · роль: {user?.role}
       </p>
 
-      <div className="mt-5 divide-y divide-zinc-100 rounded-xl border border-zinc-200 bg-white text-xs shadow-sm">
+      <div className="adm-panel mt-5 text-xs">
         {TAB_GROUPS.map((group) => {
           const tabs = TABS.filter((t) => group.ids.includes(t.id));
           if (tabs.length === 0) return null;
           return (
-            <div key={group.label} className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
-              <span className="w-24 shrink-0 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
+            <div key={group.label} className="adm-row flex flex-col gap-2.5 px-5 py-4 sm:flex-row sm:items-center sm:gap-5">
+              <span className="adm-label w-24 shrink-0 text-[11px] font-extrabold uppercase tracking-[0.18em]">
                 {group.label}
               </span>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-2.5">
                 {tabs.map((t) => (
                   <button
                     key={t.id}
                     type="button"
                     onClick={() => setTab(t.id)}
-                    className={`rounded-full border px-3 py-1.5 font-medium transition-colors ${
-                      tab === t.id
-                        ? "border-zinc-900 bg-zinc-900 text-white"
-                        : "border-zinc-200 bg-zinc-50 text-zinc-600 hover:border-zinc-400 hover:text-zinc-900"
-                    }`}
+                    data-active={tab === t.id}
+                    aria-current={tab === t.id ? "page" : undefined}
+                    className="adm-key"
+                    style={group.colors as React.CSSProperties}
                   >
-                    {t.label}
-                    {typeof t.count === "number" && (
-                      <span className={`ml-1 ${tab === t.id ? "text-zinc-300" : "text-zinc-400"}`}>({t.count})</span>
-                    )}
+                    <span className="adm-ico" aria-hidden="true">{TAB_ICONS[t.id]}</span>
+                    <span>{t.label}</span>
+                    {typeof t.count === "number" && <span className="adm-count">{t.count}</span>}
                   </button>
                 ))}
               </div>

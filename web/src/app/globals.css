@@ -289,6 +289,48 @@ textarea,
   animation: adm-flip 3.2s ease-in-out infinite;
 }
 
+.adm-card {
+  position: relative;
+  border-radius: 18px;
+  border: 2px solid #94a3b8;
+  background: #fff;
+  box-shadow: 0 2px 0 #e2e8f0, 0 10px 22px -14px rgba(15, 23, 42, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.adm-card::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  padding: 2px;
+  border-radius: inherit;
+  background: conic-gradient(from var(--adm-angle), #3b82f6, #a855f7, #ec4899, #f59e0b, #10b981, #3b82f6);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  animation: adm-rotate 5s linear infinite;
+  pointer-events: none;
+}
+.adm-card:hover {
+  transform: translateY(-2px);
+  border-color: transparent;
+  box-shadow: 0 18px 36px -16px rgba(99, 102, 241, 0.6);
+}
+.adm-card:hover::before {
+  opacity: 1;
+}
+.adm-key--danger:hover .adm-ico {
+  animation: adm-shake 0.5s ease;
+}
+
+@keyframes adm-shake {
+  0%, 100% { transform: rotate(0deg); }
+  20% { transform: rotate(-18deg); }
+  40% { transform: rotate(16deg); }
+  60% { transform: rotate(-12deg); }
+  80% { transform: rotate(8deg); }
+}
 @keyframes adm-aurora {
   0% { background-position: 0% 0%, 100% 0%, 50% 100%, 0 0; }
   100% { background-position: 100% 60%, 0% 80%, 40% 0%, 0 0; }
@@ -316,6 +358,7 @@ textarea,
 @media (prefers-reduced-motion: reduce) {
   .adm-panel,
   .adm-panel::before,
+  .adm-card::before,
   .adm-label,
   .adm-key,
   .adm-key::after,

@@ -23,6 +23,8 @@ function toLocalInput(iso: string): string {
 }
 
 const COPY_COLORS_TEXT = { "--c1": "#3b82f6", "--c2": "#06b6d4", "--cd": "#1e3a8a", "--cs": "rgba(59,130,246,0.7)" };
+const COPY_COLORS_EDIT = { "--c1": "#10b981", "--c2": "#06b6d4", "--cd": "#065f46", "--cs": "rgba(16,185,129,0.7)" };
+const COPY_COLORS_DELETE = { "--c1": "#ef4444", "--c2": "#f43f5e", "--cd": "#7f1d1d", "--cs": "rgba(239,68,68,0.7)" };
 const COPY_COLORS_LINK = { "--c1": "#d946ef", "--c2": "#8b5cf6", "--cd": "#581c87", "--cs": "rgba(217,70,239,0.7)" };
 
 const emptyDraft = (): NewsDraft => ({
@@ -321,79 +323,79 @@ export default function NewsTab() {
       </div>
       {error && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
-      <div className="mt-4 overflow-x-auto rounded-2xl border border-zinc-200 bg-white">
-        <table className="w-full min-w-[860px] text-left text-sm">
-          <thead>
-            <tr className="border-b border-zinc-200 text-xs text-zinc-500">
-              <th className="px-3 py-2 font-medium">Публикация</th>
-              <th className="px-3 py-2 font-medium">Рубрика</th>
-              <th className="px-3 py-2 font-medium">Статус</th>
-              <th className="px-3 py-2 font-medium">Дата</th>
-              <th className="px-3 py-2 font-medium">Скопировать</th>
-              <th className="px-3 py-2" />
-            </tr>
-          </thead>
-          <tbody>
-            {posts === null && (
-              <tr><td colSpan={6} className="px-3 py-6 text-center text-zinc-400">Загрузка…</td></tr>
-            )}
-            {posts?.length === 0 && (
-              <tr><td colSpan={6} className="px-3 py-6 text-center text-zinc-400">Публикаций пока нет.</td></tr>
-            )}
-            {posts?.map((p) => (
-              <tr key={p.id} className="border-b border-zinc-100 align-middle">
-                <td className="px-3 py-2">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-14 shrink-0 overflow-hidden rounded bg-zinc-100">
-                      {p.thumbUrl && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={p.thumbUrl} alt="" className="h-full w-full object-cover" />
-                      )}
-                    </div>
-                    {p.status === "published" ? (
-                      <Link href={`/news/${p.slug}`} target="_blank" className="font-medium text-zinc-900 underline">{p.title}</Link>
-                    ) : (
-                      <span className="font-medium text-zinc-700">{p.title}</span>
-                    )}
-                  </div>
-                </td>
-                <td className="px-3 py-2 text-xs text-zinc-700">{KIND_LABELS[p.kind]}</td>
-                <td className="px-3 py-2">
-                  <span className={`rounded-full border px-2 py-0.5 text-xs ${p.status === "published" ? "border-emerald-300 bg-emerald-50 text-emerald-800" : "border-zinc-300 bg-white text-zinc-600"}`}>
+      <div className="mt-4 flex flex-col gap-4">
+        {posts === null && <p className="py-6 text-center text-sm text-zinc-400">Загрузка…</p>}
+        {posts?.length === 0 && <p className="py-6 text-center text-sm text-zinc-400">Публикаций пока нет.</p>}
+        {posts?.map((p) => (
+          <article key={p.id} className="adm-card flex flex-col gap-4 p-4 lg:flex-row lg:items-center">
+            <div className="flex min-w-0 flex-1 items-center gap-4">
+              <div className="h-20 w-28 shrink-0 overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100">
+                {p.thumbUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={p.thumbUrl} alt="" className="h-full w-full object-cover" />
+                )}
+              </div>
+              <div className="min-w-0">
+                {p.status === "published" ? (
+                  <Link href={`/news/${p.slug}`} target="_blank" className="text-sm font-bold leading-snug text-zinc-900 hover:text-blue-700">{p.title}</Link>
+                ) : (
+                  <span className="text-sm font-bold leading-snug text-zinc-700">{p.title}</span>
+                )}
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                  <span className={`rounded-full px-2.5 py-0.5 font-semibold text-white ${p.kind === "article" ? "bg-violet-600" : "bg-blue-600"}`}>
+                    {KIND_LABELS[p.kind]}
+                  </span>
+                  <span className={`rounded-full border px-2.5 py-0.5 ${p.status === "published" ? "border-emerald-300 bg-emerald-50 text-emerald-800" : "border-zinc-300 bg-zinc-50 text-zinc-600"}`}>
                     {STATUS_LABELS[p.status]}
                   </span>
-                </td>
-                <td className="px-3 py-2 text-xs text-zinc-500">{formatNewsDate(p.publishedAt)}</td>
-                <td className="px-3 py-2">
-                  {p.status === "published" ? (
-                    <div className="flex flex-wrap gap-2">
-                      <CopyKey
-                        label="Скопировать анонс"
-                        icon="📋"
-                        colors={COPY_COLORS_TEXT}
-                        getText={() => `${p.title}
+                  <span className="text-zinc-500">{formatNewsDate(p.publishedAt)}</span>
+                </div>
+              </div>
+            </div>
 
-${newsSnippet(p, 400)}`}
-                      />
-                      <CopyKey
-                        label="Ссылка на новость"
-                        icon="🔗"
-                        colors={COPY_COLORS_LINK}
-                        getText={() => `https://naidii.ru/news/${p.slug}`}
-                      />
-                    </div>
-                  ) : (
-                    <span className="text-xs text-zinc-400">после публикации</span>
-                  )}
-                </td>
-                <td className="px-3 py-2 text-right text-xs">
-                  <button type="button" onClick={() => setEditing(p)} className="mr-3 text-blue-700 underline">править</button>
-                  <button type="button" onClick={() => remove(p)} className="text-red-600 underline">удалить</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+            <div className="flex flex-wrap gap-2 lg:w-[240px] lg:flex-col lg:items-stretch">
+              {p.status === "published" ? (
+                <>
+                  <CopyKey
+                    label="Скопировать анонс"
+                    icon="📋"
+                    colors={COPY_COLORS_TEXT}
+                    getText={() => `${p.title}${String.fromCharCode(10, 10)}${newsSnippet(p, 400)}`}
+                  />
+                  <CopyKey
+                    label="Ссылка на новость"
+                    icon="🔗"
+                    colors={COPY_COLORS_LINK}
+                    getText={() => "https://naidii.ru/news/" + p.slug}
+                  />
+                </>
+              ) : (
+                <span className="text-xs text-zinc-400">Копирование — после публикации</span>
+              )}
+            </div>
+
+            <div className="flex gap-2 lg:flex-col lg:items-stretch">
+              <button
+                type="button"
+                onClick={() => setEditing(p)}
+                className="adm-key !rounded-full !px-4 !py-1.5 text-xs"
+                style={COPY_COLORS_EDIT as React.CSSProperties}
+              >
+                <span className="adm-ico" aria-hidden="true">✏️</span>
+                <span>Править</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => remove(p)}
+                className="adm-key adm-key--danger !rounded-full !px-4 !py-1.5 text-xs"
+                style={COPY_COLORS_DELETE as React.CSSProperties}
+              >
+                <span className="adm-ico" aria-hidden="true">🗑️</span>
+                <span>Удалить</span>
+              </button>
+            </div>
+          </article>
+        ))}
       </div>
     </div>
   );

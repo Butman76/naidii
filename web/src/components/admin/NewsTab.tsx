@@ -32,7 +32,25 @@ const emptyDraft = (): NewsDraft => ({
   publishedAt: toLocalInput(""), thumbnail: null, removeThumbnail: false,
 });
 
-const inputClass = "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100";
+const inputClass = "adm-field w-full px-3.5 py-2.5 text-sm text-zinc-900 outline-none";
+
+// Цвета 3D-клавиш редактора (см. .adm-key в globals.css).
+const KEY_BLUE = { "--c1": "#3b82f6", "--c2": "#06b6d4", "--cd": "#1e3a8a", "--cs": "rgba(59,130,246,0.7)" };
+const KEY_AMBER = { "--c1": "#f59e0b", "--c2": "#f43f5e", "--cd": "#7c2d12", "--cs": "rgba(245,158,11,0.7)" };
+const KEY_GREEN = { "--c1": "#10b981", "--c2": "#84cc16", "--cd": "#065f46", "--cs": "rgba(16,185,129,0.7)" };
+const KEY_PINK = { "--c1": "#d946ef", "--c2": "#8b5cf6", "--cd": "#581c87", "--cs": "rgba(217,70,239,0.7)" };
+const KEY_ROSE = { "--c1": "#fb7185", "--c2": "#f97316", "--cd": "#7c2d12", "--cs": "rgba(251,113,133,0.7)" };
+const KEY_SLATE = { "--c1": "#64748b", "--c2": "#94a3b8", "--cd": "#334155", "--cs": "rgba(100,116,139,0.6)" };
+
+function ToolKey({ colors, onClick, children, disabled, className = "" }: {
+  colors: Record<string, string>; onClick: () => void; children: React.ReactNode; disabled?: boolean; className?: string;
+}) {
+  return (
+    <button type="button" disabled={disabled} onClick={onClick} className={`adm-key adm-key--sm ${className}`} style={colors as React.CSSProperties}>
+      {children}
+    </button>
+  );
+}
 
 function Editor({ post, onClose, onSaved }: { post: NewsPost | null; onClose: () => void; onSaved: () => void }) {
   const [draft, setDraft] = useState<NewsDraft>(() =>
@@ -125,18 +143,21 @@ function Editor({ post, onClose, onSaved }: { post: NewsPost | null; onClose: ()
     }
   }
 
-  const tool = "rounded-md border border-zinc-300 bg-white px-2.5 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-50";
 
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-5">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-base font-semibold text-zinc-900">{post ? "Редактирование" : "Новая публикация"}</h2>
-        <button type="button" onClick={onClose} className="text-sm text-zinc-500 hover:text-zinc-900">← к списку</button>
+    <div className="adm-card adm-card--live overflow-hidden">
+      <div className="adm-banner flex items-center justify-between gap-3 px-6 py-4">
+        <h2 className="relative z-10 flex items-center gap-3 text-lg font-extrabold text-white">
+          <span className="adm-float text-2xl" aria-hidden="true">{post ? "🛠️" : "✍️"}</span>
+          {post ? "Редактирование публикации" : "Новая публикация"}
+        </h2>
+        <ToolKey colors={KEY_SLATE} onClick={onClose} className="relative z-10">← к списку</ToolKey>
       </div>
 
-      <div className="mt-4 grid gap-4 md:grid-cols-2">
+      <div className="p-6">
+      <div className="grid gap-5 md:grid-cols-2">
         <label className="md:col-span-2">
-          <span className="text-xs font-medium text-zinc-500">Заголовок</span>
+          <span className="adm-lbl">Заголовок</span>
           <input
             value={draft.title}
             onChange={(e) => patch({ title: e.target.value, ...(slugTouched ? {} : { slug: slugify(e.target.value) }) })}
@@ -145,33 +166,36 @@ function Editor({ post, onClose, onSaved }: { post: NewsPost | null; onClose: ()
           />
         </label>
         <label>
-          <span className="text-xs font-medium text-zinc-500">Ссылка (slug) — naidii.ru/news/…</span>
+          <span className="adm-lbl">Ссылка (slug) — naidii.ru/news/…</span>
           <input value={draft.slug} onChange={(e) => { setSlugTouched(true); patch({ slug: e.target.value }); }} className={inputClass} maxLength={120} />
         </label>
         <div>
-          <span className="text-xs font-medium text-zinc-500">Рубрика</span>
+          <span className="adm-lbl">Рубрика</span>
           <div className="mt-1 flex gap-2">
             {(["news", "article"] as NewsKind[]).map((k) => (
               <button
                 key={k}
                 type="button"
                 onClick={() => patch({ kind: k })}
-                className={`rounded-full border px-4 py-1.5 text-sm font-medium ${draft.kind === k ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-300 text-zinc-700 hover:border-zinc-500"}`}
+                data-active={draft.kind === k}
+                className="adm-key !rounded-full !px-5 !py-2 text-sm"
+                style={(k === "news" ? KEY_BLUE : KEY_PINK) as React.CSSProperties}
               >
+                <span className="adm-ico" aria-hidden="true">{k === "news" ? "⚡" : "📖"}</span>
                 {KIND_LABELS[k]}
               </button>
             ))}
           </div>
         </div>
         <label className="md:col-span-2">
-          <span className="text-xs font-medium text-zinc-500">Анонс (показывается на карточке и под заголовком, до 400 знаков)</span>
+          <span className="adm-lbl">Анонс (показывается на карточке и под заголовком, до 400 знаков)</span>
           <textarea value={draft.excerpt} onChange={(e) => patch({ excerpt: e.target.value })} rows={2} maxLength={400} className={inputClass} />
         </label>
 
         <div>
-          <span className="text-xs font-medium text-zinc-500">Миниатюра (обложка)</span>
+          <span className="adm-lbl">Миниатюра (обложка)</span>
           <div className="mt-1 flex items-center gap-3">
-            <div className="flex h-16 w-24 items-center justify-center overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 text-[11px] text-zinc-400">
+            <div className="flex h-16 w-24 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-indigo-300 bg-indigo-50/50 text-[11px] text-indigo-300">
               {thumbPreview ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={thumbPreview} alt="" className="h-full w-full object-cover" />
@@ -180,6 +204,7 @@ function Editor({ post, onClose, onSaved }: { post: NewsPost | null; onClose: ()
             <div className="flex flex-col gap-1 text-xs">
               <input
                 type="file"
+                className="adm-file"
                 accept="image/jpeg,image/png,image/webp,image/gif"
                 onChange={(e) => {
                   const f = e.target.files?.[0] ?? null;
@@ -200,7 +225,7 @@ function Editor({ post, onClose, onSaved }: { post: NewsPost | null; onClose: ()
           </div>
         </div>
         <label>
-          <span className="text-xs font-medium text-zinc-500">Дата и время публикации (можно в будущем — выйдет само)</span>
+          <span className="adm-lbl">Дата и время публикации (можно в будущем — выйдет само)</span>
           <input type="datetime-local" value={draft.publishedAt} onChange={(e) => patch({ publishedAt: e.target.value })} className={inputClass} />
         </label>
       </div>
@@ -208,20 +233,20 @@ function Editor({ post, onClose, onSaved }: { post: NewsPost | null; onClose: ()
       <div className="mt-5">
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="mr-1 text-xs font-medium text-zinc-500">Текст</span>
-          <button type="button" className={tool} onClick={() => prefixLines("## ", "Крупный заголовок")}>Заголовок</button>
-          <button type="button" className={tool} onClick={() => prefixLines("### ", "Подзаголовок")}>Подзаголовок</button>
-          <button type="button" className={tool} onClick={() => prefixLines("#### ", "Мелкий подзаголовок")}>Мелкий</button>
-          <button type="button" className={`${tool} font-bold`} onClick={() => wrap("**", "**", "жирный текст")}>Ж</button>
-          <button type="button" className={`${tool} italic`} onClick={() => wrap("*", "*", "курсив")}>К</button>
-          <button type="button" className={tool} onClick={() => prefixLines("> ", "Цитата")}>Цитата</button>
-          <button type="button" className={tool} onClick={() => prefixLines("- ", "Пункт списка")}>• Список</button>
-          <button type="button" className={tool} onClick={() => prefixLines("1. ", "Пункт списка")}>1. Список</button>
-          <button type="button" className={tool} onClick={() => {
+          <ToolKey colors={KEY_BLUE} onClick={() => prefixLines("## ", "Крупный заголовок")}>Заголовок</ToolKey>
+          <ToolKey colors={KEY_BLUE} onClick={() => prefixLines("### ", "Подзаголовок")}>Подзаголовок</ToolKey>
+          <ToolKey colors={KEY_BLUE} onClick={() => prefixLines("#### ", "Мелкий подзаголовок")}>Мелкий</ToolKey>
+          <ToolKey colors={KEY_AMBER} className="font-black" onClick={() => wrap("**", "**", "жирный текст")}>Ж</ToolKey>
+          <ToolKey colors={KEY_AMBER} className="italic" onClick={() => wrap("*", "*", "курсив")}>К</ToolKey>
+          <ToolKey colors={KEY_GREEN} onClick={() => prefixLines("> ", "Цитата")}>❝ Цитата</ToolKey>
+          <ToolKey colors={KEY_GREEN} onClick={() => prefixLines("- ", "Пункт списка")}>• Список</ToolKey>
+          <ToolKey colors={KEY_GREEN} onClick={() => prefixLines("1. ", "Пункт списка")}>1. Список</ToolKey>
+          <ToolKey colors={KEY_PINK} onClick={() => {
             const url = window.prompt("Адрес ссылки (https://…):", "https://");
             if (url) wrap("[", `](${url})`, "текст ссылки");
-          }}>Ссылка</button>
-          <button type="button" className={tool} onClick={() => insertText("\n\n---\n\n")}>Разделитель</button>
-          <button type="button" className={`${tool} border-blue-300 bg-blue-50 text-blue-800`} disabled={busy} onClick={() => imageInputRef.current?.click()}>🖼 Фото в текст</button>
+          }}>🔗 Ссылка</ToolKey>
+          <ToolKey colors={KEY_SLATE} onClick={() => insertText("\n\n---\n\n")}>— Разделитель</ToolKey>
+          <ToolKey colors={KEY_ROSE} disabled={busy} onClick={() => imageInputRef.current?.click()}>🖼 Фото в текст</ToolKey>
           <input
             ref={imageInputRef}
             type="file"
@@ -248,7 +273,7 @@ function Editor({ post, onClose, onSaved }: { post: NewsPost | null; onClose: ()
             placeholder={"## Заголовок раздела\n\nОбычный абзац. Можно **жирный**, *курсив*, [ссылку](https://…).\n\n### Подзаголовок\n\n> Цитата\n\n- пункт списка"}
           />
           {preview && (
-            <div className="max-h-[560px] overflow-y-auto rounded-lg border border-zinc-200 bg-white p-5">
+            <div className="max-h-[560px] overflow-y-auto rounded-xl border-2 border-dashed border-indigo-200 bg-gradient-to-br from-white to-indigo-50/60 p-5">
               {draft.body.trim() ? <NewsBody body={draft.body} /> : <p className="text-sm text-zinc-400">Здесь появится предпросмотр.</p>}
             </div>
           )}
@@ -261,14 +286,30 @@ function Editor({ post, onClose, onSaved }: { post: NewsPost | null; onClose: ()
 
       {error && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
-      <div className="mt-5 flex flex-wrap items-center gap-3">
-        <button type="button" disabled={busy} onClick={() => submit("published")} className="rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50">
+      <div className="mt-6 flex flex-wrap items-center gap-4 border-t-2 border-dashed border-zinc-200 pt-5">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => submit("published")}
+          data-active={busy}
+          className="adm-key !rounded-full !px-7 !py-3 text-sm"
+          style={KEY_GREEN as React.CSSProperties}
+        >
+          <span className="adm-ico" aria-hidden="true">{busy ? "⏳" : "🚀"}</span>
           {busy ? "Сохраняем…" : post?.status === "published" ? "Сохранить" : "Опубликовать"}
         </button>
-        <button type="button" disabled={busy} onClick={() => submit("draft")} className="rounded-full border border-zinc-300 px-5 py-2.5 text-sm font-medium text-zinc-700 hover:border-zinc-500 disabled:opacity-50">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => submit("draft")}
+          className="adm-key !rounded-full !px-6 !py-3 text-sm"
+          style={KEY_AMBER as React.CSSProperties}
+        >
+          <span className="adm-ico" aria-hidden="true">📝</span>
           Сохранить как черновик
         </button>
-        <button type="button" onClick={onClose} className="text-sm text-zinc-500 hover:text-zinc-900">Отмена</button>
+        <button type="button" onClick={onClose} className="text-sm font-medium text-zinc-500 underline decoration-dotted hover:text-zinc-900">Отмена</button>
+      </div>
       </div>
     </div>
   );

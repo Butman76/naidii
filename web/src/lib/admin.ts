@@ -99,10 +99,16 @@ export async function fetchModerationData(pb: PocketBase): Promise<ModerationDat
       expand: "specialist_profile_id,customer_id",
       sort: "created",
     }),
-    // Аккаунты с ролью admin в списке не показываем — владелец площадки не
-    // должен светиться в списке пользователей у модераторов (и случайно
-    // попадать под "block"/"delete"/"войти как").
-    pb.collection("users").getFullList({ filter: 'role != "admin"', sort: "-created" }),
+    // Аккаунты с ролью admin не показываем модераторам — владелец площадки не
+    // должен светиться в их списке пользователей (и случайно попадать под
+    // "block"/"delete"/"войти как"). Самим админам список полный: иначе
+    // назначенного админа нельзя было бы увидеть и снять (роль меняется в
+    // этой же таблице).
+    pb.collection("users").getFullList(
+      pb.authStore.record?.role === "admin"
+        ? { sort: "-created" }
+        : { filter: 'role != "admin"', sort: "-created" }
+    ),
   ]);
 
   const profiles: PendingProfile[] = profileRecords.map((p) => ({

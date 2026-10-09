@@ -286,6 +286,32 @@ export default function AdminPanel() {
     });
   }
 
+  // Роль пользователя меняет только admin. Настоящая защита — серверный хук
+  // pb_hooks/users_guard.pb.js (без него role писался бы любым пользователем
+  // в свою запись); здесь — только удобный интерфейс и подтверждение для
+  // ролей с доступом к админке.
+  async function changeUserRole(id: string, name: string, current: string, next: string) {
+    if (next === current) return;
+    if (next === "admin" || next === "moderator") {
+      const what =
+        next === "admin"
+          ? "АДМИНА: полный доступ к /admin — тарифы, журнал, пользователи, новости, смена ролей"
+          : "МОДЕРАТОРА: модерация профилей, услуг, отзывов и лендингов";
+      if (!window.confirm(`Назначить «${name || id}» роль ${what}?`)) return;
+    } else if (current === "admin" || current === "moderator") {
+      if (!window.confirm(`Снять с «${name || id}» доступ к админке и сделать «${next}»?`)) return;
+    }
+    await runAction(id, async () => {
+      await pbClient.collection("users").update(id, { role: next });
+      await logAdminAction(pbClient, {
+        action: `Сменил роль пользователя: ${current} → ${next}`,
+        entityType: "users",
+        entityId: id,
+        newData: { role: next },
+      });
+    });
+  }
+
   async function deleteUser(id: string, name: string) {
     if (!window.confirm(`Удалить пользователя «${name || id}» безвозвратно? Его анкета и услуги (если есть) удалятся вместе с ним.`)) {
       return;
@@ -396,6 +422,15 @@ export default function AdminPanel() {
     ...(isAdmin ? [{ id: "unclaimed" as Tab, label: "Неподтверждённые карточки" }] : []),
   ];
 
+  // Вкладки в несколько ярусов по смыслу (вместо одной длинной прокручиваемой
+  // строки). Модератор видит только «Модерацию» и «Пользователей».
+  const TAB_GROUPS: Array<{ label: string; ids: Tab[] }> = [
+    { label: "Модерация", ids: ["profiles", "types", "reviews", "landing", "disputes"] },
+    { label: "Люди", ids: ["users", "prospects", "unclaimed", "logins"] },
+    { label: "Контент", ids: ["news", "events", "ads"] },
+    { label: "Система", ids: ["plans", "log"] },
+  ];
+
   if (error) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-16 text-center text-sm text-zinc-500">
@@ -411,24 +446,37 @@ export default function AdminPanel() {
         {user?.email} · роль: {user?.role}
       </p>
 
-      <div className="mt-5 flex gap-1 overflow-x-auto border-b border-zinc-300 text-xs">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => setTab(t.id)}
-            className={`shrink-0 border-b-2 px-3 py-2 font-medium transition-colors ${
-              tab === t.id
-                ? "border-zinc-900 text-zinc-900"
-                : "border-transparent text-zinc-500 hover:text-zinc-900"
-            }`}
-          >
-            {t.label}
-            {typeof t.count === "number" && (
-              <span className="ml-1 text-zinc-400">({t.count})</span>
-            )}
-          </button>
-        ))}
+      <div className="mt-5 divide-y divide-zinc-100 rounded-xl border border-zinc-200 bg-white text-xs shadow-sm">
+        {TAB_GROUPS.map((group) => {
+          const tabs = TABS.filter((t) => group.ids.includes(t.id));
+          if (tabs.length === 0) return null;
+          return (
+            <div key={group.label} className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
+              <span className="w-24 shrink-0 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
+                {group.label}
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {tabs.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setTab(t.id)}
+                    className={`rounded-full border px-3 py-1.5 font-medium transition-colors ${
+                      tab === t.id
+                        ? "border-zinc-900 bg-zinc-900 text-white"
+                        : "border-zinc-200 bg-zinc-50 text-zinc-600 hover:border-zinc-400 hover:text-zinc-900"
+                    }`}
+                  >
+                    {t.label}
+                    {typeof t.count === "number" && (
+                      <span className={`ml-1 ${tab === t.id ? "text-zinc-300" : "text-zinc-400"}`}>({t.count})</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {actionError && (
@@ -631,7 +679,25 @@ export default function AdminPanel() {
                   <tr key={u.id} className="border-b border-zinc-100 last:border-0">
                     <Td className="font-medium">{u.name || "—"}</Td>
                     <Td>{u.email}</Td>
-                    <Td>{u.role}</Td>
+                    <Td>
+                      {isAdmin && u.id !== user?.id ? (
+                        <select
+                          value={u.role}
+                          disabled={busyId === u.id}
+                          onChange={(e) => changeUserRole(u.id, u.name, u.role, e.target.value)}
+                          className={`rounded border border-zinc-300 bg-white px-1.5 py-1 text-xs ${
+                            u.role === "admin" ? "font-bold text-red-700" : u.role === "moderator" ? "font-semibold text-amber-700" : ""
+                          }`}
+                        >
+                          <option value="customer">customer</option>
+                          <option value="specialist">specialist</option>
+                          <option value="moderator">moderator</option>
+                          <option value="admin">admin</option>
+                        </select>
+                      ) : (
+                        u.role
+                      )}
+                    </Td>
                     <Td>
                       <span
                         className={

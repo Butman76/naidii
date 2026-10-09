@@ -37,8 +37,8 @@ export function NewsColumn({ posts }: { posts: NewsPost[] }) {
         </Link>
       </div>
 
-      <Link href={`/news/${lead.slug}`} className="group mt-3 block">
-        <Cover post={lead} className="aspect-[16/10] rounded-xl" />
+      <Link href={`/news/${lead.slug}`} className="group mt-3 block p-2.5 rounded-xl border border-zinc-200 bg-zinc-50/70 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:bg-white hover:shadow-md motion-reduce:transition-none motion-reduce:hover:translate-y-0">
+        <Cover post={lead} className="aspect-[16/10] rounded-lg" />
         <p className="mt-2 text-[11px] text-zinc-500">
           {KIND_LABELS[lead.kind]} · {formatNewsDate(lead.publishedAt)}
         </p>
@@ -46,10 +46,10 @@ export function NewsColumn({ posts }: { posts: NewsPost[] }) {
         <p className="mt-1 line-clamp-4 text-xs leading-relaxed text-zinc-600">{newsSnippet(lead, 220)}</p>
       </Link>
 
-      <ul className="mt-2">
+      <ul className="mt-3 flex flex-col gap-3">
         {rest.map((p) => (
-          <li key={p.id} className="border-t border-zinc-100">
-            <Link href={`/news/${p.slug}`} className="group flex gap-3 py-3">
+          <li key={p.id}>
+            <Link href={`/news/${p.slug}`} className="group flex gap-3 p-2.5 rounded-xl border border-zinc-200 bg-zinc-50/70 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:bg-white hover:shadow-md motion-reduce:transition-none motion-reduce:hover:translate-y-0">
               <Cover post={p} className="h-[88px] w-[88px] shrink-0 rounded-lg" />
               <div className="min-w-0">
                 <p className="text-[11px] text-zinc-500">

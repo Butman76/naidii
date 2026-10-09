@@ -4,10 +4,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { pbClient } from "@/lib/auth-client";
 import {
-  KIND_LABELS, STATUS_LABELS, deleteNews, fetchAdminNews, formatNewsDate, saveNews, slugify, uploadNewsImage,
+  KIND_LABELS, STATUS_LABELS, deleteNews, fetchAdminNews, formatNewsDate, newsSnippet, saveNews, slugify, uploadNewsImage,
   type NewsDraft, type NewsKind, type NewsPost, type NewsStatus,
 } from "@/lib/news";
 import NewsBody from "@/components/news/NewsBody";
+import CopyKey from "./CopyKey";
 
 // Вкладка «Новости» в /admin (только admin): список публикаций и редактор.
 // Текст — Markdown с кнопками форматирования над полем (заголовки трёх
@@ -20,6 +21,9 @@ function toLocalInput(iso: string): string {
   const p = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 }
+
+const COPY_COLORS_TEXT = { "--c1": "#3b82f6", "--c2": "#06b6d4", "--cd": "#1e3a8a", "--cs": "rgba(59,130,246,0.7)" };
+const COPY_COLORS_LINK = { "--c1": "#d946ef", "--c2": "#8b5cf6", "--cd": "#581c87", "--cs": "rgba(217,70,239,0.7)" };
 
 const emptyDraft = (): NewsDraft => ({
   title: "", slug: "", kind: "news", excerpt: "", body: "", status: "draft",
@@ -318,22 +322,23 @@ export default function NewsTab() {
       {error && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
       <div className="mt-4 overflow-x-auto rounded-2xl border border-zinc-200 bg-white">
-        <table className="w-full min-w-[640px] text-left text-sm">
+        <table className="w-full min-w-[860px] text-left text-sm">
           <thead>
             <tr className="border-b border-zinc-200 text-xs text-zinc-500">
               <th className="px-3 py-2 font-medium">Публикация</th>
               <th className="px-3 py-2 font-medium">Рубрика</th>
               <th className="px-3 py-2 font-medium">Статус</th>
               <th className="px-3 py-2 font-medium">Дата</th>
+              <th className="px-3 py-2 font-medium">Скопировать</th>
               <th className="px-3 py-2" />
             </tr>
           </thead>
           <tbody>
             {posts === null && (
-              <tr><td colSpan={5} className="px-3 py-6 text-center text-zinc-400">Загрузка…</td></tr>
+              <tr><td colSpan={6} className="px-3 py-6 text-center text-zinc-400">Загрузка…</td></tr>
             )}
             {posts?.length === 0 && (
-              <tr><td colSpan={5} className="px-3 py-6 text-center text-zinc-400">Публикаций пока нет.</td></tr>
+              <tr><td colSpan={6} className="px-3 py-6 text-center text-zinc-400">Публикаций пока нет.</td></tr>
             )}
             {posts?.map((p) => (
               <tr key={p.id} className="border-b border-zinc-100 align-middle">
@@ -359,6 +364,28 @@ export default function NewsTab() {
                   </span>
                 </td>
                 <td className="px-3 py-2 text-xs text-zinc-500">{formatNewsDate(p.publishedAt)}</td>
+                <td className="px-3 py-2">
+                  {p.status === "published" ? (
+                    <div className="flex flex-wrap gap-2">
+                      <CopyKey
+                        label="Скопировать анонс"
+                        icon="📋"
+                        colors={COPY_COLORS_TEXT}
+                        getText={() => `${p.title}
+
+${newsSnippet(p, 400)}`}
+                      />
+                      <CopyKey
+                        label="Ссылка на новость"
+                        icon="🔗"
+                        colors={COPY_COLORS_LINK}
+                        getText={() => `https://naidii.ru/news/${p.slug}`}
+                      />
+                    </div>
+                  ) : (
+                    <span className="text-xs text-zinc-400">после публикации</span>
+                  )}
+                </td>
                 <td className="px-3 py-2 text-right text-xs">
                   <button type="button" onClick={() => setEditing(p)} className="mr-3 text-blue-700 underline">править</button>
                   <button type="button" onClick={() => remove(p)} className="text-red-600 underline">удалить</button>

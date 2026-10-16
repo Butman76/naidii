@@ -100,6 +100,8 @@ export default async function ResultTypePage({
         </div>
 
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+          {typeOffers.length > 0 && (
+            <>
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-zinc-900">
               Предложения специалистов
@@ -115,13 +117,6 @@ export default async function ResultTypePage({
             чем смотреть, кто именно исполнитель.
           </p>
 
-          {typeOffers.length === 0 && (
-            <p className="mt-4 rounded-2xl border border-dashed border-zinc-300 bg-white p-5 text-sm text-zinc-600">
-              Предложений от специалистов площадки по этой услуге пока нет. Ниже — компании направления, которые
-              занимаются такими задачами.
-            </p>
-          )}
-
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {typeOffers.map((offer) => (
               <ServiceOfferRow
@@ -132,9 +127,11 @@ export default async function ResultTypePage({
               />
             ))}
           </div>
+            </>
+          )}
 
           {companies.length > 0 && (
-            <section className="mt-12">
+            <section className={typeOffers.length > 0 ? "mt-12" : ""}>
               <h2 className="text-lg font-semibold text-zinc-900">Компании направления «{categoryName}»</h2>
               <p className="mt-1 text-sm text-zinc-500">
                 Добавлены редакцией по открытым данным — владельцы пока не подтвердили карточки. Сверху те, в чьём

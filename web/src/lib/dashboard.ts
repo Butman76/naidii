@@ -36,6 +36,8 @@ export interface SpecialistDashboardLead {
 // чтобы не тянуть отдельный mock-каталог типов и не рисковать рассинхроном.
 export type SpecialistDashboardOffer = ServiceOffer & {
   resultTypeTitle: string;
+  /** Подкатегория (под-направление) типа результата — например «Продажи и заявки». */
+  subcategory: string;
   categorySlug: string;
   categoryName: string;
 };
@@ -119,6 +121,7 @@ export async function fetchOwnSpecialistDashboard(
     id: o.id,
     resultTypeSlug: o.expand?.result_type_id?.slug ?? "",
     resultTypeTitle: o.expand?.result_type_id?.title ?? "Своё направление (на модерации)",
+    subcategory: o.expand?.result_type_id?.subcategory ?? "",
     categorySlug: o.expand?.result_type_id?.expand?.category_id?.slug ?? "",
     categoryName: o.expand?.result_type_id?.expand?.category_id?.name ?? "На модерации",
     tagline: o.tagline ?? "",

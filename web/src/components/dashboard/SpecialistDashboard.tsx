@@ -283,6 +283,11 @@ export default function SpecialistDashboard({
                           className={`flex aspect-square flex-col justify-between rounded-2xl border p-3 ${accent.border} ${accent.tint}`}
                         >
                           <div className="min-w-0">
+                            {offer.subcategory && (
+                              <p className="mb-1 truncate text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+                                {offer.subcategory}
+                              </p>
+                            )}
                             <p className="line-clamp-3 text-sm font-medium text-zinc-900">
                               {offer.resultTypeTitle}
                             </p>

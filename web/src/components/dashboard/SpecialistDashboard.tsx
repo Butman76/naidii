@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { formatPrice, SERVICE_TAG_LABELS } from "@/types/service-card";
 import ServiceCreationForm from "./ServiceCreationForm";
+import ServiceFormModal from "./ServiceFormModal";
 import ProfileEditForm from "./ProfileEditForm";
 import LeadChat from "./LeadChat";
 import OrdersTab from "./OrdersTab";
@@ -335,23 +336,25 @@ export default function SpecialistDashboard({
               );
             })}
 
-            {offers.length === 0 && !showCreationForm && (
+            {offers.length === 0 && (
               <p className="text-sm text-zinc-500">У вас пока нет ни одной услуги.</p>
             )}
 
-            {showCreationForm ? (
-              <ServiceCreationForm
-                specialist={specialist}
-                onCreated={refresh}
-                onCancel={() => setShowCreationForm(false)}
-              />
-            ) : (
-              <button
-                onClick={() => setShowCreationForm(true)}
-                className="rounded-2xl border border-dashed border-zinc-300 p-4 text-sm text-zinc-500 transition-colors hover:border-zinc-400 hover:text-zinc-700"
-              >
-                + Добавить услугу
-              </button>
+            <button
+              onClick={() => setShowCreationForm(true)}
+              className="min-h-[56px] rounded-2xl border-2 border-dashed border-indigo-300 bg-indigo-50/50 p-4 text-base font-bold text-indigo-700 transition-colors hover:border-indigo-500 hover:bg-indigo-50"
+            >
+              + Добавить услугу
+            </button>
+
+            {showCreationForm && (
+              <ServiceFormModal onClose={() => setShowCreationForm(false)}>
+                <ServiceCreationForm
+                  specialist={specialist}
+                  onCreated={refresh}
+                  onCancel={() => setShowCreationForm(false)}
+                />
+              </ServiceFormModal>
             )}
           </div>
         )}

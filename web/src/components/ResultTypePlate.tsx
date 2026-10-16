@@ -10,6 +10,13 @@ import { withBasePath } from "@/lib/base-path";
 // которые предлагают именно этот тип результата ("Telegram Звёзды" у
 // Playerok, а не карточка отдельного продавца). Ведёт на /services/{slug},
 // где уже сравниваются конкретные предложения.
+function companiesWord(n: number): string {
+  const m10 = n % 10, m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return "компания";
+  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return "компании";
+  return "компаний";
+}
+
 export default function ResultTypePlate({ type }: { type: ResultTypeSummary }) {
   const style = getCategoryStyle(type.categorySlug);
   const categoryName =
@@ -83,6 +90,12 @@ export default function ResultTypePlate({ type }: { type: ResultTypeSummary }) {
         <p className="mt-1 line-clamp-2 text-sm font-medium leading-snug text-zinc-800">
           {type.title}
         </p>
+
+        {type.companiesCount ? (
+          <p className="mt-2 inline-flex w-fit items-center gap-1 rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-600">
+            + {type.companiesCount} {companiesWord(type.companiesCount)} направления
+          </p>
+        ) : null}
 
         <div className="mt-auto flex items-center justify-between pt-3 text-[11px] text-zinc-500">
           <span>

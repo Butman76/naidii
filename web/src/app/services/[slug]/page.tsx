@@ -6,7 +6,9 @@ import Footer from "@/components/Footer";
 import ServiceOfferRow from "@/components/ServiceOfferRow";
 import { getCategoryStyle } from "@/data/category-style";
 import { CATEGORIES } from "@/data/categories";
+import UnclaimedCard from "@/components/unclaimed/UnclaimedCard";
 import { fetchCatalogData, getOffersForType } from "@/lib/catalog";
+import { fetchActiveUnclaimedListings, unclaimedForType } from "@/lib/unclaimed";
 import { withBasePath } from "@/lib/base-path";
 
 // Живые данные из PocketBase. generateStaticParams всё ещё нужен для
@@ -46,10 +48,11 @@ export default async function ResultTypePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const { resultTypes, offers } = await fetchCatalogData();
+  const [{ resultTypes, offers }, unclaimed] = await Promise.all([fetchCatalogData(), fetchActiveUnclaimedListings()]);
   const type = resultTypes.find((t) => t.slug === slug);
   if (!type) notFound();
 
+  const companies = unclaimedForType(unclaimed, type);
   const typeOffers = getOffersForType(offers, slug);
   const style = getCategoryStyle(type.categorySlug);
   const categoryName =
@@ -120,6 +123,27 @@ export default async function ResultTypePage({
               />
             ))}
           </div>
+
+          {companies.length > 0 && (
+            <section className="mt-12">
+              <h2 className="text-lg font-semibold text-zinc-900">Компании направления «{categoryName}»</h2>
+              <p className="mt-1 text-sm text-zinc-500">
+                Добавлены редакцией по открытым данным — владельцы пока не подтвердили карточки. Сверху те, в чьём
+                описании заявлено именно это.
+              </p>
+              <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {companies.map(({ listing }) => (
+                  <UnclaimedCard key={listing.id} listing={listing} />
+                ))}
+              </div>
+              <Link
+                href={`/category/${type.categorySlug}`}
+                className="mt-5 inline-block text-sm font-medium text-blue-700 hover:underline"
+              >
+                Все компании направления →
+              </Link>
+            </section>
+          )}
         </div>
       </main>
       <Footer />

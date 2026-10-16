@@ -3,13 +3,16 @@ import ResultTypePlate from "./ResultTypePlate";
 import EventsSidebar from "./events/EventsSidebar";
 import NewsSidebar from "./news/NewsSidebar";
 import { fetchCatalogData, summarizeResultTypes, sortByPromotedThenRating } from "@/lib/catalog";
+import { fetchActiveUnclaimedListings, unclaimedForType } from "@/lib/unclaimed";
 
 // Главный объект первого экрана каталога — плашка типа результата, а не
 // профиль специалиста (см. PIVOT_SERVICE_CARDS.md). Живые данные из
 // PocketBase с 2026-08-24 — раньше был mockTopResultTypes.
 export default async function TopServices() {
-  const { resultTypes, offers } = await fetchCatalogData();
-  const top = sortByPromotedThenRating(summarizeResultTypes(resultTypes, offers)).slice(0, 20);
+  const [{ resultTypes, offers }, unclaimed] = await Promise.all([fetchCatalogData(), fetchActiveUnclaimedListings()]);
+  const top = sortByPromotedThenRating(summarizeResultTypes(resultTypes, offers))
+    .slice(0, 20)
+    .map((s) => ({ ...s, companiesCount: unclaimedForType(unclaimed, s).length }));
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">

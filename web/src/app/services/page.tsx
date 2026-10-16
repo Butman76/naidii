@@ -5,6 +5,7 @@ import ServicesCatalog from "@/components/ServicesCatalog";
 import PartnerAdsCarousel from "@/components/PartnerAdsCarousel";
 import { fetchCatalogData, summarizeResultTypes } from "@/lib/catalog";
 import { fetchActivePartnerAds } from "@/lib/partner-ads";
+import { fetchActiveUnclaimedListings, unclaimedForType } from "@/lib/unclaimed";
 
 // Без этого страница была полностью статической (собранной один раз при
 // билде) и не видела изменений в PocketBase (публикацию профиля/карточки
@@ -18,11 +19,15 @@ export const metadata: Metadata = {
 };
 
 export default async function ServicesPage() {
-  const [{ resultTypes, offers }, partnerAds] = await Promise.all([
+  const [{ resultTypes, offers }, partnerAds, unclaimed] = await Promise.all([
     fetchCatalogData(),
     fetchActivePartnerAds(),
+    fetchActiveUnclaimedListings(),
   ]);
-  const summaries = summarizeResultTypes(resultTypes, offers);
+  const summaries = summarizeResultTypes(resultTypes, offers).map((s) => ({
+    ...s,
+    companiesCount: unclaimedForType(unclaimed, s).length,
+  }));
 
   return (
     <>

@@ -101,14 +101,23 @@ export function getOffersForType(offers: ServiceOffer[], resultTypeSlug: string)
     );
 }
 
+// includeEmpty — оставлять и типы результата без единого предложения
+// специалиста (цена/рейтинг у них 0). Нужно, когда в каталоге остались почти
+// одни добавленные редакцией компании: карточка услуги живёт и без оффера,
+// на ней показаны компании направления (lib/unclaimed.ts).
 export function summarizeResultTypes(
   resultTypes: ResultType[],
-  offers: ServiceOffer[]
+  offers: ServiceOffer[],
+  options: { includeEmpty?: boolean } = {}
 ): ResultTypeSummary[] {
   return resultTypes
     .map((type): ResultTypeSummary | null => {
       const typeOffers = getOffersForType(offers, type.slug);
-      if (typeOffers.length === 0) return null;
+      if (typeOffers.length === 0) {
+        return options.includeEmpty
+          ? { ...type, offersCount: 0, minPrice: 0, bestRating: 0, hasPromoted: false, promotionRank: 0 }
+          : null;
+      }
       return {
         ...type,
         offersCount: typeOffers.length,

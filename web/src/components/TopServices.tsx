@@ -10,9 +10,11 @@ import { fetchActiveUnclaimedListings, unclaimedForType } from "@/lib/unclaimed"
 // PocketBase с 2026-08-24 — раньше был mockTopResultTypes.
 export default async function TopServices() {
   const [{ resultTypes, offers }, unclaimed] = await Promise.all([fetchCatalogData(), fetchActiveUnclaimedListings()]);
-  const top = sortByPromotedThenRating(summarizeResultTypes(resultTypes, offers))
-    .slice(0, 20)
-    .map((s) => ({ ...s, companiesCount: unclaimedForType(unclaimed, s).length }));
+  const top = sortByPromotedThenRating(
+    summarizeResultTypes(resultTypes, offers, { includeEmpty: true })
+      .map((s) => ({ ...s, companiesCount: unclaimedForType(unclaimed, s).length }))
+      .filter((s) => s.offersCount > 0 || s.companiesCount > 0)
+  ).slice(0, 20);
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">

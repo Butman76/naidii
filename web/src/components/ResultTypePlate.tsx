@@ -85,7 +85,7 @@ export default function ResultTypePlate({ type }: { type: ResultTypeSummary }) {
 
       <div className="flex flex-1 flex-col p-3">
         <p className="text-base font-bold text-zinc-900">
-          {formatPrice("from", type.minPrice)}
+          {type.offersCount > 0 ? formatPrice("from", type.minPrice) : "Цена по запросу"}
         </p>
         <p className="mt-1 line-clamp-2 text-sm font-medium leading-snug text-zinc-800">
           {type.title}
@@ -99,11 +99,13 @@ export default function ResultTypePlate({ type }: { type: ResultTypeSummary }) {
 
         <div className="mt-auto flex items-center justify-between pt-3 text-[11px] text-zinc-500">
           <span>
-            {type.offersCount === 1
-              ? "1 исполнитель"
-              : `${type.offersCount} исполнителя сравнить`}
+            {type.offersCount === 0
+              ? "Компании направления"
+              : type.offersCount === 1
+                ? "1 исполнитель"
+                : `${type.offersCount} исполнителя сравнить`}
           </span>
-          <span>★ {type.bestRating.toFixed(1)}</span>
+          {type.offersCount > 0 && <span>★ {type.bestRating.toFixed(1)}</span>}
         </div>
       </div>
     </Link>

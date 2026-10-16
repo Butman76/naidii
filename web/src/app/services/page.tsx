@@ -24,10 +24,9 @@ export default async function ServicesPage() {
     fetchActivePartnerAds(),
     fetchActiveUnclaimedListings(),
   ]);
-  const summaries = summarizeResultTypes(resultTypes, offers).map((s) => ({
-    ...s,
-    companiesCount: unclaimedForType(unclaimed, s).length,
-  }));
+  const summaries = summarizeResultTypes(resultTypes, offers, { includeEmpty: true })
+    .map((s) => ({ ...s, companiesCount: unclaimedForType(unclaimed, s).length }))
+    .filter((s) => s.offersCount > 0 || s.companiesCount > 0);
 
   return (
     <>

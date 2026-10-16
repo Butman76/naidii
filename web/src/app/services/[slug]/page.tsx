@@ -104,14 +104,23 @@ export default async function ResultTypePage({
             <h2 className="text-lg font-semibold text-zinc-900">
               Предложения специалистов
             </h2>
-            <p className="text-sm text-zinc-500">
-              {typeOffers.length === 1 ? "1 исполнитель" : `${typeOffers.length} исполнителя`}
-            </p>
+            {typeOffers.length > 0 && (
+              <p className="text-sm text-zinc-500">
+                {typeOffers.length === 1 ? "1 исполнитель" : `${typeOffers.length} исполнителя`}
+              </p>
+            )}
           </div>
           <p className="mt-1 text-sm text-zinc-500">
             Один и тот же результат — сравните цену, срок и рейтинг, прежде
             чем смотреть, кто именно исполнитель.
           </p>
+
+          {typeOffers.length === 0 && (
+            <p className="mt-4 rounded-2xl border border-dashed border-zinc-300 bg-white p-5 text-sm text-zinc-600">
+              Предложений от специалистов площадки по этой услуге пока нет. Ниже — компании направления, которые
+              занимаются такими задачами.
+            </p>
+          )}
 
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {typeOffers.map((offer) => (

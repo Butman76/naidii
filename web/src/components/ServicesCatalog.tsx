@@ -65,7 +65,7 @@ export default function ServicesCatalog({
     });
 
     return [...list].sort((a, b) => {
-      if (sortBy === "priceAsc") return a.minPrice - b.minPrice;
+      if (sortBy === "priceAsc") return (a.minPrice || Number.MAX_SAFE_INTEGER) - (b.minPrice || Number.MAX_SAFE_INTEGER);
       if (sortBy === "rating") return b.bestRating - a.bestRating;
       // relevance: продвигаемые по тарифу сначала (Enterprise выше Pro,
       // внутри уровня — суточная рулетка), дальше по рейтингу — упрощённая

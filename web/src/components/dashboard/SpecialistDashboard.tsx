@@ -311,8 +311,20 @@ export default function SpecialistDashboard({
                                 ))}
                               </div>
                             )}
-                            <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800">
-                              Опубликовано
+                            <span
+                              className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                                offer.typeStatus === "approved"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : offer.typeStatus === "pending"
+                                    ? "bg-amber-100 text-amber-800"
+                                    : "bg-red-100 text-red-700"
+                              }`}
+                            >
+                              {offer.typeStatus === "approved"
+                                ? "Опубликовано"
+                                : offer.typeStatus === "pending"
+                                  ? "Тип на модерации"
+                                  : "Тип отклонён"}
                             </span>
                           </div>
                         </div>

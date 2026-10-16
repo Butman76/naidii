@@ -38,6 +38,8 @@ export type SpecialistDashboardOffer = ServiceOffer & {
   resultTypeTitle: string;
   /** Подкатегория (под-направление) типа результата — например «Продажи и заявки». */
   subcategory: string;
+  /** Статус типа результата: услуга видна в каталоге, только если тип approved. */
+  typeStatus: "approved" | "pending" | "rejected";
   categorySlug: string;
   categoryName: string;
 };
@@ -122,6 +124,8 @@ export async function fetchOwnSpecialistDashboard(
     resultTypeSlug: o.expand?.result_type_id?.slug ?? "",
     resultTypeTitle: o.expand?.result_type_id?.title ?? "Своё направление (на модерации)",
     subcategory: o.expand?.result_type_id?.subcategory ?? "",
+    typeStatus: (o.expand?.result_type_id?.status || "approved") as "approved" | "pending" | "rejected",
+
     categorySlug: o.expand?.result_type_id?.expand?.category_id?.slug ?? "",
     categoryName: o.expand?.result_type_id?.expand?.category_id?.name ?? "На модерации",
     tagline: o.tagline ?? "",

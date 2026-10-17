@@ -1,4 +1,5 @@
 import type { Specialist } from "@/types/specialist";
+import NewsBody from "@/components/news/NewsBody";
 import { CATEGORIES } from "@/data/categories";
 import { withBasePath } from "@/lib/base-path";
 import { embedVideoUrl } from "@/lib/video-embed";
@@ -149,9 +150,9 @@ export default function PremiumSpecialistProfile({
           <h2 className="text-lg font-semibold text-zinc-900">
             О специалисте
           </h2>
-          <p className="mt-3 text-sm leading-relaxed text-zinc-600">
-            {specialist.fullDescription}
-          </p>
+          <div className="mt-3">
+            <NewsBody body={specialist.fullDescription} />
+          </div>
           <div className="mt-4 flex flex-wrap gap-1">
             {specialist.skills.map((skill) => (
               <span

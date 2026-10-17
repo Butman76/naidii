@@ -1,10 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { pbClient } from "@/lib/auth-client";
 import type { Specialist } from "@/types/specialist";
 import { updateSpecialistSkills, type MySkill, type SkillOption } from "@/lib/dashboard";
 import SpecialistCard from "@/components/SpecialistCard";
+import PremiumSpecialistProfile from "@/components/PremiumSpecialistProfile";
+import StandardSpecialistProfile from "@/components/StandardSpecialistProfile";
+import MarkdownEditor from "@/components/MarkdownEditor";
+import { CATEGORIES } from "@/data/categories";
+import { getCategory3D, getCategoryStyle } from "@/data/category-style";
 
 // Раньше "Редактировать" в профиле кабинета ничего не делал (кнопка без
 // обработчика) — публичный профиль нельзя было заполнить иначе, чем через
@@ -14,16 +19,72 @@ import SpecialistCard from "@/components/SpecialistCard";
 // и навыки" здесь называется точно так же, как строка в чек-листе
 // "Заполненность профиля" на вкладке "Обзор" (SpecialistDashboard.tsx) —
 // чтобы специалист сразу понимал, где заполнить то, на что там жалуются.
+//
+// 2026-10-17: «Полное описание» — редактор Markdown как у новостей
+// (MarkdownEditor), навыки раскрашены в цвета направлений (справочник
+// skills.category хранит название направления), карточка справа учитывает
+// тариф (Enterprise — премиум-оформление), плюс кнопка «Предпросмотр
+// лендинга» — публичная страница профиля из текущих, ещё не сохранённых
+// данных.
+
+// skills.category — свободный текст с названием направления; "Общие
+// технологии" и всё незнакомое — серое «Другое».
+function categorySlugByName(name: string): string {
+  return CATEGORIES.find((c) => c.name === name)?.slug ?? "other";
+}
+
+function LandingPreviewModal({ specialist, onClose }: { specialist: Specialist; onClose: () => void }) {
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-[60] flex flex-col bg-zinc-900/70 p-2 sm:p-6" role="dialog" aria-modal="true" aria-label="Предпросмотр лендинга">
+      <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col overflow-hidden rounded-2xl bg-zinc-50 shadow-2xl">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-zinc-200 bg-white px-4 py-3">
+          <div>
+            <p className="text-sm font-bold text-zinc-900">Предпросмотр лендинга</p>
+            <p className="text-xs text-zinc-500">Так публичная страница выглядит с вашими текущими правками. Обложка и фото из вкладки «Лендинг» подтягиваются после сохранения.</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="shrink-0 rounded-full bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700"
+          >
+            Закрыть
+          </button>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {specialist.premium ? <PremiumSpecialistProfile specialist={specialist} /> : <StandardSpecialistProfile specialist={specialist} />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ProfileEditForm({
   specialist,
   allSkills,
   mySkills,
+  planCode,
+  categorySlugs,
   onSaved,
   onCancel,
 }: {
   specialist: Specialist;
   allSkills: SkillOption[];
   mySkills: MySkill[];
+  planCode: string;
+  categorySlugs: string[];
   onSaved: () => void;
   onCancel: () => void;
 }) {
@@ -35,6 +96,7 @@ export default function ProfileEditForm({
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showLanding, setShowLanding] = useState(false);
 
   function toggleSkill(id: string) {
     setSelectedSkillIds((prev) => {
@@ -54,13 +116,34 @@ export default function ProfileEditForm({
 
   // Живой превью карточки в каталоге (см. SpecialistCard.tsx) — остальные
   // поля (рейтинг, отзывы, услуги и т.п.) берём как есть у specialist, тут
-  // редактируются только title/описания/навыки.
+  // редактируются только title/описания/навыки. Тариф и направления в
+  // данных кабинета не лежат в самом specialist, поэтому достраиваем их тут:
+  // Enterprise — премиум-оформление и контент лендинга, Pro/Enterprise —
+  // метка «Продвигается» (как в публичном каталоге, lib/specialists.ts).
   const previewSkills = allSkills.filter((s) => selectedSkillIds.has(s.id)).map((s) => s.name);
+  const mainCategory = categorySlugs[0] ?? "other";
+  const isEnterprise = planCode === "enterprise";
   const preview: Specialist = {
     ...specialist,
     title: title.trim() || specialist.title,
     shortDescription: shortDescription.trim(),
+    fullDescription,
     skills: previewSkills,
+    category: mainCategory,
+    categories: categorySlugs.length > 0 ? categorySlugs : undefined,
+    badges: planCode === "pro" || isEnterprise ? ["promoted"] : [],
+    premium: isEnterprise
+      ? {
+          tagline: title.trim() || shortDescription.trim(),
+          coverGradient: `bg-gradient-to-br ${getCategoryStyle(mainCategory).gradient}`,
+          gallery: [],
+          serviceCards: [],
+          presentations: [],
+          videoPitchLabel: "",
+          team: [],
+          certificates: [],
+        }
+      : undefined,
   };
 
   async function handleSubmit(e: React.FormEvent) {
@@ -85,9 +168,19 @@ export default function ProfileEditForm({
     }
   }
 
+  const landingButton = (
+    <button
+      type="button"
+      onClick={() => setShowLanding(true)}
+      className="rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-500 px-4 py-2 text-xs font-bold text-white shadow-md shadow-fuchsia-500/30 transition-transform hover:-translate-y-0.5 motion-reduce:hover:translate-y-0"
+    >
+      Предпросмотр лендинга
+    </button>
+  );
+
   return (
-    <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <div className="mt-4 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
+    <form onSubmit={handleSubmit} className="flex min-w-0 flex-col gap-4">
       <div>
         <label className="text-xs font-medium text-zinc-500">
           Заголовок профиля
@@ -121,48 +214,56 @@ export default function ProfileEditForm({
           />
         </div>
 
-        <div className="mt-3">
-          <label className="text-xs font-medium text-zinc-500">
-            Полное описание (в профиле)
-          </label>
-          <textarea
+        <div className="mt-4">
+          <MarkdownEditor
             value={fullDescription}
-            onChange={(e) => setFullDescription(e.target.value)}
-            rows={6}
-            className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none"
+            onChange={setFullDescription}
+            label="Полное описание (в профиле)"
+            rows={14}
+            toolbarExtra={landingButton}
           />
         </div>
 
-        <div className="mt-3">
+        <div className="mt-5">
           <label className="text-xs font-medium text-zinc-500">
             Навыки {selectedSkillIds.size > 0 ? `(выбрано ${selectedSkillIds.size})` : ""}
           </label>
           {allSkills.length > 0 ? (
-            <div className="mt-2 flex flex-col gap-3">
-              {[...skillsByCategory.entries()].map(([category, list]) => (
-                <div key={category || "other"}>
-                  <p className="text-[11px] font-medium text-zinc-400">{category || "Другое"}</p>
-                  <div className="mt-1 flex flex-wrap gap-1.5">
-                    {list.map((skill) => {
-                      const on = selectedSkillIds.has(skill.id);
-                      return (
-                        <button
-                          key={skill.id}
-                          type="button"
-                          onClick={() => toggleSkill(skill.id)}
-                          className={`rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
-                            on
-                              ? "border-zinc-900 bg-zinc-900 text-white"
-                              : "border-zinc-300 text-zinc-700 hover:border-zinc-500"
-                          }`}
-                        >
-                          {skill.name}
-                        </button>
-                      );
-                    })}
+            <div className="mt-2 flex flex-col gap-4">
+              {[...skillsByCategory.entries()].map(([category, list]) => {
+                const slug = categorySlugByName(category);
+                const st = getCategoryStyle(slug);
+                return (
+                  <div key={category || "other"} className="rounded-xl p-3" style={{ backgroundColor: `${st.hex}12` }}>
+                    <p className="flex items-center gap-2 text-sm font-bold brightness-75" style={{ color: st.hex }}>
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: st.hex }} aria-hidden="true" />
+                      {category || "Другое"}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {list.map((skill) => {
+                        const on = selectedSkillIds.has(skill.id);
+                        return (
+                          <button
+                            key={skill.id}
+                            type="button"
+                            onClick={() => toggleSkill(skill.id)}
+                            aria-pressed={on}
+                            style={on ? undefined : { borderColor: `${st.hex}66`, backgroundColor: `${st.hexLight}66` }}
+                            className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-all duration-150 motion-reduce:transition-none ${
+                              on
+                                ? `-translate-y-0.5 border-b-2 bg-gradient-to-br text-white shadow-md ${getCategory3D(slug)}`
+                                : "text-zinc-800 hover:-translate-y-0.5 hover:shadow-sm motion-reduce:hover:translate-y-0"
+                            }`}
+                          >
+                            {on && <span aria-hidden="true">✓ </span>}
+                            {skill.name}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="mt-1 text-xs text-zinc-400">Справочник навыков пока пуст.</p>
@@ -172,30 +273,33 @@ export default function ProfileEditForm({
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <button
           type="submit"
           disabled={saving}
-          className="rounded-full bg-zinc-900 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
+          className="rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
         >
           {saving ? "Сохраняем…" : "Сохранить"}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
+          className="rounded-full border border-zinc-300 px-5 py-2.5 text-sm font-semibold text-zinc-700 transition-colors hover:bg-zinc-50"
         >
           Отмена
         </button>
+        {landingButton}
       </div>
     </form>
 
-    <div className="self-start lg:sticky lg:top-4">
+    <div className="self-start xl:sticky xl:top-4">
       <p className="text-xs font-medium text-zinc-500">Так карточка выглядит в каталоге</p>
-      <div className="pointer-events-none mt-2">
+      <div className="pointer-events-none mt-2 max-w-sm">
         <SpecialistCard specialist={preview} />
       </div>
     </div>
+
+    {showLanding && <LandingPreviewModal specialist={preview} onClose={() => setShowLanding(false)} />}
     </div>
   );
 }

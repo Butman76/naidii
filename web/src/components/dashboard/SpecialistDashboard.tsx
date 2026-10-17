@@ -22,12 +22,13 @@ import { LEAD_STATUS_LABELS, LEAD_STATUS_STYLES } from "@/data/dashboard-mock";
 import type { SpecialistDashboardData } from "@/lib/dashboard";
 import { useAuth } from "@/lib/use-auth";
 import SpecialistNav from "./SpecialistNav";
+import NewsBody from "@/components/news/NewsBody";
 
 type Tab = "overview" | "profile" | "services" | "leads" | "jobboard" | "orders" | "archive" | "reviews" | "analytics" | "plan" | "landing";
 
 const TABS: Array<{ id: Tab; label: string }> = [
   { id: "overview", label: "Обзор" },
-  { id: "profile", label: "Профиль" },
+  { id: "profile", label: "Настройка профиля" },
   { id: "services", label: "Услуги" },
   { id: "leads", label: "Заявки" },
   { id: "jobboard", label: "Доска объявлений" },
@@ -198,7 +199,7 @@ export default function SpecialistDashboard({
           <div className="rounded-2xl border border-zinc-200 bg-white p-5">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold text-zinc-900">
-                Публичный профиль
+                Настройка профиля
               </p>
               {!editingProfile && (
                 <button
@@ -215,6 +216,8 @@ export default function SpecialistDashboard({
                 specialist={specialist}
                 allSkills={allSkills}
                 mySkills={mySkills}
+                planCode={planCode}
+                categorySlugs={[...new Set(offers.map((o) => o.categorySlug).filter(Boolean))]}
                 onSaved={refresh}
                 onCancel={() => setEditingProfile(false)}
               />
@@ -235,7 +238,7 @@ export default function SpecialistDashboard({
               <div>
                 <dt className="text-xs text-zinc-500">Полное описание</dt>
                 <dd className="text-zinc-600">
-                  {specialist.fullDescription || "—"}
+                  {specialist.fullDescription ? <NewsBody body={specialist.fullDescription} /> : "—"}
                 </dd>
               </div>
               <div>

@@ -25,17 +25,23 @@ export default function SpecialistCard({
   const isPremium = Boolean(specialist.premium);
   const style = getCategoryStyle((specialist.categories ?? [specialist.category])[0] ?? "other");
 
+  // Премиум (Enterprise): градиентная рамка и свечение, как у премиум-
+  // предложения на странице услуги (ServiceOfferRow). Остальные — обычная
+  // рамка и полоска цвета направления сверху.
   return (
     <div
-      className={`group relative flex flex-col overflow-hidden rounded-2xl border bg-white p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${
+      className={`group relative flex flex-col rounded-2xl transition-all duration-200 hover:-translate-y-1 hover:shadow-xl motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${
         isPremium
-          ? "border-amber-200 ring-1 ring-amber-200"
-          : "border-zinc-200"
+          ? "bg-gradient-to-br from-violet-500 via-fuchsia-500 to-amber-400 p-[2px] shadow-lg shadow-fuchsia-500/20"
+          : "border border-zinc-200 bg-white"
       }`}
     >
-      {isPremium ? (
-        <div className="-mx-4 -mt-4 mb-3 h-1.5 rounded-t-2xl bg-gradient-to-r from-violet-500 via-fuchsia-500 to-amber-500" />
-      ) : (
+     <div
+      className={`relative flex flex-1 flex-col overflow-hidden p-4 ${
+        isPremium ? "rounded-[14px] bg-gradient-to-b from-fuchsia-50/70 to-white" : "rounded-2xl"
+      }`}
+     >
+      {!isPremium && (
         <span className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${style.gradient}`} aria-hidden="true" />
       )}
       <div
@@ -50,7 +56,11 @@ export default function SpecialistCard({
       <div className="relative flex flex-1 flex-col">
         <div className="flex items-start justify-between gap-2">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-sm font-semibold text-white">
+            <div
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white ${
+                isPremium ? "bg-gradient-to-br from-violet-600 to-fuchsia-500" : "bg-zinc-900"
+              }`}
+            >
               {specialist.avatarInitials}
             </div>
             <div className="min-w-0">
@@ -119,6 +129,7 @@ export default function SpecialistCard({
           </button>
         </div>
       </div>
+     </div>
     </div>
   );
 }

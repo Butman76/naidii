@@ -209,7 +209,7 @@ export default function SpecialistNav({
                       </span>
                     )}
                   </span>
-                  <span className="max-w-[72px] truncate">{it.label.replace("Доска объявлений", "Доска")}</span>
+                  <span className="max-w-[72px] truncate">{it.label.replace("Доска объявлений", "Доска").replace("Настройка профиля", "Настройки")}</span>
                 </button>
               );
             })}

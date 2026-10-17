@@ -98,12 +98,18 @@ export default function ServiceOfferRow({
             </div>
           </Link>
 
-          <div className="mt-3">
+          <div className="mt-3 grid grid-cols-[1fr_auto] items-start gap-2">
             <OrderButton
               specialistProfileId={offer.specialistProfileId}
               categorySlug={categorySlug}
               contextLabel={contextLabel}
             />
+            <Link
+              href={`/specialist/${offer.specialistSlug}`}
+              className="rounded-full border border-zinc-300 bg-white px-4 py-1.5 text-[11px] font-medium text-zinc-800 transition-colors hover:border-zinc-900 hover:bg-zinc-50"
+            >
+              Профиль
+            </Link>
           </div>
         </div>
       </div>

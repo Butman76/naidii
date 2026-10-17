@@ -146,7 +146,7 @@ export default function MarkdownEditor({
         </div>
       </div>
 
-      <div className={`mt-2 grid gap-4 ${preview ? "xl:grid-cols-2" : ""}`}>
+      <div className={`mt-2 grid gap-4 ${preview ? "lg:grid-cols-2" : ""}`}>
         <textarea
           ref={ref}
           value={value}

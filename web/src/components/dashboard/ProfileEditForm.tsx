@@ -8,6 +8,7 @@ import SpecialistCard from "@/components/SpecialistCard";
 import PremiumSpecialistProfile from "@/components/PremiumSpecialistProfile";
 import StandardSpecialistProfile from "@/components/StandardSpecialistProfile";
 import MarkdownEditor from "@/components/MarkdownEditor";
+import NewsBody from "@/components/news/NewsBody";
 import { CATEGORIES } from "@/data/categories";
 import { getCategory3D, getCategoryStyle } from "@/data/category-style";
 
@@ -33,22 +34,76 @@ function categorySlugByName(name: string): string {
   return CATEGORIES.find((c) => c.name === name)?.slug ?? "other";
 }
 
-function LandingPreviewModal({ specialist, onClose }: { specialist: Specialist; onClose: () => void }) {
+// Блокирует прокрутку страницы под окном; Esc закрывает (если передан onEsc).
+function useModalLock(onEsc?: () => void) {
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") onEsc?.();
     };
     window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = prev;
       window.removeEventListener("keydown", onKey);
     };
-  }, [onClose]);
+  }, [onEsc]);
+}
+
+// Редактор описания — отдельное большое окно: в узкой колонке формы кабинета
+// панель форматирования и два столбца (текст + предпросмотр) не помещались
+// (2026-10-17, замечание владельца). Правки применяются к форме сразу, окно
+// закрывается кнопкой «Готово»; в профиль они попадают после «Сохранить».
+function DescriptionEditorModal({
+  value,
+  onChange,
+  onClose,
+  onLandingPreview,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  onClose: () => void;
+  onLandingPreview: () => void;
+}) {
+  useModalLock();
+  return (
+    <div className="fixed inset-0 z-[60] flex flex-col bg-zinc-900/70 p-2 sm:p-6" role="dialog" aria-modal="true" aria-label="Редактор описания">
+      <div className="mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-zinc-200 bg-gradient-to-r from-indigo-50 to-fuchsia-50 px-4 py-3 sm:px-6">
+          <div>
+            <p className="text-base font-bold text-zinc-900">Полное описание профиля</p>
+            <p className="text-xs text-zinc-500">Правки применяются сразу. В профиль они попадут после кнопки «Сохранить» в форме.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onLandingPreview}
+              className="rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-500 px-4 py-2 text-sm font-bold text-white shadow-md shadow-fuchsia-500/30"
+            >
+              Предпросмотр лендинга
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-full bg-zinc-900 px-5 py-2 text-sm font-semibold text-white hover:bg-zinc-700"
+            >
+              Готово
+            </button>
+          </div>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
+          <MarkdownEditor value={value} onChange={onChange} label="Текст" rows={26} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LandingPreviewModal({ specialist, onClose }: { specialist: Specialist; onClose: () => void }) {
+  useModalLock(onClose);
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col bg-zinc-900/70 p-2 sm:p-6" role="dialog" aria-modal="true" aria-label="Предпросмотр лендинга">
+    <div className="fixed inset-0 z-[70] flex flex-col bg-zinc-900/70 p-2 sm:p-6" role="dialog" aria-modal="true" aria-label="Предпросмотр лендинга">
       <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col overflow-hidden rounded-2xl bg-zinc-50 shadow-2xl">
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-zinc-200 bg-white px-4 py-3">
           <div>
@@ -97,6 +152,7 @@ export default function ProfileEditForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showLanding, setShowLanding] = useState(false);
+  const [editingText, setEditingText] = useState(false);
 
   function toggleSkill(id: string) {
     setSelectedSkillIds((prev) => {
@@ -215,13 +271,26 @@ export default function ProfileEditForm({
         </div>
 
         <div className="mt-4">
-          <MarkdownEditor
-            value={fullDescription}
-            onChange={setFullDescription}
-            label="Полное описание (в профиле)"
-            rows={14}
-            toolbarExtra={landingButton}
-          />
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <label className="text-xs font-medium text-zinc-500">Полное описание (в профиле)</label>
+            <button
+              type="button"
+              onClick={() => setEditingText(true)}
+              className="rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-indigo-500/30 transition-transform hover:-translate-y-0.5 motion-reduce:hover:translate-y-0"
+            >
+              {fullDescription.trim() ? "Открыть редактор" : "Написать описание"}
+            </button>
+          </div>
+          <div className="relative mt-2 max-h-56 overflow-hidden rounded-xl border-2 border-dashed border-indigo-200 bg-gradient-to-br from-white to-indigo-50/60 p-4">
+            {fullDescription.trim() ? (
+              <NewsBody body={fullDescription} />
+            ) : (
+              <p className="text-sm text-zinc-400">Описание пока пустое. Нажмите «Написать описание» — откроется большой редактор с форматированием.</p>
+            )}
+            {fullDescription.trim() && (
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-white to-transparent" aria-hidden="true" />
+            )}
+          </div>
         </div>
 
         <div className="mt-5">
@@ -299,6 +368,14 @@ export default function ProfileEditForm({
       </div>
     </div>
 
+    {editingText && (
+      <DescriptionEditorModal
+        value={fullDescription}
+        onChange={setFullDescription}
+        onClose={() => setEditingText(false)}
+        onLandingPreview={() => setShowLanding(true)}
+      />
+    )}
     {showLanding && <LandingPreviewModal specialist={preview} onClose={() => setShowLanding(false)} />}
     </div>
   );

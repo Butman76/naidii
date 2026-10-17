@@ -1,7 +1,6 @@
 import Header from "@/components/Header";
 import HeroCarousel from "@/components/HeroCarousel";
 import DirectionsStrip from "@/components/DirectionsStrip";
-import TrustStats from "@/components/TrustStats";
 import TopServices from "@/components/TopServices";
 import PartnerAdsCarousel from "@/components/PartnerAdsCarousel";
 import Footer from "@/components/Footer";
@@ -22,7 +21,7 @@ export default async function Home() {
       <main className="flex-1">
         <HeroCarousel />
         <DirectionsStrip />
-        <TrustStats />
+        {/* Блок TrustStats (счётчики) временно убран по просьбе владельца 2026-10-17; компонент components/TrustStats.tsx на месте. */}
         <PartnerAdsCarousel ads={partnerAds} />
         <TopServices />
       </main>

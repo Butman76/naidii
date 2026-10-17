@@ -8,23 +8,21 @@ import { createPocketBase } from "./pocketbase";
 
 // Только то, что можно безопасно показать анонимному посетителю. Юрлицо,
 // ИНН и сайт сюда сознательно не входят (см. AdminUnclaimedListing ниже) —
-// иначе мы бы напрямую сводили заказчика с конторой мимо площадки. domain
-// всё равно виден через URL страницы (/unclaimed/{domain}) — это не
-// изменить без смены схемы адресов, но это не то же самое, что кликабельная
-// ссылка на сайт или прямые контакты.
+// иначе мы бы напрямую сводили заказчика с конторой мимо площадки. Домен
+// (сайт) тоже не входит (2026-10-17): страница компании живёт по id,
+// /unclaimed/{id}; домен есть только в AdminUnclaimedListing.
 export interface UnclaimedListing {
   id: string;
   name: string;
-  domain: string;
   city: string;
   blurb: string;
   categories: string[];
 }
 
 // Различает UnclaimedListing от Specialist в общей сетке карточек (у
-// Specialist нет поля domain) — см. mixIn ниже.
+// Specialist нет поля blurb, у компании — slug) — см. mixIn ниже.
 export function isUnclaimedListing(v: unknown): v is UnclaimedListing {
-  return typeof v === "object" && v !== null && "domain" in v;
+  return typeof v === "object" && v !== null && "blurb" in v && !("slug" in v);
 }
 
 // Вмешивает неподтверждённые карточки в уже отсортированный список
@@ -136,7 +134,6 @@ function mapListing(r: Record<string, unknown>): UnclaimedListing {
   return {
     id: s("id"),
     name: s("name"),
-    domain: s("domain"),
     city: s("city"),
     blurb: s("blurb"),
     categories: Array.isArray(r.categories) ? (r.categories as string[]) : [],
@@ -163,11 +160,11 @@ export async function fetchActiveUnclaimedListings(): Promise<UnclaimedListing[]
   }
 }
 
-export async function fetchUnclaimedListingByDomain(domain: string): Promise<UnclaimedListing | null> {
+export async function fetchUnclaimedListingById(id: string): Promise<UnclaimedListing | null> {
   try {
     const pb = createPocketBase();
     const r = await pb.collection("unclaimed_specialists_public").getFirstListItem(
-      pb.filter('domain = {:domain} && status = "active"', { domain })
+      pb.filter('id = {:id} && status = "active"', { id })
     );
     return mapListing(r as unknown as Record<string, unknown>);
   } catch {
@@ -178,6 +175,7 @@ export async function fetchUnclaimedListingByDomain(domain: string): Promise<Unc
 // ---------- админка ----------
 
 export interface AdminUnclaimedListing extends UnclaimedListing {
+  domain: string;
   website: string;
   legalName: string;
   inn: string;
@@ -207,6 +205,7 @@ export async function fetchAdminUnclaimedListings(pb: PocketBase): Promise<Admin
   const records = await pb.collection("unclaimed_specialists").getFullList({ sort: "-created", batch: 500 });
   return records.map((r) => ({
     ...mapListing(r as unknown as Record<string, unknown>),
+    domain: String(r.domain ?? ""),
     website: String(r.website ?? ""),
     legalName: String(r.legal_name ?? ""),
     inn: String(r.inn ?? ""),

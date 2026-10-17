@@ -14,13 +14,13 @@ import { getCategoryStyle } from "@/data/category-style";
 // карточку от обычной. По просьбе пользователя 2026-09-28: никаких кнопок и
 // внешней ссылки на сайт компании прямо в карточке — это было бы прямой
 // переадресацией мимо площадки. Вся карточка ведёт на профиль
-// (/unclaimed/[domain]), там — подробности и форма «это моя компания».
+// (/unclaimed/[id]), там — подробности и форма «это моя компания».
 export default function UnclaimedCard({ listing }: { listing: UnclaimedListing }) {
   const style = getCategoryStyle(listing.categories[0] ?? "other");
 
   return (
     <Link
-      href={`/unclaimed/${listing.domain}`}
+      href={`/unclaimed/${listing.id}`}
       className="group relative flex flex-col overflow-hidden rounded-2xl border border-dashed border-zinc-300 bg-white p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl motion-reduce:transition-none motion-reduce:hover:translate-y-0"
     >
       <span className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${style.gradient}`} aria-hidden="true" />
@@ -38,7 +38,7 @@ export default function UnclaimedCard({ listing }: { listing: UnclaimedListing }
             </div>
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-zinc-900">{listing.name}</p>
-              <p className="truncate text-xs text-zinc-500">{listing.domain}{listing.city ? ` · ${listing.city}` : ""}</p>
+              {listing.city && <p className="truncate text-xs text-zinc-500">{listing.city}</p>}
             </div>
           </div>
         </div>

@@ -7,11 +7,11 @@ import CategoryDots from "@/components/CategoryDots";
 import ClaimModal from "@/components/unclaimed/ClaimModal";
 import AdminDetails from "@/components/unclaimed/AdminDetails";
 import { CATEGORIES } from "@/data/categories";
-import { fetchActiveUnclaimedListings, fetchUnclaimedListingByDomain } from "@/lib/unclaimed";
+import { fetchActiveUnclaimedListings, fetchUnclaimedListingById } from "@/lib/unclaimed";
 
 export async function generateStaticParams() {
   const listings = await fetchActiveUnclaimedListings();
-  return listings.map((l) => ({ domain: l.domain }));
+  return listings.map((l) => ({ id: l.id }));
 }
 
 export const revalidate = 60;
@@ -19,10 +19,10 @@ export const revalidate = 60;
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ domain: string }>;
+  params: Promise<{ id: string }>;
 }): Promise<Metadata> {
-  const { domain } = await params;
-  const listing = await fetchUnclaimedListingByDomain(domain);
+  const { id } = await params;
+  const listing = await fetchUnclaimedListingById(id);
   if (!listing) return {};
   return {
     title: `${listing.name} — НайдИИ`,
@@ -36,17 +36,18 @@ export async function generateMetadata({
 // нет ни сайта компании, ни юрлица/ИНН: иначе мы бы напрямую сводили
 // заказчика с конторой мимо площадки. Эти поля вообще не покидают сервер
 // для анонимного посетителя (см. lib/unclaimed.ts) — видны только админу
-// (AdminDetails.tsx). "Это моя компания" (ClaimModal.tsx) открывает
+// (AdminDetails.tsx); адрес страницы — по id, домен в нём не светится
+// (2026-10-17). "Это моя компания" (ClaimModal.tsx) открывает
 // модалку с инструкцией написать на claim@naidii.ru — без формы на сайте.
 // noindex в метаданных: страниц много, данных на них мало, размножать в
 // поиске такие карточки незачем.
 export default async function UnclaimedProfilePage({
   params,
 }: {
-  params: Promise<{ domain: string }>;
+  params: Promise<{ id: string }>;
 }) {
-  const { domain } = await params;
-  const listing = await fetchUnclaimedListingByDomain(domain);
+  const { id } = await params;
+  const listing = await fetchUnclaimedListingById(id);
   if (!listing) notFound();
 
   return (
@@ -61,7 +62,7 @@ export default async function UnclaimedProfilePage({
           <div className="mt-4 flex items-start justify-between gap-3">
             <div>
               <h1 className="text-2xl font-bold text-zinc-900 sm:text-3xl">{listing.name}</h1>
-              <p className="mt-1 text-sm text-zinc-500">{listing.domain}{listing.city ? ` · ${listing.city}` : ""}</p>
+              {listing.city && <p className="mt-1 text-sm text-zinc-500">{listing.city}</p>}
             </div>
             <span className="shrink-0 rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600">
               Добавлено редакцией

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { pbClient } from "@/lib/auth-client";
 import { useAuth } from "@/lib/use-auth";
 
-// Юрлицо/ИНН/сайт на публичной странице карточки (/unclaimed/[domain]) не
+// Юрлицо/ИНН/сайт на публичной странице карточки (/unclaimed/[id]) не
 // приходят с сервера вообще — страница читает view-коллекцию, где этих
 // полей физически нет (см. lib/unclaimed.ts, миграция 1755000062). Админу
 // они всё равно нужны под рукой, не только во вкладке /admin, поэтому
@@ -15,7 +15,7 @@ import { useAuth } from "@/lib/use-auth";
 // дёргать запрос зря для всех остальных, а не как охрана сама по себе.
 export default function AdminDetails({ id }: { id: string }) {
   const { user } = useAuth();
-  const [data, setData] = useState<{ website: string; legalName: string; inn: string } | null>(null);
+  const [data, setData] = useState<{ domain: string; website: string; legalName: string; inn: string } | null>(null);
 
   useEffect(() => {
     if (user?.role !== "admin") {
@@ -25,9 +25,9 @@ export default function AdminDetails({ id }: { id: string }) {
     let cancelled = false;
     pbClient
       .collection("unclaimed_specialists")
-      .getOne(id, { fields: "website,legal_name,inn" })
+      .getOne(id, { fields: "domain,website,legal_name,inn" })
       .then((r) => {
-        if (!cancelled) setData({ website: String(r.website ?? ""), legalName: String(r.legal_name ?? ""), inn: String(r.inn ?? "") });
+        if (!cancelled) setData({ domain: String(r.domain ?? ""), website: String(r.website ?? ""), legalName: String(r.legal_name ?? ""), inn: String(r.inn ?? "") });
       })
       .catch(() => {
         if (!cancelled) setData(null);
@@ -47,6 +47,12 @@ export default function AdminDetails({ id }: { id: string }) {
           <div className="flex gap-2">
             <dt className="w-28 shrink-0 text-xs text-zinc-500">Юрлицо</dt>
             <dd className="text-zinc-800">{data.legalName}{data.inn ? `, ИНН ${data.inn}` : ""}</dd>
+          </div>
+        )}
+        {data.domain && (
+          <div className="flex gap-2">
+            <dt className="w-28 shrink-0 text-xs text-zinc-500">Домен</dt>
+            <dd className="text-zinc-800">{data.domain}</dd>
           </div>
         )}
         {data.website && (

@@ -21,6 +21,7 @@ import type { SpecialistDashboardOffer } from "@/lib/dashboard";
 import { LEAD_STATUS_LABELS, LEAD_STATUS_STYLES } from "@/data/dashboard-mock";
 import type { SpecialistDashboardData } from "@/lib/dashboard";
 import { useAuth } from "@/lib/use-auth";
+import SpecialistNav from "./SpecialistNav";
 
 type Tab = "overview" | "profile" | "services" | "leads" | "jobboard" | "orders" | "archive" | "reviews" | "analytics" | "plan" | "landing";
 
@@ -88,6 +89,7 @@ export default function SpecialistDashboard({
   const [editingProfile, setEditingProfile] = useState(false);
 
   const totalOfferCount = offers.length;
+  const newLeadsCount = leads.filter((l) => l.status === "new").length;
 
   // "Лендинг" — только на тарифе с профилем-лендингом вместо обычной
   // карточки (см. PremiumSpecialistProfile.tsx), остальным вкладка не нужна.
@@ -96,7 +98,7 @@ export default function SpecialistDashboard({
     : TABS;
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-6xl px-4 pb-28 pt-8 sm:px-6 lg:px-8 lg:pb-8">
       {profileStatus === "pending" && (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           Ваш профиль на модерации — станет виден в каталоге, когда его
@@ -118,23 +120,17 @@ export default function SpecialistDashboard({
         </div>
       </div>
 
-      <div className="mt-6 flex gap-1 overflow-x-auto border-b border-zinc-200">
-        {visibleTabs.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => setTab(t.id)}
-            className={`shrink-0 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
-              tab === t.id
-                ? "border-zinc-900 text-zinc-900"
-                : "border-transparent text-zinc-500 hover:text-zinc-900"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
+      <div className="mt-6 lg:grid lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start lg:gap-8">
+        <SpecialistNav
+          items={visibleTabs}
+          active={tab}
+          onSelect={(id) => setTab(id as Tab)}
+          badges={{ leads: newLeadsCount }}
+          name={specialist.name}
+          initials={specialist.avatarInitials}
+          planLabel={`Тариф «${currentPlan.title}»`}
+        />
+        <div className="min-w-0">
       <div className="mt-6">
         {tab === "overview" && (
           <div className="flex flex-col gap-6">
@@ -516,6 +512,8 @@ export default function SpecialistDashboard({
         {tab === "landing" && currentPlan.customLanding && (
           <PremiumLandingEditor specialistId={specialist.id} />
         )}
+      </div>
+      </div>
       </div>
     </div>
   );

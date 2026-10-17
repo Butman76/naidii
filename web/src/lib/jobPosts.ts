@@ -1,4 +1,5 @@
 import type PocketBase from "pocketbase";
+import { createPocketBase } from "./pocketbase";
 
 // Открытые объявления заказчика ("Разместить объявление" в кабинете, 2026-08-29)
 // — заказчик описывает задачу свободным текстом (категория/подкатегория
@@ -10,6 +11,35 @@ import type PocketBase from "pocketbase";
 // объявления целиком, попытка откликнуться на уже закрытое — 400).
 
 export type JobPostStatus = "open" | "closed";
+
+// Публичная версия объявления для /orders (видят все, в том числе гости):
+// без заказчика (ни id, ни имени) и с текстом, где контакты заменены на
+// «[контакты скрыты]». Читается из view-коллекции job_posts_public
+// (миграция 1755000069) — этих полей там физически нет, так что их не
+// достать и прямым запросом к API.
+export interface PublicJobPost {
+  id: string;
+  categorySlug: string;
+  subcategory: string;
+  description: string;
+  createdAt: string;
+}
+
+export async function fetchPublicJobPosts(): Promise<PublicJobPost[]> {
+  try {
+    const pb = createPocketBase();
+    const records = await pb.collection("job_posts_public").getFullList({ sort: "-created", batch: 200 });
+    return records.map((r) => ({
+      id: r.id,
+      categorySlug: (r.category_slug as string) ?? "",
+      subcategory: (r.subcategory as string) ?? "",
+      description: (r.description as string) ?? "",
+      createdAt: (r.created as string) ?? "",
+    }));
+  } catch {
+    return [];
+  }
+}
 
 export interface JobPost {
   id: string;

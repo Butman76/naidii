@@ -8,7 +8,7 @@ import { useEffect } from "react";
 // делают — форма длинная, и потерять введённое из-за случайного клика мимо —
 // знакомая ошибка (см. то же решение в unclaimed/ClaimModal.tsx). Пока окно
 // открыто, страница под ним не прокручивается; прокручивается само окно.
-export default function ServiceFormModal({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
+export default function ServiceFormModal({ onClose, children, label = "Новая карточка услуги" }: { onClose: () => void; children: React.ReactNode; label?: string }) {
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -18,7 +18,7 @@ export default function ServiceFormModal({ onClose, children }: { onClose: () =>
   }, []);
 
   return (
-    <div className="fixed inset-0 z-[60] overflow-y-auto bg-zinc-900/70 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Новая карточка услуги">
+    <div className="fixed inset-0 z-[60] overflow-y-auto bg-zinc-900/70 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={label}>
       <div className="mx-auto w-full max-w-3xl px-2 py-4 sm:px-4 sm:py-8">
         <div className="relative">
           <button

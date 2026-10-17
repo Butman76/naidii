@@ -204,8 +204,15 @@ export default function AdminPanel() {
   }
 
   async function moderateResultType(id: string, status: string, label: string) {
+    // При отказе просим причину — исполнитель увидит её в кабинете и сможет
+    // исправить услугу и отправить заново. Отмена окна = отказ не ставим.
+    let note: string | null = "";
+    if (status === "rejected") {
+      note = window.prompt("Причина отказа (её увидит исполнитель):", "");
+      if (note === null) return;
+    }
     await runAction(id, async () => {
-      await pbClient.collection("result_types").update(id, { status });
+      await pbClient.collection("result_types").update(id, { status, ...(status === "rejected" ? { moderation_note: note!.trim() } : {}) });
       await logAdminAction(pbClient, {
         action: label,
         entityType: "result_types",

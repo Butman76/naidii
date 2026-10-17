@@ -42,6 +42,13 @@ export type SpecialistDashboardOffer = ServiceOffer & {
   typeStatus: "approved" | "pending" | "rejected";
   categorySlug: string;
   categoryName: string;
+  resultTypeId: string;
+  /** Описание собственного типа (для правки отклонённой/ожидающей услуги). */
+  typeDescription: string;
+  /** Причина отказа от модератора (пусто, если не писали). */
+  typeNote: string;
+  /** Тип создан этим исполнителем — его можно править и удалять, пока он не одобрен. */
+  typeIsMine: boolean;
 };
 
 export interface SkillOption {
@@ -121,6 +128,10 @@ export async function fetchOwnSpecialistDashboard(
 
   const offers: SpecialistDashboardOffer[] = offerRecords.map((o) => ({
     id: o.id,
+    resultTypeId: o.result_type_id ?? "",
+    typeDescription: o.expand?.result_type_id?.description ?? "",
+    typeNote: o.expand?.result_type_id?.moderation_note ?? "",
+    typeIsMine: Boolean(o.expand?.result_type_id?.created_by) && o.expand?.result_type_id?.created_by === profile.user_id,
     resultTypeSlug: o.expand?.result_type_id?.slug ?? "",
     resultTypeTitle: o.expand?.result_type_id?.title ?? "Своё направление (на модерации)",
     subcategory: o.expand?.result_type_id?.subcategory ?? "",

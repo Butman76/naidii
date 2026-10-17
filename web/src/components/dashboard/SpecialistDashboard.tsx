@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { formatPrice, SERVICE_TAG_LABELS } from "@/types/service-card";
 import ServiceCreationForm from "./ServiceCreationForm";
 import ServiceFormModal from "./ServiceFormModal";
+import ServiceEditForm from "./ServiceEditForm";
 import ProfileEditForm from "./ProfileEditForm";
 import LeadChat from "./LeadChat";
 import OrdersTab from "./OrdersTab";
@@ -21,6 +22,7 @@ import type { SpecialistDashboardOffer } from "@/lib/dashboard";
 import { LEAD_STATUS_LABELS, LEAD_STATUS_STYLES } from "@/data/dashboard-mock";
 import type { SpecialistDashboardData } from "@/lib/dashboard";
 import { useAuth } from "@/lib/use-auth";
+import { pbClient } from "@/lib/auth-client";
 import SpecialistNav from "./SpecialistNav";
 import NewsBody from "@/components/news/NewsBody";
 
@@ -87,6 +89,30 @@ export default function SpecialistDashboard({
   const currentPlan = PLANS.find((p) => p.code === planCode) ?? PLANS[0];
 
   const [showCreationForm, setShowCreationForm] = useState(false);
+  const [editingOffer, setEditingOffer] = useState<SpecialistDashboardOffer | null>(null);
+  const [deletingOfferId, setDeletingOfferId] = useState<string | null>(null);
+
+  // Удаление услуги: сначала само предложение, затем — если тип свой и не
+  // одобрен — и тип (иначе он остался бы висеть в очереди модерации).
+  async function deleteOffer(offer: SpecialistDashboardOffer) {
+    const own = offer.typeIsMine && offer.typeStatus !== "approved";
+    const ok = window.confirm(
+      `Удалить услугу «${offer.resultTypeTitle}»?` + (own ? " Заявка на модерацию тоже будет отозвана." : "")
+    );
+    if (!ok) return;
+    setDeletingOfferId(offer.id);
+    try {
+      await pbClient.collection("services").delete(offer.id);
+      if (own && offer.resultTypeId) {
+        await pbClient.collection("result_types").delete(offer.resultTypeId).catch(() => {});
+      }
+      refresh();
+    } catch {
+      window.alert("Не получилось удалить услугу — попробуйте ещё раз.");
+    } finally {
+      setDeletingOfferId(null);
+    }
+  }
   const [editingProfile, setEditingProfile] = useState(false);
 
   const totalOfferCount = offers.length;
@@ -280,7 +306,7 @@ export default function SpecialistDashboard({
                       return (
                         <div
                           key={offer.id}
-                          className={`flex aspect-square flex-col justify-between rounded-2xl border p-3 ${accent.border} ${accent.tint}`}
+                          className={`flex min-h-[220px] flex-col justify-between gap-2 rounded-2xl border p-3 ${accent.border} ${accent.tint}`}
                         >
                           <div className="min-w-0">
                             {offer.subcategory && (
@@ -327,6 +353,38 @@ export default function SpecialistDashboard({
                                   : "Тип отклонён"}
                             </span>
                           </div>
+                          {offer.typeStatus === "rejected" && (
+                            <p className="rounded-lg bg-red-50 px-2 py-1 text-[11px] leading-snug text-red-700">
+                              {offer.typeNote ? `Причина: ${offer.typeNote}` : "Модератор не указал причину."}
+                            </p>
+                          )}
+                          <div className="flex flex-wrap gap-1.5">
+                            {offer.typeIsMine && offer.typeStatus !== "approved" ? (
+                              <button
+                                type="button"
+                                onClick={() => setEditingOffer(offer)}
+                                className="rounded-full bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-indigo-700"
+                              >
+                                {offer.typeStatus === "rejected" ? "Исправить и отправить заново" : "Изменить"}
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setEditingOffer(offer)}
+                                className="rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50"
+                              >
+                                Изменить
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              disabled={deletingOfferId === offer.id}
+                              onClick={() => void deleteOffer(offer)}
+                              className="rounded-full border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                            >
+                              Удалить
+                            </button>
+                          </div>
                         </div>
                       );
                     })}
@@ -345,6 +403,12 @@ export default function SpecialistDashboard({
             >
               + Добавить услугу
             </button>
+
+            {editingOffer && (
+              <ServiceFormModal onClose={() => setEditingOffer(null)} label="Изменить услугу">
+                <ServiceEditForm offer={editingOffer} onSaved={refresh} onCancel={() => setEditingOffer(null)} />
+              </ServiceFormModal>
+            )}
 
             {showCreationForm && (
               <ServiceFormModal onClose={() => setShowCreationForm(false)}>

@@ -49,10 +49,28 @@ function Picture({ post, large }: { post: NewsPost; large?: boolean }) {
   );
 }
 
+// Счётчик просмотров — только для админов (число приходит из NewsCatalog,
+// остальным views не передаётся и значок не рисуется).
+function ViewsBadge({ views, className = "right-3 top-3" }: { views?: number; className?: string }) {
+  if (views === undefined) return null;
+  return (
+    <span
+      className={`absolute ${className} z-10 inline-flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-semibold text-white backdrop-blur-sm`}
+      title="Уникальные просмотры (видно только админам)"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5" aria-hidden="true">
+        <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" />
+        <circle cx="12" cy="12" r="3" />
+      </svg>
+      {views}
+    </span>
+  );
+}
+
 const frame =
   "group relative block overflow-hidden rounded-2xl border border-zinc-200 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-xl motion-reduce:transition-none motion-reduce:hover:translate-y-0";
 
-export default function NewsTile({ post, size }: { post: NewsPost; size: TileSize }) {
+export default function NewsTile({ post, size, views }: { post: NewsPost; size: TileSize; views?: number }) {
   const href = `/news/${post.slug}`;
   const span = TILE_SPAN[size];
 
@@ -61,6 +79,7 @@ export default function NewsTile({ post, size }: { post: NewsPost; size: TileSiz
       <Link href={href} className={`${frame} flex bg-white ${span}`}>
         <div className="relative w-2/5 shrink-0">
           <Picture post={post} />
+          <ViewsBadge views={views} className="left-2 top-2" />
         </div>
         <div className="flex min-w-0 flex-1 flex-col p-4">
           <div className="flex items-center gap-2">
@@ -83,6 +102,7 @@ export default function NewsTile({ post, size }: { post: NewsPost; size: TileSiz
           <div className="absolute left-3 top-3">
             <Badge kind={post.kind} />
           </div>
+          <ViewsBadge views={views} />
         </div>
         <div className="p-4">
           <p className="text-[11px] text-zinc-400">{formatNewsDate(post.publishedAt)}</p>
@@ -102,6 +122,7 @@ export default function NewsTile({ post, size }: { post: NewsPost; size: TileSiz
       <div className="absolute left-3 top-3">
         <Badge kind={post.kind} />
       </div>
+      <ViewsBadge views={views} />
       <div className="absolute inset-x-0 bottom-0 p-4 text-white">
         <p className="text-[11px] text-white/70">{formatNewsDate(post.publishedAt)}</p>
         <h3

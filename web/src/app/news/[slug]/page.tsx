@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import NewsBody from "@/components/news/NewsBody";
 import NewsCard from "@/components/news/NewsCard";
+import NewsViewTracker from "@/components/news/NewsViewTracker";
 import { KIND_LABELS, fetchNewsBySlug, fetchPublishedNews, formatNewsDate, readingMinutes } from "@/lib/news";
 
 export const revalidate = 60;
@@ -57,6 +58,7 @@ export default async function NewsPostPage({ params }: { params: Promise<{ slug:
     <>
       <Header />
       <main className="flex-1">
+        <NewsViewTracker slug={post.slug} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
         <article className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
           <Link

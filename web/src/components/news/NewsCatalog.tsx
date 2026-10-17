@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import NewsTile, { type TileSize } from "./NewsTile";
 import type { NewsKind, NewsPost } from "@/lib/news";
+import { pbClient } from "@/lib/auth-client";
+import { useAuth } from "@/lib/use-auth";
 
 type Filter = "all" | NewsKind;
 
@@ -30,6 +32,25 @@ function sizesFor(count: number): TileSize[] {
 // Фильтр по рубрике — на клиенте по уже загруженному списку (как у событий).
 export default function NewsCatalog({ posts }: { posts: NewsPost[] }) {
   const [filter, setFilter] = useState<Filter>("all");
+  // Счётчики просмотров видят только админы: правило news_view_counts
+  // (миграция 1755000067) отдаёт их только им, остальные ничего не запрашивают.
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+  const [views, setViews] = useState<Record<string, number> | null>(null);
+  useEffect(() => {
+    if (!isAdmin) return;
+    let cancelled = false;
+    pbClient
+      .collection("news_view_counts")
+      .getFullList({ requestKey: null })
+      .then((rows) => {
+        if (!cancelled) setViews(Object.fromEntries(rows.map((r) => [r.id, Number(r.views) || 0])));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdmin]);
   const list = useMemo(() => (filter === "all" ? posts : posts.filter((p) => p.kind === filter)), [posts, filter]);
   const sizes = sizesFor(list.length);
 
@@ -53,7 +74,7 @@ export default function NewsCatalog({ posts }: { posts: NewsPost[] }) {
       {list.length > 0 ? (
         <div className="mt-6 grid grid-flow-dense grid-cols-1 gap-4 md:grid-cols-2 md:auto-rows-[210px] lg:grid-cols-4">
           {list.map((p, i) => (
-            <NewsTile key={p.id} post={p} size={sizes[i]} />
+            <NewsTile key={p.id} post={p} size={sizes[i]} views={isAdmin && views ? views[p.id] ?? 0 : undefined} />
           ))}
         </div>
       ) : (

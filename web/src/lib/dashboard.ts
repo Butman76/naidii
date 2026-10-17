@@ -133,7 +133,6 @@ export async function fetchOwnSpecialistDashboard(
     priceValue: o.price_from ?? 0,
     durationFrom: o.duration_from ?? "",
     scopeLabel: o.scope_label ?? "",
-    revisionsIncluded: o.revisions_included ?? undefined,
     tags: (o.tags ?? []) as ServiceCardTag[],
     specialistProfileId: profile.id,
     specialistSlug: profile.slug,

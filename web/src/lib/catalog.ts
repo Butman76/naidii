@@ -74,7 +74,6 @@ export async function fetchCatalogData(): Promise<CatalogData> {
         priceValue: o.price_from,
         durationFrom: o.duration_from,
         scopeLabel: o.scope_label,
-        revisionsIncluded: o.revisions_included || undefined,
         tags: o.tags ?? [],
         promoted: promotionRank > 0,
         promotionRank,

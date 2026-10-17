@@ -12,13 +12,6 @@ import OrderButton from "./OrderButton";
 // отличался только крошечной фиолетовой меткой (2026-10-16, замечание
 // владельца). Две зоны (профиль и кнопка «Заказать») разделены явно: карточка
 // не оборачивается одной ссылкой.
-function revisionsLabel(n: number | undefined): string {
-  if (!n) return "Без доработок";
-  const m10 = n % 10, m100 = n % 100;
-  const word = m10 === 1 && m100 !== 11 ? "доработка" : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? "доработки" : "доработок";
-  return `${n} ${word} включено`;
-}
-
 export default function ServiceOfferRow({
   offer,
   categorySlug,
@@ -74,9 +67,6 @@ export default function ServiceOfferRow({
           )}
 
           <div className="mt-3 flex flex-wrap gap-1.5">
-            <span className="rounded-lg bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800 ring-1 ring-inset ring-amber-200">
-              {revisionsLabel(offer.revisionsIncluded)}
-            </span>
             {offer.tags.map((tag) => (
               <span
                 key={tag}

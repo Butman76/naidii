@@ -134,8 +134,6 @@ export default function ServiceCreationForm({
   const [priceType, setPriceType] = useState<ServicePriceType>("from");
   const [priceValue, setPriceValue] = useState("");
   const [durationFrom, setDurationFrom] = useState("");
-  const [revisionsMode, setRevisionsMode] = useState<"count" | "none" | "">("");
-  const [revisionsCount, setRevisionsCount] = useState("2");
   const [tagline, setTagline] = useState("");
   const [tags, setTags] = useState<ServiceCardTag[]>([]);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -185,8 +183,6 @@ export default function ServiceCreationForm({
   const hasPrice = Number(priceValue) > 0;
   const hasDuration = durationFrom.trim().length > 0;
   const hasScope = Boolean(selectedType) || useCustomType; // унаследован от типа результата
-  const hasRevisions = revisionsMode !== "";
-  const hasExample = Boolean(previewImage);
   const hasOffPlatformContact = OFF_PLATFORM_CONTACT_RE.test(tagline);
   const hasTagline = tagline.trim().length > 0 && !hasOffPlatformContact;
 
@@ -198,8 +194,6 @@ export default function ServiceCreationForm({
     { label: "Указана цена", ok: hasPrice },
     { label: "Указан срок выполнения", ok: hasDuration },
     { label: "Объём работы задан", ok: hasScope },
-    { label: "Указано число правок (или «без правок»)", ok: hasRevisions },
-    { label: "Загружен хотя бы один пример результата", ok: hasExample },
     { label: "В тексте нет контактов для ухода со сделки", ok: !hasOffPlatformContact },
     { label: "Заполнено краткое УТП", ok: hasTagline },
   ];
@@ -246,7 +240,6 @@ export default function ServiceCreationForm({
         price_from: Number(priceValue),
         duration_from: durationFrom.trim(),
         scope_label: selectedType?.scopeLabel ?? "",
-        revisions_included: revisionsMode === "count" ? Number(revisionsCount) : 0,
         tags,
         active: true,
         // PocketBase JS SDK сам собирает multipart/form-data, когда в
@@ -287,30 +280,6 @@ export default function ServiceCreationForm({
     );
   }
 
-  // «Доработки» (в ТЗ §8 — «число правок либо отметка, что правки не
-  // предусмотрены»): сколько раундов бесплатных исправлений по замечаниям
-  // заказчика вы включаете в цену. Данные те же (revisionsMode/revisionsCount),
-  // поменялась подача: быстрые кнопки вместо радио + поля.
-  const revisionKey =
-    revisionsMode === "none"
-      ? "none"
-      : revisionsMode === "count"
-        ? ["1", "2", "3"].includes(revisionsCount)
-          ? revisionsCount
-          : "other"
-        : "";
-  function pickRevisions(key: string) {
-    if (key === "none") {
-      setRevisionsMode("none");
-    } else if (key === "other") {
-      setRevisionsMode("count");
-      if (["1", "2", "3"].includes(revisionsCount)) setRevisionsCount("4");
-    } else {
-      setRevisionsMode("count");
-      setRevisionsCount(key);
-    }
-  }
-
   const doneCount = checklist.filter((c) => c.ok).length;
   const accent = style.hex;
   const field =
@@ -339,7 +308,6 @@ export default function ServiceCreationForm({
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {CATEGORIES.filter((c) => c.slug !== "other").map((c) => {
             const on = categorySlug === c.slug;
-            const st = getCategoryStyle(c.slug);
             return (
               <button
                 key={c.slug}
@@ -351,13 +319,12 @@ export default function ServiceCreationForm({
                   setUseCustomType(false);
                 }}
                 aria-pressed={on}
-                className={`relative flex min-h-[72px] flex-col items-start justify-center gap-1 rounded-2xl border-b-4 bg-gradient-to-br px-3.5 py-3 text-left text-white transition-all duration-200 ${getCategory3D(c.slug)} ${
+                className={`relative flex min-h-[64px] flex-col items-start justify-center gap-1 rounded-2xl border-b-4 bg-gradient-to-br px-3.5 py-3 text-left text-white transition-all duration-200 ${getCategory3D(c.slug)} ${
                   on
                     ? "-translate-y-1 scale-[1.03] shadow-xl ring-4 ring-white outline outline-2 outline-zinc-900/10"
                     : "opacity-60 saturate-50 hover:opacity-90 hover:saturate-100"
                 }`}
               >
-                <span className="text-2xl leading-none drop-shadow">{st.icon}</span>
                 <span className="text-sm font-extrabold leading-snug sm:text-base">{c.name}</span>
                 {on && (
                   <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white text-sm font-black text-zinc-900">
@@ -503,24 +470,6 @@ export default function ServiceCreationForm({
           </div>
         </div>
 
-        <div className="mt-5 rounded-xl bg-amber-50 p-3 sm:p-4">
-          <p className="text-base font-bold text-zinc-900">Доработки после сдачи</p>
-          <p className="mt-0.5 text-sm text-zinc-600">
-            Сколько раз вы <b>бесплатно</b> поправите результат по замечаниям заказчика уже после того, как сдали работу.
-            Заказчик видит это на карточке — так он заранее знает, на что рассчитывать. Если доработки платные — выберите «Без доработок».
-          </p>
-          <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
-            {([["none", "Без доработок"], ["1", "1 раз"], ["2", "2 раза"], ["3", "3 раза"], ["other", "Другое число"]] as const).map(([k, label]) => (
-              <button key={k} type="button" onClick={() => pickRevisions(k)} aria-pressed={revisionKey === k} className={choice(revisionKey === k)}>
-                {label}
-              </button>
-            ))}
-          </div>
-          {revisionKey === "other" && (
-            <input type="number" min={1} inputMode="numeric" value={revisionsCount} onChange={(e) => setRevisionsCount(e.target.value)} className={`${field} mt-3 max-w-[140px]`} />
-          )}
-        </div>
-
         <div className="mt-5">
           <p className="text-base font-bold text-zinc-800">Метки</p>
           <p className="text-sm text-zinc-500">Отметьте всё, что про вас верно.</p>
@@ -548,7 +497,7 @@ export default function ServiceCreationForm({
       </Step>
 
       {/* Шаг 5: пример результата */}
-      <Step n={5} title="Пример результата" hint="Фото или скриншот вашей работы — система сама подрежет и наложит цвет направления.">
+      <Step n={5} title="Пример результата (по желанию)" hint="Можно пропустить. Фото или скриншот вашей работы — система сама подрежет и наложит цвет направления.">
         <label className="flex cursor-pointer flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-indigo-300 bg-indigo-50/50 p-4 text-center transition hover:bg-indigo-50 sm:flex-row sm:text-left">
           <div
             className={`relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-4xl text-white ${
@@ -559,7 +508,7 @@ export default function ServiceCreationForm({
               // eslint-disable-next-line @next/next/no-img-element -- локальный object URL
               <img src={previewImage} alt="" className="absolute inset-0 h-full w-full object-cover" />
             ) : (
-              style.icon
+              null
             )}
           </div>
           <div>
@@ -589,7 +538,7 @@ export default function ServiceCreationForm({
         <ul className="mt-3 flex flex-col gap-1.5">
           {checklist.map((item) => (
             <li key={item.label} className={`flex items-start gap-2 text-sm sm:text-base ${item.ok ? "font-semibold text-emerald-700" : "text-zinc-500"}`}>
-              <span className="mt-0.5">{item.ok ? "✅" : "⬜"}</span>
+              <span className="mt-0.5 font-bold">{item.ok ? "✓" : "○"}</span>
               {item.label}
             </li>
           ))}
@@ -603,7 +552,7 @@ export default function ServiceCreationForm({
         disabled={!canSubmit}
         className="mt-5 min-h-[56px] w-full rounded-2xl border-b-4 border-emerald-800 bg-gradient-to-r from-emerald-500 to-lime-500 py-3 text-lg font-extrabold text-white shadow-lg shadow-emerald-500/30 transition-all hover:-translate-y-0.5 active:translate-y-0.5 active:border-b-2 disabled:cursor-not-allowed disabled:border-zinc-400 disabled:from-zinc-300 disabled:to-zinc-300 disabled:shadow-none"
       >
-        {submitting ? "Сохраняем…" : useCustomType ? "🚀 Отправить на модерацию" : "🚀 Опубликовать"}
+        {submitting ? "Сохраняем…" : useCustomType ? "Отправить на модерацию" : "Опубликовать"}
       </button>
     </form>
   );

@@ -55,7 +55,6 @@ export interface ServiceOffer {
   priceValue: number;
   durationFrom: string;
   scopeLabel: string;
-  revisionsIncluded?: number;
   tags: ServiceCardTag[];
   promoted?: boolean;
   /** 0 — не продвигается; 1 Pro, 2 Enterprise, 3 ручное продвижение админом (см. lib/promotion.ts). */

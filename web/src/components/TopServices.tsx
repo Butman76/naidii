@@ -28,14 +28,18 @@ export default async function TopServices() {
         </p>
       </div>
 
-      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
-        <div className="grid grid-cols-1 gap-4 min-[640px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+      {/* События слева, новости справа, услуги посередине (2026-10-21). На телефоне и планшете
+          порядок такой: услуги, события, новости. */}
+      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[250px_minmax(0,1fr)_250px]">
+        <div className="order-2 self-start lg:order-1">
+          <EventsSidebar />
+        </div>
+        <div className="order-1 grid grid-cols-1 gap-4 min-[640px]:grid-cols-2 md:grid-cols-3 lg:order-2 lg:grid-cols-2 xl:grid-cols-3">
           {top.map((type) => (
             <ResultTypePlate key={type.id} type={type} />
           ))}
         </div>
-        <div className="flex flex-col gap-4 self-start">
-          <EventsSidebar />
+        <div className="order-3 self-start">
           <NewsSidebar />
         </div>
       </div>

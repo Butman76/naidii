@@ -28,6 +28,15 @@ function Badge({ kind }: { kind: NewsPost["kind"] }) {
   );
 }
 
+function AuthorChip({ post }: { post: NewsPost }) {
+  if (!post.authorProfileId) return null;
+  return (
+    <span className="max-w-[160px] truncate rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-semibold text-zinc-800 shadow-sm">
+      {post.authorName ? `От компании · ${post.authorName}` : "От компании"}
+    </span>
+  );
+}
+
 function Picture({ post, large }: { post: NewsPost; large?: boolean }) {
   const src = large ? post.imageUrl : post.thumbUrl;
   return src ? (
@@ -85,6 +94,11 @@ export default function NewsTile({ post, size, views }: { post: NewsPost; size: 
           <div className="flex items-center gap-2">
             <Badge kind={post.kind} />
             <span className="text-[11px] text-zinc-400">{formatNewsDate(post.publishedAt)}</span>
+            {post.authorProfileId && (
+              <span className="truncate rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-600">
+                {post.authorName ? `От компании · ${post.authorName}` : "От компании"}
+              </span>
+            )}
           </div>
           <h3 className="mt-2 line-clamp-3 text-base font-semibold leading-snug text-zinc-900 group-hover:text-blue-700">{post.title}</h3>
           <p className="mt-1.5 line-clamp-3 text-sm leading-relaxed text-zinc-600">{newsSnippet(post, 160)}</p>
@@ -99,8 +113,9 @@ export default function NewsTile({ post, size, views }: { post: NewsPost; size: 
       <Link href={href} className={`${frame} flex flex-col bg-white ${span}`}>
         <div className="relative min-h-[140px] flex-1">
           <Picture post={post} />
-          <div className="absolute left-3 top-3">
+          <div className="absolute left-3 top-3 flex items-center gap-1.5">
             <Badge kind={post.kind} />
+            <AuthorChip post={post} />
           </div>
           <ViewsBadge views={views} />
         </div>
@@ -119,8 +134,9 @@ export default function NewsTile({ post, size, views }: { post: NewsPost; size: 
     <Link href={href} className={`${frame} ${span} bg-zinc-900`}>
       <Picture post={post} large={big} />
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
-      <div className="absolute left-3 top-3">
+      <div className="absolute left-3 top-3 flex items-center gap-1.5">
         <Badge kind={post.kind} />
+        <AuthorChip post={post} />
       </div>
       <ViewsBadge views={views} />
       <div className="absolute inset-x-0 bottom-0 p-4 text-white">

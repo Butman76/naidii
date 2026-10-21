@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import StandardSpecialistProfile from "@/components/StandardSpecialistProfile";
 import PremiumSpecialistProfile from "@/components/PremiumSpecialistProfile";
+import { fetchPublishedNews } from "@/lib/news";
 import ViewTracker from "@/components/ViewTracker";
 import { fetchSpecialists } from "@/lib/specialists";
 
@@ -44,6 +45,7 @@ export default async function SpecialistProfilePage({
   const specialists = await fetchSpecialists();
   const specialist = specialists.find((s) => s.slug === slug);
   if (!specialist) notFound();
+  const posts = (await fetchPublishedNews()).filter((p) => p.authorProfileId === specialist.id);
 
   return (
     <>
@@ -51,9 +53,9 @@ export default async function SpecialistProfilePage({
       <ViewTracker slug={specialist.slug} />
       <main className="flex-1">
         {specialist.premium ? (
-          <PremiumSpecialistProfile specialist={specialist} />
+          <PremiumSpecialistProfile specialist={specialist} posts={posts} />
         ) : (
-          <StandardSpecialistProfile specialist={specialist} />
+          <StandardSpecialistProfile specialist={specialist} posts={posts} />
         )}
       </main>
       <Footer />

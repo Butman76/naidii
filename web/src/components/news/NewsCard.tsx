@@ -50,6 +50,7 @@ export default function NewsCard({ post }: { post: NewsPost }) {
         <p className="text-xs text-zinc-400">
           {formatNewsDate(post.publishedAt)}
           {post.kind === "article" && ` · ${readingMinutes(post.body)} мин чтения`}
+          {post.authorProfileId && ` · От компании${post.authorName ? ` «${post.authorName}»` : ""}`}
         </p>
         <h3 className="mt-1.5 line-clamp-3 text-[17px] font-semibold leading-snug text-zinc-900 group-hover:text-blue-700">
           {post.title}

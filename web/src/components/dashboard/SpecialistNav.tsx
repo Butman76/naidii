@@ -51,6 +51,12 @@ const ICONS: Record<string, ReactNode> = {
   reviews: (
     <path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z" />
   ),
+  blog: (
+    <>
+      <path d="M4 20h4L19 9a2.1 2.1 0 0 0-4-4L4 16z" />
+      <path d="M13.5 6.5l4 4" />
+    </>
+  ),
   analytics: (
     <>
       <path d="M3 3v18h18" />
@@ -96,7 +102,7 @@ const GROUPS: Array<{ title: string | null; ids: string[] }> = [
   { title: null, ids: ["overview"] },
   { title: "Работа", ids: ["services", "leads", "orders", "jobboard", "archive"] },
   { title: "Репутация", ids: ["reviews", "analytics"] },
-  { title: "Витрина", ids: ["profile", "landing", "plan"] },
+  { title: "Витрина", ids: ["profile", "blog", "landing", "plan"] },
 ];
 
 export default function SpecialistNav({

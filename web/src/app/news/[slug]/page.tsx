@@ -49,7 +49,9 @@ export default async function NewsPostPage({ params }: { params: Promise<{ slug:
     description: post.excerpt || undefined,
     datePublished: post.publishedAt,
     image: post.imageUrl ? [post.imageUrl] : undefined,
-    author: { "@type": "Organization", name: "Редакция НайдИИ" },
+    author: post.authorName
+      ? { "@type": "Organization", name: post.authorName, url: `https://naidii.ru/specialist/${post.authorSlug}` }
+      : { "@type": "Organization", name: "Редакция НайдИИ" },
     publisher: { "@type": "Organization", name: "НайдИИ", url: "https://naidii.ru" },
     mainEntityOfPage: `https://naidii.ru/news/${post.slug}`,
   };
@@ -86,9 +88,30 @@ export default async function NewsPostPage({ params }: { params: Promise<{ slug:
             <img src={post.imageUrl} alt="" className="mt-6 h-auto w-full rounded-2xl border border-zinc-200" />
           )}
 
+          {post.authorProfileId && (
+            <p className="mt-4 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
+              Материал компании{post.authorName ? ` «${post.authorName}»` : ""}. Мнение авторов может не совпадать с мнением редакции НайдИИ.{" "}
+              <Link href="/blog-rules" className="underline">Правила блога</Link>
+            </p>
+          )}
+
           <div className="mt-8">
             <NewsBody body={post.body} />
           </div>
+
+          {post.authorProfileId && post.authorSlug && (
+            <div className="mt-8 flex flex-wrap items-center gap-3 rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+              <p className="min-w-0 flex-1 text-sm text-zinc-700">
+                Автор: <span className="font-semibold text-zinc-900">{post.authorName}</span>
+              </p>
+              <Link
+                href={`/specialist/${post.authorSlug}`}
+                className="rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-zinc-700"
+              >
+                Профиль
+              </Link>
+            </div>
+          )}
 
           <div className="mt-12 border-t border-zinc-200 pt-6">
             <Link

@@ -211,6 +211,15 @@ function Editor({ post, onClose, onSaved }: { post: NewsPost | null; onClose: ()
   );
 }
 
+// Памятка модератору для статей компаний (правила блога — /blog-rules).
+const MODERATION_CHECKLIST = [
+  "Это польза читателю про ИИ и автоматизацию (разбор, кейс, объяснение); объявление о продаже не подходит.",
+  "Есть подводка, текст начинается с темы, а не с рекламы компании.",
+  "Нет призывов уйти со сделки (контакты, ссылки на сторонние сайты) и обещаний гарантированного результата без подтверждений.",
+  "Текст не скопирован, нет оскорблений, политики и чужих торговых марок в роли рекламы.",
+  "Заголовок честный и соответствует тексту.",
+];
+
 export default function NewsTab() {
   const [posts, setPosts] = useState<NewsPost[] | null>(null);
   const [editing, setEditing] = useState<NewsPost | "new" | null>(null);
@@ -229,6 +238,26 @@ export default function NewsTab() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  async function moderate(p: NewsPost, approve: boolean) {
+    let note = "";
+    if (!approve) {
+      const answer = window.prompt("Причина отказа (её увидит автор):", "");
+      if (answer === null) return;
+      note = answer.trim();
+    }
+    try {
+      await pbClient.collection("news_posts").update(
+        p.id,
+        approve
+          ? { status: "published", published_at: new Date().toISOString().replace("T", " "), moderation_note: "" }
+          : { status: "rejected", moderation_note: note }
+      );
+      await load();
+    } catch {
+      setError("Не удалось изменить статус.");
+    }
+  }
 
   async function remove(p: NewsPost) {
     if (!window.confirm(`Удалить «${p.title}» насовсем?`)) return;
@@ -260,10 +289,29 @@ export default function NewsTab() {
       </div>
       {error && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
+      {(() => {
+        const pendingCount = posts?.filter((p) => p.status === "pending").length ?? 0;
+        if (pendingCount === 0) return null;
+        return (
+          <details open className="mt-4 rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+            <summary className="cursor-pointer font-bold">Статей компаний на проверке: {pendingCount}</summary>
+            <p className="mt-2 text-xs">Проверьте по пунктам, затем нажмите «Одобрить» или «Отклонить» (причину увидит автор):</p>
+            <ul className="mt-1 list-disc space-y-0.5 pl-5 text-xs">
+              {MODERATION_CHECKLIST.map((c) => (
+                <li key={c}>{c}</li>
+              ))}
+            </ul>
+          </details>
+        );
+      })()}
+
       <div className="mt-4 flex flex-col gap-4">
         {posts === null && <p className="py-6 text-center text-sm text-zinc-400">Загрузка…</p>}
         {posts?.length === 0 && <p className="py-6 text-center text-sm text-zinc-400">Публикаций пока нет.</p>}
-        {posts?.map((p) => (
+        {posts
+          ?.slice()
+          .sort((a, b) => Number(b.status === "pending") - Number(a.status === "pending"))
+          .map((p) => (
           <article key={p.id} className="adm-card flex flex-col gap-4 p-4 lg:flex-row lg:items-center">
             <div className="flex min-w-0 flex-1 items-center gap-4">
               <div className="h-20 w-28 shrink-0 overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100">
@@ -282,9 +330,24 @@ export default function NewsTab() {
                   <span className={`rounded-full px-2.5 py-0.5 font-semibold text-white ${p.kind === "article" ? "bg-violet-600" : "bg-blue-600"}`}>
                     {KIND_LABELS[p.kind]}
                   </span>
-                  <span className={`rounded-full border px-2.5 py-0.5 ${p.status === "published" ? "border-emerald-300 bg-emerald-50 text-emerald-800" : "border-zinc-300 bg-zinc-50 text-zinc-600"}`}>
+                  <span
+                    className={`rounded-full border px-2.5 py-0.5 ${
+                      p.status === "published"
+                        ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                        : p.status === "pending"
+                          ? "border-amber-300 bg-amber-50 font-semibold text-amber-800"
+                          : p.status === "rejected"
+                            ? "border-red-300 bg-red-50 text-red-700"
+                            : "border-zinc-300 bg-zinc-50 text-zinc-600"
+                    }`}
+                  >
                     {STATUS_LABELS[p.status]}
                   </span>
+                  {p.authorProfileId && (
+                    <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 font-medium text-indigo-800">
+                      От компании{p.authorName ? `: ${p.authorName}` : ""}
+                    </span>
+                  )}
                   <span className="text-zinc-500">{formatNewsDate(p.publishedAt)}</span>
                 </div>
               </div>
@@ -305,6 +368,15 @@ export default function NewsTab() {
                     colors={COPY_COLORS_LINK}
                     getText={() => "https://naidii.ru/news/" + p.slug}
                   />
+                </>
+              ) : p.status === "pending" ? (
+                <>
+                  <button type="button" onClick={() => void moderate(p, true)} className="adm-key !rounded-full !px-4 !py-1.5 text-xs" style={COPY_COLORS_EDIT as React.CSSProperties}>
+                    Одобрить
+                  </button>
+                  <button type="button" onClick={() => void moderate(p, false)} className="adm-key adm-key--danger !rounded-full !px-4 !py-1.5 text-xs" style={COPY_COLORS_DELETE as React.CSSProperties}>
+                    Отклонить
+                  </button>
                 </>
               ) : (
                 <span className="text-xs text-zinc-400">Копирование — после публикации</span>

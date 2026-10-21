@@ -6,12 +6,13 @@ import type { NewsKind, NewsPost } from "@/lib/news";
 import { pbClient } from "@/lib/auth-client";
 import { useAuth } from "@/lib/use-auth";
 
-type Filter = "all" | NewsKind;
+type Filter = "all" | NewsKind | "company";
 
 const FILTERS: Array<{ id: Filter; label: string }> = [
   { id: "all", label: "Все" },
   { id: "news", label: "Новости" },
   { id: "article", label: "Статьи" },
+  { id: "company", label: "От компаний" },
 ];
 
 // Мозаика: размеры плиток идут по кругу так, чтобы на сетке из 4 колонок
@@ -51,7 +52,7 @@ export default function NewsCatalog({ posts }: { posts: NewsPost[] }) {
       cancelled = true;
     };
   }, [isAdmin]);
-  const list = useMemo(() => (filter === "all" ? posts : posts.filter((p) => p.kind === filter)), [posts, filter]);
+  const list = useMemo(() => (filter === "all" ? posts : filter === "company" ? posts.filter((p) => p.authorProfileId) : posts.filter((p) => p.kind === filter)), [posts, filter]);
   const sizes = sizesFor(list.length);
 
   return (

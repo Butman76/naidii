@@ -1,5 +1,7 @@
 import type { Specialist } from "@/types/specialist";
 import NewsBody from "@/components/news/NewsBody";
+import SpecialistBlog from "@/components/SpecialistBlog";
+import type { NewsPost } from "@/lib/news";
 import { CATEGORIES } from "@/data/categories";
 import { withBasePath } from "@/lib/base-path";
 import { embedVideoUrl } from "@/lib/video-embed";
@@ -29,8 +31,10 @@ const GALLERY_GRADIENTS = [
 // всех, кто на этом тарифе, оформление (coverGradient) — разное.
 export default function PremiumSpecialistProfile({
   specialist,
+  posts = [],
 }: {
   specialist: Specialist;
+  posts?: NewsPost[];
 }) {
   const premium = specialist.premium;
   if (!premium) return null;
@@ -164,6 +168,8 @@ export default function PremiumSpecialistProfile({
             ))}
           </div>
         </section>
+
+        <SpecialistBlog posts={posts} />
 
         {(() => {
           const embedUrl = premium.videoUrl ? embedVideoUrl(premium.videoUrl) : null;

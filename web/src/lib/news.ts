@@ -2,15 +2,23 @@ import type PocketBase from "pocketbase";
 import type { RecordModel } from "pocketbase";
 import { createPocketBase } from "./pocketbase";
 
-// Раздел «Новости и статьи» (/news, миграция 1755000063). Публикует только
-// админ — из вкладки «Новости» в /admin. Текст — Markdown (см. NewsBody.tsx).
+// Раздел «Новости и статьи» (/news, миграция 1755000063). Редакционные
+// публикации — админ, вкладка «Новости» в /admin. С 2026-10-21 статьи пишут и
+// компании (блог специалиста, миграция 1755000070): они идут на модерацию,
+// выходят в этой же ленте с пометкой «От компании» и в блоке «Блог» на
+// странице профиля. Текст — Markdown (см. NewsBody.tsx).
 
 export type NewsKind = "news" | "article";
-export type NewsStatus = "draft" | "published";
+export type NewsStatus = "draft" | "published" | "pending" | "rejected";
 
 export const KIND_LABELS: Record<NewsKind, string> = { news: "Новость", article: "Статья" };
 export const KIND_LABELS_PLURAL: Record<NewsKind, string> = { news: "Новости", article: "Статьи" };
-export const STATUS_LABELS: Record<NewsStatus, string> = { draft: "Черновик", published: "Опубликовано" };
+export const STATUS_LABELS: Record<NewsStatus, string> = {
+  draft: "Черновик",
+  published: "Опубликовано",
+  pending: "На проверке",
+  rejected: "Отклонено",
+};
 
 export interface NewsPost {
   id: string;
@@ -24,9 +32,15 @@ export interface NewsPost {
   status: NewsStatus;
   publishedAt: string;
   created: string;
+  /** Автор-компания (блог специалиста); пусто у редакционных публикаций. */
+  authorProfileId: string;
+  authorName: string;
+  authorSlug: string;
+  /** Причина отказа (пишет админ). */
+  moderationNote: string;
 }
 
-function mapPost(pb: PocketBase, r: RecordModel): NewsPost {
+export function mapPost(pb: PocketBase, r: RecordModel): NewsPost {
   const thumb = typeof r.thumbnail === "string" && r.thumbnail ? (r.thumbnail as string) : "";
   return {
     id: r.id,
@@ -37,9 +51,13 @@ function mapPost(pb: PocketBase, r: RecordModel): NewsPost {
     body: String(r.body ?? ""),
     thumbUrl: thumb ? pb.files.getURL(r, thumb, { thumb: "600x0" }) : null,
     imageUrl: thumb ? pb.files.getURL(r, thumb, { thumb: "1200x0" }) : null,
-    status: (r.status === "published" ? "published" : "draft") as NewsStatus,
+    status: (["published", "pending", "rejected"].includes(String(r.status)) ? r.status : "draft") as NewsStatus,
     publishedAt: String(r.published_at ?? "") || String(r.created ?? ""),
     created: String(r.created ?? ""),
+    authorProfileId: String(r.author_profile_id ?? ""),
+    authorName: String(r.expand?.author_profile_id?.public_name ?? ""),
+    authorSlug: String(r.expand?.author_profile_id?.slug ?? ""),
+    moderationNote: String(r.moderation_note ?? ""),
   };
 }
 
@@ -82,8 +100,8 @@ export async function fetchPublishedNews(limit?: number): Promise<NewsPost[]> {
     const pb = createPocketBase();
     const filter = pb.filter('status = "published" && published_at <= {:now}', { now: new Date().toISOString().replace("T", " ") });
     const records = limit
-      ? (await pb.collection("news_posts").getList(1, limit, { filter, sort: "-published_at" })).items
-      : await pb.collection("news_posts").getFullList({ filter, sort: "-published_at", batch: 500 });
+      ? (await pb.collection("news_posts").getList(1, limit, { filter, sort: "-published_at", expand: "author_profile_id" })).items
+      : await pb.collection("news_posts").getFullList({ filter, sort: "-published_at", batch: 500, expand: "author_profile_id" });
     return records.map((r) => mapPost(pb, r));
   } catch {
     return [];
@@ -97,7 +115,8 @@ export async function fetchNewsBySlug(slug: string): Promise<NewsPost | null> {
       pb.filter('slug = {:slug} && status = "published" && published_at <= {:now}', {
         slug,
         now: new Date().toISOString().replace("T", " "),
-      })
+      }),
+      { expand: "author_profile_id" }
     );
     return mapPost(pb, r);
   } catch {
@@ -110,7 +129,7 @@ export async function fetchNewsBySlug(slug: string): Promise<NewsPost | null> {
 export async function fetchAdminNews(pb: PocketBase): Promise<NewsPost[]> {
   // requestKey: null — без автоотмены: в dev React монтирует эффект дважды, и
   // первый запрос иначе отменялся бы вторым с ложной ошибкой «не удалось загрузить».
-  const records = await pb.collection("news_posts").getFullList({ sort: "-created", batch: 500, requestKey: null });
+  const records = await pb.collection("news_posts").getFullList({ sort: "-created", batch: 500, requestKey: null, expand: "author_profile_id" });
   return records.map((r) => mapPost(pb, r));
 }
 

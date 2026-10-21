@@ -1,5 +1,7 @@
 import type { Specialist } from "@/types/specialist";
 import NewsBody from "@/components/news/NewsBody";
+import SpecialistBlog from "@/components/SpecialistBlog";
+import type { NewsPost } from "@/lib/news";
 import { CATEGORIES } from "@/data/categories";
 
 const BADGE_LABELS: Record<string, string> = {
@@ -18,8 +20,10 @@ const BADGE_STYLES: Record<string, string> = {
 
 export default function StandardSpecialistProfile({
   specialist,
+  posts = [],
 }: {
   specialist: Specialist;
+  posts?: NewsPost[];
 }) {
   const categoryName =
     CATEGORIES.find((c) => c.slug === specialist.category)?.name ??
@@ -99,6 +103,8 @@ export default function StandardSpecialistProfile({
             <NewsBody body={specialist.fullDescription} />
           </div>
         </section>
+
+        <SpecialistBlog posts={posts} />
 
         {specialist.services.length > 0 && (
           <section className="mt-10">

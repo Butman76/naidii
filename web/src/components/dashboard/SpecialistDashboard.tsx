@@ -24,13 +24,15 @@ import type { SpecialistDashboardData } from "@/lib/dashboard";
 import { useAuth } from "@/lib/use-auth";
 import { pbClient } from "@/lib/auth-client";
 import SpecialistNav from "./SpecialistNav";
+import SpecialistBlogTab from "./SpecialistBlogTab";
 import NewsBody from "@/components/news/NewsBody";
 
-type Tab = "overview" | "profile" | "services" | "leads" | "jobboard" | "orders" | "archive" | "reviews" | "analytics" | "plan" | "landing";
+type Tab = "overview" | "profile" | "blog" | "services" | "leads" | "jobboard" | "orders" | "archive" | "reviews" | "analytics" | "plan" | "landing";
 
 const TABS: Array<{ id: Tab; label: string }> = [
   { id: "overview", label: "Обзор" },
   { id: "profile", label: "Настройка профиля" },
+  { id: "blog", label: "Блог" },
   { id: "services", label: "Услуги" },
   { id: "leads", label: "Заявки" },
   { id: "jobboard", label: "Доска объявлений" },
@@ -574,6 +576,15 @@ export default function SpecialistDashboard({
               </div>
             )}
           </div>
+        )}
+
+        {tab === "blog" && (
+          <SpecialistBlogTab
+            profileId={specialist.id}
+            profileStatus={profileStatus}
+            planCode={planCodeRaw}
+            activeUntil={planActiveUntil}
+          />
         )}
 
         {tab === "landing" && currentPlan.customLanding && (

@@ -41,6 +41,7 @@ export function NewsColumn({ posts }: { posts: NewsPost[] }) {
         <Cover post={lead} className="aspect-[16/10] rounded-lg" />
         <p className="mt-2 text-[11px] text-zinc-500">
           {KIND_LABELS[lead.kind]} · {formatNewsDate(lead.publishedAt)}
+          {lead.authorProfileId && " · От компании"}
         </p>
         <p className="mt-0.5 line-clamp-3 text-sm font-semibold leading-snug text-zinc-900 group-hover:text-blue-700">{lead.title}</p>
         <p className="mt-1 line-clamp-4 text-xs leading-relaxed text-zinc-600">{newsSnippet(lead, 220)}</p>
@@ -54,6 +55,7 @@ export function NewsColumn({ posts }: { posts: NewsPost[] }) {
               <div className="min-w-0">
                 <p className="text-[11px] text-zinc-500">
                   {KIND_LABELS[p.kind]} · {formatNewsDate(p.publishedAt)}
+                  {p.authorProfileId && " · От компании"}
                 </p>
                 <p className="mt-0.5 line-clamp-2 text-xs font-semibold leading-snug text-zinc-900 group-hover:text-blue-700">{p.title}</p>
                 <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-zinc-600">{newsSnippet(p, 110)}</p>

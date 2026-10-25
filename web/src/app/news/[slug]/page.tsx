@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import NewsBody from "@/components/news/NewsBody";
 import NewsCard from "@/components/news/NewsCard";
 import NewsViewTracker from "@/components/news/NewsViewTracker";
+import StaffSelectable from "@/components/news/StaffSelectable";
 import { KIND_LABELS, fetchNewsBySlug, fetchPublishedNews, formatNewsDate, readingMinutes } from "@/lib/news";
 
 export const revalidate = 60;
@@ -63,6 +64,7 @@ export default async function NewsPostPage({ params }: { params: Promise<{ slug:
         <NewsViewTracker slug={post.slug} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
         <article className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
+          <StaffSelectable>
           <Link
             href="/news"
             className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:border-zinc-400 hover:text-zinc-900"
@@ -121,6 +123,7 @@ export default async function NewsPostPage({ params }: { params: Promise<{ slug:
               <span aria-hidden="true">←</span> Вернуться к списку новостей
             </Link>
           </div>
+          </StaffSelectable>
         </article>
 
         {more.length > 0 && (

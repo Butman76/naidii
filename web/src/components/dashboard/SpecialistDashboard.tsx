@@ -2,31 +2,53 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { formatPrice, SERVICE_TAG_LABELS } from "@/types/service-card";
 import ServiceCreationForm from "./ServiceCreationForm";
+import ServiceFormModal from "./ServiceFormModal";
+import ServiceEditForm from "./ServiceEditForm";
 import ProfileEditForm from "./ProfileEditForm";
 import LeadChat from "./LeadChat";
 import OrdersTab from "./OrdersTab";
 import SpecialistJobBoard from "./SpecialistJobBoard";
+import PremiumLandingEditor from "./PremiumLandingEditor";
+import PlanPaymentPanel from "./PlanPaymentPanel";
+import AnalyticsPanel from "./AnalyticsPanel";
+import { planPromotionRank } from "@/lib/promotion";
 import { getCategoryStyle, getCategoryAccent } from "@/data/category-style";
+import { PLANS } from "@/data/plans";
+import { PLAN_SHELL } from "@/data/plan-style";
 import type { SpecialistDashboardOffer } from "@/lib/dashboard";
 import { LEAD_STATUS_LABELS, LEAD_STATUS_STYLES } from "@/data/dashboard-mock";
 import type { SpecialistDashboardData } from "@/lib/dashboard";
 import { useAuth } from "@/lib/use-auth";
+import { pbClient } from "@/lib/auth-client";
+import SpecialistNav from "./SpecialistNav";
+import SpecialistBlogTab from "./SpecialistBlogTab";
+import NewsBody from "@/components/news/NewsBody";
 
-type Tab = "overview" | "profile" | "services" | "leads" | "jobboard" | "orders" | "archive" | "reviews" | "plan";
+type Tab = "overview" | "profile" | "blog" | "services" | "leads" | "jobboard" | "orders" | "archive" | "reviews" | "analytics" | "plan" | "landing";
 
 const TABS: Array<{ id: Tab; label: string }> = [
   { id: "overview", label: "Обзор" },
-  { id: "profile", label: "Профиль" },
+  { id: "profile", label: "Настройка профиля" },
+  { id: "blog", label: "Блог" },
   { id: "services", label: "Услуги" },
   { id: "leads", label: "Заявки" },
   { id: "jobboard", label: "Доска объявлений" },
   { id: "orders", label: "Заказы" },
   { id: "archive", label: "Архив" },
   { id: "reviews", label: "Отзывы" },
+  { id: "analytics", label: "Аналитика" },
   { id: "plan", label: "Тариф" },
 ];
+
+// Плашка "Тут новые заказы" на главной (HeroDealsBadge.tsx) ведёт сюда через
+// ?tab=jobboard — специалист попадает сразу на доску объявлений, а не на
+// "Обзор" по умолчанию.
+function isValidTab(value: string | null): value is Tab {
+  return TABS.some((t) => t.id === value);
+}
 
 // Услуги группируются по направлению (не идут вперемешку) — порядок групп
 // по первому появлению в списке (сам список уже отсортирован по дате
@@ -60,19 +82,52 @@ export default function SpecialistDashboard({
   data: SpecialistDashboardData;
   refresh: () => void;
 }) {
-  const { specialist, profileStatus, viewsCount, leadsCount, offers, leads, cases } = data;
+  const { specialist, profileStatus, viewsCount, leadsCount, offers, leads, cases, allSkills, mySkills, planCode, planActiveUntil, planCodeRaw } = data;
   const { user } = useAuth();
-  const [tab, setTab] = useState<Tab>("overview");
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get("tab");
+  const [tab, setTab] = useState<Tab>(isValidTab(requestedTab) ? requestedTab : "overview");
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
-  const isPremium = Boolean(specialist.premium);
+  const currentPlan = PLANS.find((p) => p.code === planCode) ?? PLANS[0];
 
   const [showCreationForm, setShowCreationForm] = useState(false);
+  const [editingOffer, setEditingOffer] = useState<SpecialistDashboardOffer | null>(null);
+  const [deletingOfferId, setDeletingOfferId] = useState<string | null>(null);
+
+  // Удаление услуги: сначала само предложение, затем — если тип свой и не
+  // одобрен — и тип (иначе он остался бы висеть в очереди модерации).
+  async function deleteOffer(offer: SpecialistDashboardOffer) {
+    const own = offer.typeIsMine && offer.typeStatus !== "approved";
+    const ok = window.confirm(
+      `Удалить услугу «${offer.resultTypeTitle}»?` + (own ? " Заявка на модерацию тоже будет отозвана." : "")
+    );
+    if (!ok) return;
+    setDeletingOfferId(offer.id);
+    try {
+      await pbClient.collection("services").delete(offer.id);
+      if (own && offer.resultTypeId) {
+        await pbClient.collection("result_types").delete(offer.resultTypeId).catch(() => {});
+      }
+      refresh();
+    } catch {
+      window.alert("Не получилось удалить услугу — попробуйте ещё раз.");
+    } finally {
+      setDeletingOfferId(null);
+    }
+  }
   const [editingProfile, setEditingProfile] = useState(false);
 
   const totalOfferCount = offers.length;
+  const newLeadsCount = leads.filter((l) => l.status === "new").length;
+
+  // "Лендинг" — только на тарифе с профилем-лендингом вместо обычной
+  // карточки (см. PremiumSpecialistProfile.tsx), остальным вкладка не нужна.
+  const visibleTabs = currentPlan.customLanding
+    ? [...TABS.slice(0, -1), { id: "landing" as const, label: "Лендинг" }, TABS[TABS.length - 1]]
+    : TABS;
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-6xl px-4 pb-28 pt-8 sm:px-6 lg:px-8 lg:pb-8">
       {profileStatus === "pending" && (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           Ваш профиль на модерации — станет виден в каталоге, когда его
@@ -94,23 +149,17 @@ export default function SpecialistDashboard({
         </div>
       </div>
 
-      <div className="mt-6 flex gap-1 overflow-x-auto border-b border-zinc-200">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => setTab(t.id)}
-            className={`shrink-0 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
-              tab === t.id
-                ? "border-zinc-900 text-zinc-900"
-                : "border-transparent text-zinc-500 hover:text-zinc-900"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
+      <div className="mt-6 lg:grid lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start lg:gap-8">
+        <SpecialistNav
+          items={visibleTabs}
+          active={tab}
+          onSelect={(id) => setTab(id as Tab)}
+          badges={{ leads: newLeadsCount }}
+          name={specialist.name}
+          initials={specialist.avatarInitials}
+          planLabel={`Тариф «${currentPlan.title}»`}
+        />
+        <div className="min-w-0">
       <div className="mt-6">
         {tab === "overview" && (
           <div className="flex flex-col gap-6">
@@ -127,15 +176,26 @@ export default function SpecialistDashboard({
               </p>
               <div className="mt-3 flex flex-col gap-2 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-zinc-600">Описание и навыки</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTab("profile");
+                      setEditingProfile(true);
+                    }}
+                    className="text-zinc-600 underline-offset-2 hover:text-zinc-900 hover:underline"
+                  >
+                    Описание и навыки
+                  </button>
                   <span
                     className={
-                      specialist.shortDescription
+                      specialist.shortDescription && specialist.skills.length > 0
                         ? "text-emerald-600"
                         : "text-amber-600"
                     }
                   >
-                    {specialist.shortDescription ? "Готово" : "Пока не заполнено"}
+                    {specialist.shortDescription && specialist.skills.length > 0
+                      ? "Готово"
+                      : "Пока не заполнено"}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -167,7 +227,7 @@ export default function SpecialistDashboard({
           <div className="rounded-2xl border border-zinc-200 bg-white p-5">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold text-zinc-900">
-                Публичный профиль
+                Настройка профиля
               </p>
               {!editingProfile && (
                 <button
@@ -182,6 +242,10 @@ export default function SpecialistDashboard({
             {editingProfile ? (
               <ProfileEditForm
                 specialist={specialist}
+                allSkills={allSkills}
+                mySkills={mySkills}
+                planCode={planCode}
+                categorySlugs={[...new Set(offers.map((o) => o.categorySlug).filter(Boolean))]}
                 onSaved={refresh}
                 onCancel={() => setEditingProfile(false)}
               />
@@ -194,7 +258,7 @@ export default function SpecialistDashboard({
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-zinc-500">Краткое описание</dt>
+                <dt className="text-xs text-zinc-500">Краткое описание (на карточке специалиста в каталоге)</dt>
                 <dd className="text-zinc-900">
                   {specialist.shortDescription || "—"}
                 </dd>
@@ -202,7 +266,7 @@ export default function SpecialistDashboard({
               <div>
                 <dt className="text-xs text-zinc-500">Полное описание</dt>
                 <dd className="text-zinc-600">
-                  {specialist.fullDescription || "—"}
+                  {specialist.fullDescription ? <NewsBody body={specialist.fullDescription} /> : "—"}
                 </dd>
               </div>
               <div>
@@ -244,9 +308,14 @@ export default function SpecialistDashboard({
                       return (
                         <div
                           key={offer.id}
-                          className={`flex aspect-square flex-col justify-between rounded-2xl border p-3 ${accent.border} ${accent.tint}`}
+                          className={`flex min-h-[220px] flex-col justify-between gap-2 rounded-2xl border p-3 ${accent.border} ${accent.tint}`}
                         >
                           <div className="min-w-0">
+                            {offer.subcategory && (
+                              <p className="mb-1 truncate text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
+                                {offer.subcategory}
+                              </p>
+                            )}
                             <p className="line-clamp-3 text-sm font-medium text-zinc-900">
                               {offer.resultTypeTitle}
                             </p>
@@ -270,9 +339,53 @@ export default function SpecialistDashboard({
                                 ))}
                               </div>
                             )}
-                            <span className="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-800">
-                              Опубликовано
+                            <span
+                              className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                                offer.typeStatus === "approved"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : offer.typeStatus === "pending"
+                                    ? "bg-amber-100 text-amber-800"
+                                    : "bg-red-100 text-red-700"
+                              }`}
+                            >
+                              {offer.typeStatus === "approved"
+                                ? "Опубликовано"
+                                : offer.typeStatus === "pending"
+                                  ? "Тип на модерации"
+                                  : "Тип отклонён"}
                             </span>
+                          </div>
+                          {offer.typeStatus === "rejected" && (
+                            <p className="rounded-lg bg-red-50 px-2 py-1 text-[11px] leading-snug text-red-700">
+                              {offer.typeNote ? `Причина: ${offer.typeNote}` : "Модератор не указал причину."}
+                            </p>
+                          )}
+                          <div className="flex flex-wrap gap-1.5">
+                            {offer.typeIsMine && offer.typeStatus !== "approved" ? (
+                              <button
+                                type="button"
+                                onClick={() => setEditingOffer(offer)}
+                                className="rounded-full bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-indigo-700"
+                              >
+                                {offer.typeStatus === "rejected" ? "Исправить и отправить заново" : "Изменить"}
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setEditingOffer(offer)}
+                                className="rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50"
+                              >
+                                Изменить
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              disabled={deletingOfferId === offer.id}
+                              onClick={() => void deleteOffer(offer)}
+                              className="rounded-full border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                            >
+                              Удалить
+                            </button>
                           </div>
                         </div>
                       );
@@ -282,23 +395,31 @@ export default function SpecialistDashboard({
               );
             })}
 
-            {offers.length === 0 && !showCreationForm && (
+            {offers.length === 0 && (
               <p className="text-sm text-zinc-500">У вас пока нет ни одной услуги.</p>
             )}
 
-            {showCreationForm ? (
-              <ServiceCreationForm
-                specialist={specialist}
-                onCreated={refresh}
-                onCancel={() => setShowCreationForm(false)}
-              />
-            ) : (
-              <button
-                onClick={() => setShowCreationForm(true)}
-                className="rounded-2xl border border-dashed border-zinc-300 p-4 text-sm text-zinc-500 transition-colors hover:border-zinc-400 hover:text-zinc-700"
-              >
-                + Добавить услугу
-              </button>
+            <button
+              onClick={() => setShowCreationForm(true)}
+              className="min-h-[56px] rounded-2xl border-2 border-dashed border-indigo-300 bg-indigo-50/50 p-4 text-base font-bold text-indigo-700 transition-colors hover:border-indigo-500 hover:bg-indigo-50"
+            >
+              + Добавить услугу
+            </button>
+
+            {editingOffer && (
+              <ServiceFormModal onClose={() => setEditingOffer(null)} label="Изменить услугу">
+                <ServiceEditForm offer={editingOffer} onSaved={refresh} onCancel={() => setEditingOffer(null)} />
+              </ServiceFormModal>
+            )}
+
+            {showCreationForm && (
+              <ServiceFormModal onClose={() => setShowCreationForm(false)}>
+                <ServiceCreationForm
+                  specialist={specialist}
+                  onCreated={refresh}
+                  onCancel={() => setShowCreationForm(false)}
+                />
+              </ServiceFormModal>
             )}
           </div>
         )}
@@ -322,6 +443,7 @@ export default function SpecialistDashboard({
                 customerId={lead.customerId}
                 specialistProfileId={specialist.id}
                 otherPartyName={lead.clientName}
+                leadStatus={lead.status}
                 onClose={() => setOpenLeadId(null)}
               />
             </div>
@@ -406,28 +528,44 @@ export default function SpecialistDashboard({
           </div>
         )}
 
+        {tab === "analytics" && (
+          <AnalyticsPanel planCodeRaw={planCodeRaw} activeUntil={planActiveUntil} onOpenPlan={() => setTab("plan")} />
+        )}
+
         {tab === "plan" && (
           <div className="flex flex-col gap-4">
-            <div className="rounded-2xl border border-zinc-200 bg-white p-5">
+            <div className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5">
+              <span
+                className={`absolute inset-x-0 top-0 h-1 ${PLAN_SHELL[planCodeRaw] ?? "bg-zinc-200"}`}
+                aria-hidden="true"
+              />
               <p className="text-xs text-zinc-500">Текущий тариф</p>
               <p className="mt-1 text-lg font-semibold text-zinc-900">
-                {isPremium ? "Максимальный" : "Стандарт"}
+                {currentPlan.title}
               </p>
-              <p className="mt-2 text-sm text-zinc-600">
-                {isPremium
-                  ? "Доступен расширенный профиль-лендинг: обложка, галерея, команда, сертификаты."
-                  : "Базовая карточка в каталоге и обычный профиль. Расширенный профиль-лендинг с обложкой, галереей и командой доступен на максимальном тарифе."}
-              </p>
+              <p className="mt-2 text-sm text-zinc-600">{currentPlan.description}</p>
+              {currentPlan.customLanding && (
+                <p className="mt-3 text-xs text-zinc-500">Включён профиль-лендинг вместо обычной карточки</p>
+              )}
+              {planPromotionRank({ plan_code: planCodeRaw, active_until: planActiveUntil }) > 0 && (
+                <p className="mt-1 text-xs text-zinc-500">
+                  Продвижение включено: ваши услуги показываются выше в каталоге и в сетке «Топ-20» с меткой
+                  «Продвигается». Среди платных тарифов порядок меняется каждые сутки, чтобы верхние места
+                  доставались всем поровну; Enterprise показывается выше Pro.
+                </p>
+              )}
             </div>
 
-            {!isPremium && (
+            <PlanPaymentPanel planCodeRaw={planCodeRaw} activeUntil={planActiveUntil} refresh={refresh} />
+
+            {!currentPlan.customLanding && (
               <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
                 <p className="text-sm font-semibold text-amber-900">
-                  Максимальный тариф
+                  Хотите тариф выше?
                 </p>
                 <p className="mt-1 text-sm text-amber-800">
-                  Профиль-лендинг вместо обычной карточки, приоритет в
-                  каталоге и расширенная аналитика.
+                  На старших тарифах — продвижение в каталоге и аналитика профиля, а на
+                  максимальном — профиль-лендинг вместо обычной карточки.
                 </p>
                 <Link
                   href="/tariffs"
@@ -439,6 +577,21 @@ export default function SpecialistDashboard({
             )}
           </div>
         )}
+
+        {tab === "blog" && (
+          <SpecialistBlogTab
+            profileId={specialist.id}
+            profileStatus={profileStatus}
+            planCode={planCodeRaw}
+            activeUntil={planActiveUntil}
+          />
+        )}
+
+        {tab === "landing" && currentPlan.customLanding && (
+          <PremiumLandingEditor specialistId={specialist.id} />
+        )}
+      </div>
+      </div>
       </div>
     </div>
   );

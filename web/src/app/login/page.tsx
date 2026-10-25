@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { pbClient } from "@/lib/auth-client";
+import { pbClient, logLogin } from "@/lib/auth-client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -22,6 +22,7 @@ export default function LoginPage() {
       const authData = await pbClient
         .collection("users")
         .authWithPassword(email, password);
+      logLogin();
       const role = authData.record.role;
       router.push(role === "specialist" ? "/dashboard" : "/dashboard/customer");
     } catch {
@@ -34,7 +35,7 @@ export default function LoginPage() {
   return (
     <>
       <Header />
-      <main className="flex flex-1 items-center justify-center bg-zinc-50 px-4 py-16">
+      <main className="flex flex-1 items-center justify-center px-4 py-16">
         <form
           onSubmit={handleSubmit}
           className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-6"

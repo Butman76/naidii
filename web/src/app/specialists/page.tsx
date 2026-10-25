@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SpecialistsCatalog from "@/components/SpecialistsCatalog";
+import PartnerAdsCarousel from "@/components/PartnerAdsCarousel";
 import { fetchSpecialists } from "@/lib/specialists";
+import { fetchActivePartnerAds } from "@/lib/partner-ads";
+import { fetchActiveUnclaimedListings } from "@/lib/unclaimed";
 
 // Без этого страница была полностью статической (собранной один раз при
 // билде) и не видела изменений в PocketBase (публикацию профиля админом)
@@ -16,12 +19,16 @@ export const metadata: Metadata = {
 };
 
 export default async function SpecialistsPage() {
-  const specialists = await fetchSpecialists();
+  const [specialists, partnerAds, unclaimed] = await Promise.all([
+    fetchSpecialists(),
+    fetchActivePartnerAds(),
+    fetchActiveUnclaimedListings(),
+  ]);
 
   return (
     <>
       <Header />
-      <main className="flex-1 bg-zinc-50">
+      <main className="flex-1">
         <div className="border-b border-zinc-200 bg-white">
           <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <h1 className="text-2xl font-bold text-zinc-900 sm:text-3xl">
@@ -33,7 +40,8 @@ export default async function SpecialistsPage() {
             </p>
           </div>
         </div>
-        <SpecialistsCatalog specialists={specialists} />
+        <PartnerAdsCarousel ads={partnerAds} />
+        <SpecialistsCatalog specialists={specialists} unclaimed={unclaimed} />
       </main>
       <Footer />
     </>

@@ -17,7 +17,18 @@ export interface LeadMessage {
   leadId: string;
   senderId: string;
   body: string;
+  isSystem: boolean;
   createdAt: string;
+}
+
+export function formatDateTime(iso: string): string {
+  return new Date(iso).toLocaleString("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export type DealStatus =
@@ -79,6 +90,7 @@ function mapMessage(r: RecordModel): LeadMessage {
     leadId: r.lead_id,
     senderId: r.sender_id,
     body: r.body,
+    isSystem: Boolean(r.is_system),
     createdAt: r.created,
   };
 }
@@ -136,6 +148,38 @@ export async function subscribeToLeadMessages(
     if (e.action === "create" && e.record.lead_id === leadId) {
       onCreate(mapMessage(e.record));
     }
+  });
+}
+
+// Служебная запись в чате ("Заказчик предложил заключить сделку" и т.п.) —
+// обычное сообщение с флагом is_system, чтобы бесплатно получить и место в
+// истории переписки, и доставку через ту же realtime-подписку выше.
+export async function sendSystemMessage(
+  pb: PocketBase,
+  leadId: string,
+  senderId: string,
+  body: string
+): Promise<LeadMessage> {
+  const r = await pb.collection("lead_messages").create({
+    lead_id: leadId,
+    sender_id: senderId,
+    body,
+    is_system: true,
+  });
+  return mapMessage(r);
+}
+
+// Подписка на изменения сделки этой заявки — чтобы предложение/подтверждение/
+// отклонение от собеседника появлялось сразу, без обновления страницы (та же
+// логика, что и у subscribeToLeadMessages выше, только для deals).
+export async function subscribeToDeal(
+  pb: PocketBase,
+  leadId: string,
+  onChange: (deal: Deal | null) => void
+): Promise<() => void> {
+  return pb.collection("deals").subscribe("*", (e) => {
+    if (e.record.lead_id !== leadId) return;
+    onChange(e.action === "delete" ? null : mapDeal(e.record));
   });
 }
 

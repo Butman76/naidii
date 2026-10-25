@@ -29,6 +29,17 @@ export default function ImpersonationBanner() {
 
   if (!saved) return null;
 
+  const ROLE_LABELS: Record<string, string> = {
+    specialist: "Исполнитель",
+    customer: "Заказчик",
+    admin: "Админ",
+    moderator: "Модератор",
+  };
+  const impersonatedRole = pbClient.authStore.record?.role as string | undefined;
+  const roleLabel = (impersonatedRole && ROLE_LABELS[impersonatedRole]) || "Пользователь";
+  const impersonatedName =
+    pbClient.authStore.record?.name || pbClient.authStore.record?.email || "другой пользователь";
+
   function restore() {
     if (!saved) return;
     pbClient.authStore.save(saved.token, saved.record);
@@ -42,8 +53,8 @@ export default function ImpersonationBanner() {
 
   return (
     <div className="sticky top-0 z-50 flex items-center justify-center gap-3 bg-amber-500 px-4 py-2 text-sm font-medium text-white shadow-md">
-      <span>
-        Вы вошли как {pbClient.authStore.record?.name || pbClient.authStore.record?.email || "другой пользователь"}
+      <span className="text-base font-extrabold uppercase tracking-wide">
+        {roleLabel}: {impersonatedName}
       </span>
       <button
         onClick={restore}

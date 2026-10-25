@@ -21,7 +21,7 @@ const TABS: Array<{ id: Tab; label: string }> = [
   { id: "leads", label: "Мои заявки" },
   { id: "jobposts", label: "Объявления" },
   { id: "orders", label: "Заказы" },
-  { id: "archive", label: "Архив" },
+  { id: "archive", label: "Архив заказов" },
   { id: "reviews", label: "Мои отзывы" },
   { id: "favorites", label: "Избранное" },
   { id: "suggestions", label: "Не нашли то, что нужно?" },
@@ -179,6 +179,7 @@ export default function CustomerDashboard({
                 customerId={userId}
                 specialistProfileId={lead.specialistProfileId}
                 otherPartyName={lead.specialistName}
+                leadStatus={lead.status}
                 onClose={() => setOpenLeadId(null)}
               />
               <Link

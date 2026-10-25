@@ -7,7 +7,9 @@ import {
   fetchLeadMessages,
   sendLeadMessage,
   subscribeToLeadMessages,
+  sendSystemMessage,
   fetchDeal,
+  subscribeToDeal,
   proposeDeal,
   confirmDeal,
   declineDeal,
@@ -19,6 +21,7 @@ import {
   moderatorSendToRevision,
   formatMoney,
   formatDate,
+  formatDateTime,
   daysRemainingLabel,
   type LeadMessage,
   type Deal,
@@ -59,6 +62,7 @@ export default function LeadChat({
   customerId,
   specialistProfileId,
   otherPartyName,
+  leadStatus,
   onClose,
   onDealChanged,
 }: {
@@ -68,6 +72,15 @@ export default function LeadChat({
   customerId: string;
   specialistProfileId: string;
   otherPartyName: string;
+  // Статус самой заявки (не сделки) — "closed"/"spam" означает, что
+  // заказчик нажал "Отказать" этому отклику. Заявка и сделка на ней —
+  // разные записи: отказ отклику не трогает статус уже предложенной
+  // сделки, так что без этого флага в закрытой заявке можно было бы
+  // случайно нажать "Подтвердить" на устаревшем предложении, листая
+  // историю (баг, найденный пользователем вживую). Опционально — там,
+  // где статус заявки не передан (не завязано на объявления), поведение
+  // не меняется.
+  leadStatus?: string;
   onClose: () => void;
   onDealChanged?: () => void;
 }) {
@@ -79,11 +92,13 @@ export default function LeadChat({
   const [dealBusy, setDealBusy] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const isParticipant = currentUserRole === "customer" || currentUserRole === "specialist";
+  const isLocked = leadStatus === "closed" || leadStatus === "spam";
+  const isParticipant = (currentUserRole === "customer" || currentUserRole === "specialist") && !isLocked;
 
   useEffect(() => {
     let cancelled = false;
-    let unsubscribe: (() => void) | null = null;
+    let unsubscribeMessages: (() => void) | null = null;
+    let unsubscribeDeal: (() => void) | null = null;
 
     Promise.all([fetchLeadMessages(pbClient, leadId), fetchDeal(pbClient, leadId)]).then(
       ([msgs, d]) => {
@@ -106,14 +121,26 @@ export default function LeadChat({
       });
     }).then((unsub) => {
       if (cancelled) unsub();
-      else unsubscribe = unsub;
+      else unsubscribeMessages = unsub;
+    });
+
+    // Предложение/подтверждение/отклонение сделки собеседником должно быть
+    // видно сразу, без обновления страницы — та же логика, что у сообщений
+    // выше, только для карточки статуса сделки над чатом.
+    subscribeToDeal(pbClient, leadId, (updatedDeal) => {
+      setDeal(updatedDeal);
+      onDealChanged?.();
+    }).then((unsub) => {
+      if (cancelled) unsub();
+      else unsubscribeDeal = unsub;
     });
 
     return () => {
       cancelled = true;
-      unsubscribe?.();
+      unsubscribeMessages?.();
+      unsubscribeDeal?.();
     };
-  }, [leadId, currentUserId]);
+  }, [leadId, currentUserId, onDealChanged]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: "nearest" });
@@ -145,6 +172,31 @@ export default function LeadChat({
     }
   }
 
+  // "Заказчик"/"Специалист" отклонил/предложил — по просьбе пользователя
+  // такие действия должны оставлять системную запись прямо в переписке
+  // (не только менять цветную карточку статуса), с датой и временем.
+  function roleLabel(): string {
+    return currentUserRole === "customer" ? "Заказчик" : "Специалист";
+  }
+
+  async function postSystemMessage(body: string) {
+    const message = await sendSystemMessage(pbClient, leadId, currentUserId, body);
+    setMessages((prev) => (prev ? [...prev, message] : [message]));
+  }
+
+  async function handleDecline() {
+    if (!deal) return;
+    setDealBusy(true);
+    try {
+      await declineDeal(pbClient, deal.id);
+      setDeal({ ...deal, status: "declined" });
+      onDealChanged?.();
+      await postSystemMessage(`${roleLabel()} отклонил предложение`);
+    } finally {
+      setDealBusy(false);
+    }
+  }
+
   const myConfirmed =
     deal && (currentUserRole === "customer" ? deal.customerConfirmed : deal.specialistConfirmed);
   const iProposed = deal?.proposedBy === currentUserId;
@@ -163,6 +215,12 @@ export default function LeadChat({
           Закрыть
         </button>
       </div>
+
+      {isLocked && (
+        <div className="mx-3 mt-3 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-500">
+          Заявка отказана — переписка сохранена для истории, действия по сделке и отправка сообщений недоступны.
+        </div>
+      )}
 
       {/* --- Предложена сделка, ждём подтверждения второй стороны --- */}
       {deal?.status === "proposed" && (
@@ -191,7 +249,7 @@ export default function LeadChat({
                   </button>
                   <button
                     type="button"
-                    onClick={() => runDealAction(() => declineDeal(pbClient, deal.id).then(() => ({ ...deal, status: "declined" as const })))}
+                    onClick={handleDecline}
                     disabled={dealBusy}
                     className="rounded-full border border-red-200 px-3 py-1.5 text-[11px] font-medium text-red-700 transition-colors hover:bg-red-50 disabled:opacity-50"
                   >
@@ -217,7 +275,8 @@ export default function LeadChat({
           </div>
           <DealTerms deal={deal} />
           <div className="mt-2 flex flex-wrap gap-2">
-            {currentUserRole === "specialist" &&
+            {!isLocked &&
+              currentUserRole === "specialist" &&
               (deal.status === "confirmed" || deal.status === "needs_revision") && (
                 <button
                   type="button"
@@ -228,7 +287,7 @@ export default function LeadChat({
                   Услуга оказана
                 </button>
               )}
-            {currentUserRole === "customer" && deal.status === "delivered" && (
+            {!isLocked && currentUserRole === "customer" && deal.status === "delivered" && (
               <>
                 <button
                   type="button"
@@ -305,6 +364,16 @@ export default function LeadChat({
         )}
         <div className="flex flex-col gap-2">
           {messages?.map((m) => {
+            if (m.isSystem) {
+              return (
+                <div
+                  key={m.id}
+                  className="self-center rounded-full bg-zinc-100 px-3 py-1 text-center text-[11px] text-zinc-500"
+                >
+                  {m.body} · {formatDateTime(m.createdAt)}
+                </div>
+              );
+            }
             const isOwn = m.senderId === currentUserId;
             return (
               <div
@@ -330,7 +399,7 @@ export default function LeadChat({
             onClick={() => setShowDealForm(true)}
             className="w-full rounded-full border border-violet-300 bg-violet-50 px-3 py-1.5 text-xs font-medium text-violet-800 transition-colors hover:bg-violet-100"
           >
-            Заключить сделку
+            Предложить сделку
           </button>
         </div>
       )}
@@ -354,6 +423,7 @@ export default function LeadChat({
               setDeal(created);
               setShowDealForm(false);
               onDealChanged?.();
+              await postSystemMessage(`${roleLabel()} предложил заключить сделку`);
             } finally {
               setDealBusy(false);
             }
@@ -367,12 +437,13 @@ export default function LeadChat({
           type="text"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder="Напишите сообщение…"
-          className="flex-1 rounded-full border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none"
+          disabled={isLocked}
+          placeholder={isLocked ? "Заявка отказана — переписка закрыта" : "Напишите сообщение…"}
+          className="flex-1 rounded-full border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none disabled:cursor-not-allowed disabled:bg-zinc-50 disabled:text-zinc-400"
         />
         <button
           type="submit"
-          disabled={sending || !draft.trim()}
+          disabled={sending || !draft.trim() || isLocked}
           className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-300"
         >
           Отправить

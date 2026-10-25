@@ -1,6 +1,7 @@
 import type PocketBase from "pocketbase";
+import { createPocketBase } from "./pocketbase";
 
-// Открытые объявления заказчика ("Разместить заказ" в кабинете, 2026-08-29)
+// Открытые объявления заказчика ("Разместить объявление" в кабинете, 2026-08-29)
 // — заказчик описывает задачу свободным текстом (категория/подкатегория
 // опциональны), специалисты откликаются, каждый отклик становится обычным
 // lead + чатом (см. lib/chat.ts) с пометкой job_post_id, откуда он взялся.
@@ -10,6 +11,35 @@ import type PocketBase from "pocketbase";
 // объявления целиком, попытка откликнуться на уже закрытое — 400).
 
 export type JobPostStatus = "open" | "closed";
+
+// Публичная версия объявления для /orders (видят все, в том числе гости):
+// без заказчика (ни id, ни имени) и с текстом, где контакты заменены на
+// «[контакты скрыты]». Читается из view-коллекции job_posts_public
+// (миграция 1755000069) — этих полей там физически нет, так что их не
+// достать и прямым запросом к API.
+export interface PublicJobPost {
+  id: string;
+  categorySlug: string;
+  subcategory: string;
+  description: string;
+  createdAt: string;
+}
+
+export async function fetchPublicJobPosts(): Promise<PublicJobPost[]> {
+  try {
+    const pb = createPocketBase();
+    const records = await pb.collection("job_posts_public").getFullList({ sort: "-created", batch: 200 });
+    return records.map((r) => ({
+      id: r.id,
+      categorySlug: (r.category_slug as string) ?? "",
+      subcategory: (r.subcategory as string) ?? "",
+      description: (r.description as string) ?? "",
+      createdAt: (r.created as string) ?? "",
+    }));
+  } catch {
+    return [];
+  }
+}
 
 export interface JobPost {
   id: string;
@@ -111,6 +141,24 @@ export async function fetchJobPostResponseCounts(
   return counts;
 }
 
+// Новые отклики на объявление должны появляться у заказчика сразу, без
+// перезагрузки страницы — по просьбе пользователя, тот же принцип, что и у
+// realtime-подписок на сообщения/сделку в LeadChat (lib/chat.ts). Отдаём
+// только сам факт нового отклика (id заявки) — вызывающая сторона просто
+// перечитывает список откликов целиком, так проще получить имя специалиста
+// (expand) без риска разойтись с обычным fetchJobPostResponses.
+export async function subscribeToJobPostResponses(
+  pb: PocketBase,
+  jobPostId: string,
+  onCreate: (leadId: string) => void
+): Promise<() => void> {
+  return pb.collection("leads").subscribe("*", (e) => {
+    if (e.action === "create" && e.record.job_post_id === jobPostId) {
+      onCreate(e.record.id);
+    }
+  });
+}
+
 // Отклики (=leads с job_post_id) на конкретное объявление — для заказчика,
 // чтобы показать список параллельных чатов внутри карточки объявления.
 export async function fetchJobPostResponses(pb: PocketBase, jobPostId: string): Promise<JobPostResponse[]> {
@@ -135,12 +183,12 @@ export async function fetchJobPostResponses(pb: PocketBase, jobPostId: string): 
 export async function fetchOwnJobPostResponses(
   pb: PocketBase,
   specialistProfileId: string
-): Promise<Array<{ jobPostId: string; leadId: string }>> {
+): Promise<Array<{ jobPostId: string; leadId: string; status: string }>> {
   const records = await pb.collection("leads").getFullList({
     filter: pb.filter("specialist_profile_id = {:id} && job_post_id != \"\"", { id: specialistProfileId }),
-    fields: "id,job_post_id",
+    fields: "id,job_post_id,status",
   });
-  return records.map((r) => ({ jobPostId: r.job_post_id, leadId: r.id }));
+  return records.map((r) => ({ jobPostId: r.job_post_id, leadId: r.id, status: r.status }));
 }
 
 export async function respondToJobPost(

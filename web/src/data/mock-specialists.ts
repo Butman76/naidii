@@ -206,13 +206,13 @@ const TEMPLATES: Array<{
     premium: {
       tagline: "Голосовые AI-агенты, которые звучат как живые операторы",
       coverGradient: "bg-gradient-to-br from-violet-700 via-fuchsia-600 to-amber-500",
-      coverImageUrl: "/premium/studio-avtomatika-cover.png",
-      logoImageUrl: "/premium/studio-avtomatika-logo.png",
+      coverImageUrl: "/premium/studio-avtomatika-cover.jpg",
+      logoImageUrl: "/premium/studio-avtomatika-logo.jpg",
       gallery: [
-        "Дашборд обзвона в реальном времени",
-        "Конструктор диалоговых сценариев",
-        "Аналитика звонков и конверсий",
-        "Интеграция с телефонией и CRM",
+        { caption: "Дашборд обзвона в реальном времени" },
+        { caption: "Конструктор диалоговых сценариев" },
+        { caption: "Аналитика звонков и конверсий" },
+        { caption: "Интеграция с телефонией и CRM" },
       ],
       videoPitchLabel: "Видео: как работает голосовой агент «Автоматики»",
       team: [

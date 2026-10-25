@@ -13,7 +13,7 @@ export default function CustomerDashboardPage() {
   return (
     <>
       <Header />
-      <main className="flex-1 bg-zinc-50">
+      <main className="flex-1">
         <RequireAuth role="customer">
           <CustomerDashboardClient />
         </RequireAuth>

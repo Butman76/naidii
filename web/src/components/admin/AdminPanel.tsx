@@ -6,14 +6,26 @@ import { useAuth } from "@/lib/use-auth";
 import {
   fetchModerationData,
   fetchAdminLogs,
+  fetchLoginLogs,
+  fetchAllSpecialistProfiles,
   logAdminAction,
   type ModerationData,
   type AdminLogEntry,
+  type LoginLogEntry,
+  type SpecialistPlanRow,
 } from "@/lib/admin";
+import { PLANS } from "@/data/plans";
 import { fetchDisputedDeals, formatMoney, type DisputedDealSummary } from "@/lib/chat";
+import { countPendingLandingItems } from "@/lib/landing";
 import LeadChat from "@/components/dashboard/LeadChat";
+import LandingModerationTab from "./LandingModerationTab";
+import PartnerAdsTab from "./PartnerAdsTab";
+import ProspectsTab from "./ProspectsTab";
+import EventsTab from "./EventsTab";
+import NewsTab from "./NewsTab";
+import UnclaimedTab from "./UnclaimedTab";
 
-type Tab = "profiles" | "types" | "reviews" | "users" | "disputes" | "log";
+type Tab = "profiles" | "types" | "reviews" | "landing" | "users" | "disputes" | "plans" | "log" | "logins" | "ads" | "prospects" | "events" | "news" | "unclaimed";
 
 function formatDate(iso: string): string {
   if (!iso) return "—";
@@ -84,16 +96,33 @@ export default function AdminPanel() {
   const [tab, setTab] = useState<Tab>("profiles");
   const [data, setData] = useState<ModerationData | null>(null);
   const [logs, setLogs] = useState<AdminLogEntry[] | null>(null);
+  const [loginLogs, setLoginLogs] = useState<LoginLogEntry[] | null>(null);
   const [error, setError] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [disputes, setDisputes] = useState<DisputedDealSummary[] | null>(null);
   const [openDisputeLeadId, setOpenDisputeLeadId] = useState<string | null>(null);
+  const [plans, setPlans] = useState<SpecialistPlanRow[] | null>(null);
+  const [landingPending, setLandingPending] = useState<number | undefined>(undefined);
 
   const isAdmin = user?.role === "admin";
 
+  const refreshLandingCount = useCallback(() => {
+    countPendingLandingItems(pbClient)
+      .then(setLandingPending)
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    refreshLandingCount();
+  }, [refreshLandingCount]);
+
   const refreshDisputes = useCallback(() => {
     return fetchDisputedDeals(pbClient).then(setDisputes);
+  }, []);
+
+  const refreshPlans = useCallback(() => {
+    return fetchAllSpecialistProfiles(pbClient).then(setPlans);
   }, []);
 
   const refresh = useCallback(() => {
@@ -119,19 +148,34 @@ export default function AdminPanel() {
   }, [tab, isAdmin]);
 
   useEffect(() => {
+    if (tab !== "logins" || !isAdmin) return;
+    fetchLoginLogs(pbClient)
+      .then(setLoginLogs)
+      .catch((err) => {
+        if (err?.isAbort) return;
+      });
+  }, [tab, isAdmin]);
+
+  useEffect(() => {
     if (tab !== "disputes") return;
     refreshDisputes();
   }, [tab, refreshDisputes]);
 
+  useEffect(() => {
+    if (tab !== "plans" || !isAdmin) return;
+    refreshPlans();
+  }, [tab, isAdmin, refreshPlans]);
+
   async function runAction(
     id: string,
-    action: () => Promise<void>
+    action: () => Promise<void>,
+    afterRefresh: () => Promise<void> | void = refresh
   ) {
     setBusyId(id);
     setActionError(null);
     try {
       await action();
-      await refresh();
+      await afterRefresh();
     } catch (err) {
       // Раньше ошибка проглатывалась молча — из-за этого баг с manageRule
       // (кнопка "confirm email" ничего не делала) было не отличить от
@@ -160,8 +204,15 @@ export default function AdminPanel() {
   }
 
   async function moderateResultType(id: string, status: string, label: string) {
+    // При отказе просим причину — исполнитель увидит её в кабинете и сможет
+    // исправить услугу и отправить заново. Отмена окна = отказ не ставим.
+    let note: string | null = "";
+    if (status === "rejected") {
+      note = window.prompt("Причина отказа (её увидит исполнитель):", "");
+      if (note === null) return;
+    }
     await runAction(id, async () => {
-      await pbClient.collection("result_types").update(id, { status });
+      await pbClient.collection("result_types").update(id, { status, ...(status === "rejected" ? { moderation_note: note!.trim() } : {}) });
       await logAdminAction(pbClient, {
         action: label,
         entityType: "result_types",
@@ -242,6 +293,32 @@ export default function AdminPanel() {
     });
   }
 
+  // Роль пользователя меняет только admin. Настоящая защита — серверный хук
+  // pb_hooks/users_guard.pb.js (без него role писался бы любым пользователем
+  // в свою запись); здесь — только удобный интерфейс и подтверждение для
+  // ролей с доступом к админке.
+  async function changeUserRole(id: string, name: string, current: string, next: string) {
+    if (next === current) return;
+    if (next === "admin" || next === "moderator") {
+      const what =
+        next === "admin"
+          ? "АДМИНА: полный доступ к /admin — тарифы, журнал, пользователи, новости, смена ролей"
+          : "МОДЕРАТОРА: модерация профилей, услуг, отзывов и лендингов";
+      if (!window.confirm(`Назначить «${name || id}» роль ${what}?`)) return;
+    } else if (current === "admin" || current === "moderator") {
+      if (!window.confirm(`Снять с «${name || id}» доступ к админке и сделать «${next}»?`)) return;
+    }
+    await runAction(id, async () => {
+      await pbClient.collection("users").update(id, { role: next });
+      await logAdminAction(pbClient, {
+        action: `Сменил роль пользователя: ${current} → ${next}`,
+        entityType: "users",
+        entityId: id,
+        newData: { role: next },
+      });
+    });
+  }
+
   async function deleteUser(id: string, name: string) {
     if (!window.confirm(`Удалить пользователя «${name || id}» безвозвратно? Его анкета и услуги (если есть) удалятся вместе с ним.`)) {
       return;
@@ -254,6 +331,50 @@ export default function AdminPanel() {
         entityId: id,
       });
     });
+  }
+
+  // Тариф специалиста (basic/pro/enterprise, см. web/src/data/plans.ts) —
+  // оплаты online ещё нет, назначает вручную только admin (сервер тоже это
+  // проверяет, см. pocketbase/pb_hooks/plan_guard.pb.js, — на случай если
+  // кто-то дёрнет API мимо этой панели). enterprise включает специалисту
+  // премиум-лендинг вместо обычной карточки (web/src/lib/specialists.ts).
+  async function updatePlan(id: string, planCode: string, publicName: string) {
+    await runAction(
+      id,
+      async () => {
+        await pbClient.collection("specialist_profiles").update(id, { plan_code: planCode });
+        await logAdminAction(pbClient, {
+          action: `Назначил тариф «${planCode}»`,
+          entityType: "specialist_profiles",
+          entityId: id,
+          newData: { plan_code: planCode, public_name: publicName },
+        });
+      },
+      refreshPlans
+    );
+  }
+
+  // Персональный поддомен (например, visiontechnolabs.naidii.ru вместо
+  // /specialist/{slug}) — тоже только admin, см. plan_guard.pb.js и
+  // web/middleware.ts, который по имени хоста решает, чей профиль отдать.
+  // Санитизация здесь мягкая (нижний регистр, только буквы/цифры/дефис) —
+  // окончательно уникальность поддомена всё равно проверяет уникальный
+  // индекс в базе, ошибка попадёт в actionError, если кто-то уже занял имя.
+  async function updateSubdomain(id: string, rawValue: string, publicName: string) {
+    const subdomain = rawValue.trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
+    await runAction(
+      id,
+      async () => {
+        await pbClient.collection("specialist_profiles").update(id, { subdomain });
+        await logAdminAction(pbClient, {
+          action: subdomain ? `Назначил поддомен «${subdomain}»` : "Убрал поддомен",
+          entityType: "specialist_profiles",
+          entityId: id,
+          newData: { subdomain, public_name: publicName },
+        });
+      },
+      refreshPlans
+    );
   }
 
   // "Войти как" — реальная подмена сессии на целевого пользователя через
@@ -295,10 +416,51 @@ export default function AdminPanel() {
     { id: "profiles", label: "Профили", count: data?.profiles.length },
     { id: "types", label: "Типы услуг", count: data?.resultTypes.length },
     { id: "reviews", label: "Отзывы", count: data?.reviews.length },
+    { id: "landing", label: "Лендинги", count: landingPending },
     { id: "users", label: "Пользователи", count: data?.users.length },
     { id: "disputes", label: "Споры", count: disputes?.length },
+    ...(isAdmin ? [{ id: "plans" as Tab, label: "Тарифы", count: plans?.length }] : []),
     ...(isAdmin ? [{ id: "log" as Tab, label: "Журнал" }] : []),
+    ...(isAdmin ? [{ id: "logins" as Tab, label: "Входы", count: loginLogs?.length }] : []),
+    ...(isAdmin ? [{ id: "ads" as Tab, label: "Реклама" }] : []),
+    ...(isAdmin ? [{ id: "prospects" as Tab, label: "База исполнителей" }] : []),
+    ...(isAdmin ? [{ id: "events" as Tab, label: "AI-события" }] : []),
+    ...(isAdmin ? [{ id: "news" as Tab, label: "Новости" }] : []),
+    ...(isAdmin ? [{ id: "unclaimed" as Tab, label: "Неподтверждённые карточки" }] : []),
   ];
+
+  // Вкладки в несколько ярусов по смыслу (вместо одной длинной прокручиваемой
+  // строки). Модератор видит только «Модерацию» и «Пользователей».
+  // colors — переменные CSS для 3D-клавиш группы (см. .adm-key в globals.css):
+  // два цвета градиента, тёмный «бортик» снизу и цвет тени.
+  const TAB_GROUPS: Array<{ label: string; ids: Tab[]; colors: Record<string, string> }> = [
+    {
+      label: "Модерация",
+      ids: ["profiles", "types", "reviews", "landing", "disputes"],
+      colors: { "--c1": "#3b82f6", "--c2": "#06b6d4", "--cd": "#1e3a8a", "--cs": "rgba(59,130,246,0.7)" },
+    },
+    {
+      label: "Люди",
+      ids: ["users", "prospects", "unclaimed", "logins"],
+      colors: { "--c1": "#10b981", "--c2": "#84cc16", "--cd": "#065f46", "--cs": "rgba(16,185,129,0.7)" },
+    },
+    {
+      label: "Контент",
+      ids: ["news", "events", "ads"],
+      colors: { "--c1": "#d946ef", "--c2": "#8b5cf6", "--cd": "#581c87", "--cs": "rgba(217,70,239,0.7)" },
+    },
+    {
+      label: "Система",
+      ids: ["plans", "log"],
+      colors: { "--c1": "#f59e0b", "--c2": "#f43f5e", "--cd": "#7c2d12", "--cs": "rgba(245,158,11,0.7)" },
+    },
+  ];
+  const TAB_ICONS: Record<Tab, string> = {
+    profiles: "🧑‍💼", types: "🧩", reviews: "⭐", landing: "🚀", disputes: "⚖️",
+    users: "👥", prospects: "🎯", unclaimed: "🏷️", logins: "🔑",
+    news: "📰", events: "📅", ads: "📣",
+    plans: "💎", log: "📜",
+  };
 
   if (error) {
     return (
@@ -315,24 +477,35 @@ export default function AdminPanel() {
         {user?.email} · роль: {user?.role}
       </p>
 
-      <div className="mt-5 flex gap-1 overflow-x-auto border-b border-zinc-300 text-xs">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => setTab(t.id)}
-            className={`shrink-0 border-b-2 px-3 py-2 font-medium transition-colors ${
-              tab === t.id
-                ? "border-zinc-900 text-zinc-900"
-                : "border-transparent text-zinc-500 hover:text-zinc-900"
-            }`}
-          >
-            {t.label}
-            {typeof t.count === "number" && (
-              <span className="ml-1 text-zinc-400">({t.count})</span>
-            )}
-          </button>
-        ))}
+      <div className="adm-panel mt-5 text-xs">
+        {TAB_GROUPS.map((group) => {
+          const tabs = TABS.filter((t) => group.ids.includes(t.id));
+          if (tabs.length === 0) return null;
+          return (
+            <div key={group.label} className="adm-row flex flex-col gap-2.5 px-5 py-4 sm:flex-row sm:items-center sm:gap-5">
+              <span className="adm-label w-24 shrink-0 text-[11px] font-extrabold uppercase tracking-[0.18em]">
+                {group.label}
+              </span>
+              <div className="flex flex-wrap gap-2.5">
+                {tabs.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setTab(t.id)}
+                    data-active={tab === t.id}
+                    aria-current={tab === t.id ? "page" : undefined}
+                    className="adm-key"
+                    style={group.colors as React.CSSProperties}
+                  >
+                    <span className="adm-ico" aria-hidden="true">{TAB_ICONS[t.id]}</span>
+                    <span>{t.label}</span>
+                    {typeof t.count === "number" && <span className="adm-count">{t.count}</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {actionError && (
@@ -515,6 +688,8 @@ export default function AdminPanel() {
             </table>
           )}
 
+          {tab === "landing" && <LandingModerationTab onChanged={refreshLandingCount} />}
+
           {tab === "users" && (
             <table className="w-full min-w-[680px] border-collapse text-xs">
               <thead>
@@ -533,7 +708,25 @@ export default function AdminPanel() {
                   <tr key={u.id} className="border-b border-zinc-100 last:border-0">
                     <Td className="font-medium">{u.name || "—"}</Td>
                     <Td>{u.email}</Td>
-                    <Td>{u.role}</Td>
+                    <Td>
+                      {isAdmin && u.id !== user?.id ? (
+                        <select
+                          value={u.role}
+                          disabled={busyId === u.id}
+                          onChange={(e) => changeUserRole(u.id, u.name, u.role, e.target.value)}
+                          className={`rounded border border-zinc-300 bg-white px-1.5 py-1 text-xs ${
+                            u.role === "admin" ? "font-bold text-red-700" : u.role === "moderator" ? "font-semibold text-amber-700" : ""
+                          }`}
+                        >
+                          <option value="customer">customer</option>
+                          <option value="specialist">specialist</option>
+                          <option value="moderator">moderator</option>
+                          <option value="admin">admin</option>
+                        </select>
+                      ) : (
+                        u.role
+                      )}
+                    </Td>
                     <Td>
                       <span
                         className={
@@ -683,6 +876,70 @@ export default function AdminPanel() {
             );
           })()}
 
+          {tab === "plans" && isAdmin && (
+            <table className="w-full min-w-[640px] border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-zinc-300 bg-zinc-50">
+                  <Th>Специалист</Th>
+                  <Th>Email</Th>
+                  <Th>Статус карточки</Th>
+                  <Th>Тариф</Th>
+                  <Th>Поддомен</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {(plans ?? []).map((p) => (
+                  <tr key={p.id} className="border-b border-zinc-100 last:border-0">
+                    <Td className="font-medium">{p.publicName}</Td>
+                    <Td>{p.ownerEmail || "—"}</Td>
+                    <Td className="text-zinc-500">{p.profileStatus}</Td>
+                    <Td>
+                      <select
+                        value={p.planCode}
+                        disabled={busyId === p.id}
+                        onChange={(e) => updatePlan(p.id, e.target.value, p.publicName)}
+                        className="rounded border border-zinc-300 bg-white px-2 py-1 font-mono text-[11px] disabled:opacity-40"
+                      >
+                        {PLANS.map((plan) => (
+                          <option key={plan.code} value={plan.code}>
+                            {plan.title}
+                          </option>
+                        ))}
+                      </select>
+                    </Td>
+                    <Td>
+                      <div className="flex items-center gap-1">
+                        <input
+                          key={p.id + p.subdomain}
+                          type="text"
+                          defaultValue={p.subdomain}
+                          disabled={busyId === p.id}
+                          placeholder="без поддомена"
+                          onBlur={(e) => {
+                            if (e.target.value.trim().toLowerCase() !== p.subdomain) {
+                              updateSubdomain(p.id, e.target.value, p.publicName);
+                            }
+                          }}
+                          className="w-32 rounded border border-zinc-300 bg-white px-2 py-1 font-mono text-[11px] disabled:opacity-40"
+                        />
+                        <span className="text-zinc-400">.naidii.ru</span>
+                      </div>
+                    </Td>
+                  </tr>
+                ))}
+                {plans === null && (
+                  <tr>
+                    <Td className="text-zinc-400">Загружаем…</Td>
+                    <Td>{""}</Td>
+                    <Td>{""}</Td>
+                    <Td>{""}</Td>
+                    <Td>{""}</Td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
+
           {tab === "log" && isAdmin && (
             <table className="w-full min-w-[640px] border-collapse text-xs">
               <thead>
@@ -715,6 +972,75 @@ export default function AdminPanel() {
               </tbody>
             </table>
           )}
+
+          {tab === "logins" && isAdmin && (
+            <table className="w-full min-w-[640px] border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-zinc-300 bg-zinc-50">
+                  <Th>Пользователь</Th>
+                  <Th>Как вошли</Th>
+                  <Th>Откуда</Th>
+                  <Th>Когда</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {(loginLogs ?? []).map((entry) => (
+                  <tr key={entry.id} className="border-b border-zinc-100 last:border-0">
+                    <Td>
+                      {entry.userName}
+                      {entry.userEmail && <span className="text-zinc-400"> · {entry.userEmail}</span>}
+                    </Td>
+                    <Td>
+                      {entry.isImpersonation ? (
+                        <span className="text-amber-700">
+                          Admin ({entry.actorName || "—"}) под видом «{entry.userName}»
+                        </span>
+                      ) : (
+                        <span className="text-emerald-700">Обычный вход</span>
+                      )}
+                    </Td>
+                    <Td className="text-zinc-500">
+                      {entry.region || entry.ip ? (
+                        <>
+                          {entry.region || "регион неизвестен"}
+                          {entry.ip && <span className="text-zinc-400"> · {entry.ip}</span>}
+                        </>
+                      ) : (
+                        "—"
+                      )}
+                    </Td>
+                    <Td className="whitespace-nowrap text-zinc-500">{formatDate(entry.createdAt)}</Td>
+                  </tr>
+                ))}
+                {loginLogs === null && (
+                  <tr>
+                    <Td className="text-zinc-400">Загружаем…</Td>
+                    <Td>{""}</Td>
+                    <Td>{""}</Td>
+                    <Td>{""}</Td>
+                  </tr>
+                )}
+                {loginLogs?.length === 0 && (
+                  <tr>
+                    <Td className="text-zinc-400">Пока входов не зафиксировано.</Td>
+                    <Td>{""}</Td>
+                    <Td>{""}</Td>
+                    <Td>{""}</Td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
+
+          {tab === "ads" && isAdmin && <PartnerAdsTab />}
+
+          {tab === "prospects" && isAdmin && <ProspectsTab />}
+
+          {tab === "events" && isAdmin && <EventsTab />}
+
+          {tab === "news" && isAdmin && <NewsTab />}
+
+          {tab === "unclaimed" && isAdmin && <UnclaimedTab />}
         </div>
       )}
     </div>

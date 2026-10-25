@@ -1,5 +1,12 @@
 import { createPocketBase } from "./pocketbase";
-import type { Specialist, SpecialistBadge, SpecialistService } from "@/types/specialist";
+import type {
+  Specialist,
+  SpecialistBadge,
+  SpecialistPremiumContent,
+  SpecialistService,
+} from "@/types/specialist";
+import { getCategoryStyle } from "@/data/category-style";
+import { MANUAL_PROMOTION_RANK, planPromotionRank } from "./promotion";
 
 // Живые данные специалистов из PocketBase. Форма результата совпадает с
 // Specialist (mock-specialists.ts), чтобы SpecialistCard/StandardSpecialistProfile
@@ -7,19 +14,22 @@ import type { Specialist, SpecialistBadge, SpecialistService } from "@/types/spe
 // STATUS.md, переход с моков на живые данные, 2026-08-24).
 //
 // Упрощения относительно моков:
-// - `skills` — пустой массив: в схему БД теги навыков ещё не занесены
-//   (specialist_skills пока не наполнен сид-данными), а не отсутствуют
-//   в принципе — см. TODO ниже.
+// - `skills` — из specialist_skills (2026-09-28, ProfileEditForm.tsx:
+//   специалист выбирает теги из общего справочника skills сам в кабинете).
 // - `reviews` — пустой массив: коллекция reviews в БД пока не наполнена,
 //   это честно, а не баг — вместо выдумывания демо-отзывов.
 // - `category` — в specialist_profiles нет своего поля категории (это
 //   известный пробел, см. STATUS.md), поэтому категория определяется по
 //   первому активному предложению специалиста, а не хранится напрямую.
-// - `premium` — всегда unset: премиум-лендинг профиля — визуальный
-//   мокап тарифа, для живых специалистов пока не подключён (нет
-//   реальных тарифов/оплаты).
-// TODO: занести specialist_skills, реальные отзывы, поле категории на
-// профиле — по мере появления соответствующих данных.
+// - `premium` — заполняется, только если админ вручную поставил тариф
+//   "enterprise" (specialist_profiles.plan_code — оплаты online ещё нет,
+//   назначение целиком ручное через /admin, см. AdminPanel.tsx). Контент
+//   лендинга собирается из landing_items — только ОДОБРЕННОГО модерацией
+//   (обложка, логотип, видео, карточки услуг, портфолио, презентации) —
+//   никаких выдуманных галерей/команды/сертификатов, соответствующие блоки
+//   PremiumSpecialistProfile.tsx не показываются, пока их не заполнят.
+// TODO: реальные отзывы, поле категории на профиле — по мере появления
+// соответствующих данных.
 
 function computeInitials(name: string): string {
   return name
@@ -62,7 +72,7 @@ export async function fetchSpecialists(): Promise<Specialist[]> {
   const pb = createPocketBase();
   pb.autoCancellation(false);
 
-  const [profiles, offerRecords, promotionRecords] = await Promise.all([
+  const [profiles, offerRecords, promotionRecords, skillRecords, landingRecords] = await Promise.all([
     pb.collection("specialist_profiles").getFullList({
       filter: "profile_status = \"published\"",
     }),
@@ -71,11 +81,35 @@ export async function fetchSpecialists(): Promise<Specialist[]> {
       expand: "result_type_id.category_id",
     }),
     pb.collection("promotions").getFullList({ filter: "status = \"active\"" }),
+    // Навыки-теги (specialist_skills — связка с общим справочником skills,
+    // см. 1755000005/1755000003) — заполняются специалистом в кабинете
+    // (ProfileEditForm.tsx). Публичное правило коллекции открыто (listRule
+    // ""), поэтому забираем всё разом и группируем в памяти, как offers
+    // выше, а не отдельным запросом на каждого специалиста.
+    pb.collection("specialist_skills").getFullList({ expand: "skill_id" }).catch(() => []),
+    // Только ОДОБРЕННОЕ модерацией содержимое лендингов (landing_items,
+    // см. web/src/lib/landing.ts) — обложка, логотип, видео, карточки
+    // услуг, портфолио, презентации. Небольшая таблица (строки есть только
+    // у enterprise-специалистов) — проще забрать всю и сгруппировать в
+    // памяти, как offers/promotions выше, чем городить OR-фильтр по списку
+    // id профилей. Публичное правило коллекции и так отдаёт анониму только
+    // approved, фильтр — явная страховка. catch: пока миграция
+    // 1755000046 не применена на сервере (или при сбое этого одного
+    // запроса), лендинги показываются без доп. блоков, а не роняют
+    // сборку/страницу всего каталога.
+    pb
+      .collection("landing_items")
+      .getFullList({ filter: 'moderation_status = "approved"', sort: "sort_order,created" })
+      .catch(() => []),
   ]);
 
   const promotedProfileIds = new Set(promotionRecords.map((p) => p.specialist_profile_id));
 
   return profiles.map((p) => {
+    const mySkills = skillRecords
+      .filter((s) => s.specialist_profile_id === p.id)
+      .map((s) => s.expand?.skill_id?.name)
+      .filter((name): name is string => Boolean(name));
     const myOffers = offerRecords.filter((o) => o.specialist_profile_id === p.id);
     const firstResultType = myOffers[0]?.expand?.result_type_id;
     const category = firstResultType?.expand?.category_id?.slug ?? "other";
@@ -91,9 +125,63 @@ export async function fetchSpecialists(): Promise<Specialist[]> {
       title: o.expand?.result_type_id?.title ?? "Услуга",
       priceFrom: formatOfferPrice(o.price_type, o.price_from),
       durationFrom: o.duration_from,
+      imageUrl: o.preview_images?.[0] ? pb.files.getURL(o, o.preview_images[0], { thumb: "800x0" }) : undefined,
     }));
 
-    const badges: SpecialistBadge[] = promotedProfileIds.has(p.id) ? ["promoted"] : [];
+    // Метка "Продвигается": ручное продвижение админом или платный тариф
+    // Pro/Enterprise (см. lib/promotion.ts).
+    const promotionRank = promotedProfileIds.has(p.id) ? MANUAL_PROMOTION_RANK : planPromotionRank(p);
+    const badges: SpecialistBadge[] = promotionRank > 0 ? ["promoted"] : [];
+
+    const myLanding = landingRecords.filter((i) => i.specialist_profile_id === p.id);
+    // Обложка/логотип/видео — по одному экземпляру; после одобрения новой
+    // версии хук переводит старую в superseded, но на случай гонки берём
+    // самую свежую из одобренных.
+    const newestOfKind = (kind: string) =>
+      myLanding.filter((i) => i.kind === kind).sort((a, b) => b.created.localeCompare(a.created))[0];
+    const cover = newestOfKind("cover");
+    const logo = newestOfKind("logo");
+    const video = newestOfKind("video");
+
+    const premium: SpecialistPremiumContent | undefined =
+      p.plan_code === "enterprise"
+        ? {
+            tagline: p.title || p.short_description || "",
+            coverGradient: `bg-gradient-to-br ${getCategoryStyle(category).gradient}`,
+            coverImageUrl: cover?.image ? pb.files.getURL(cover, cover.image, { thumb: "1600x0" }) : undefined,
+            logoImageUrl: logo?.image ? pb.files.getURL(logo, logo.image, { thumb: "400x0" }) : undefined,
+            gallery: myLanding
+              .filter((i) => i.kind === "photo" && i.image)
+              .map((i) => ({
+                imageUrl: pb.files.getURL(i, i.image),
+                thumbUrl: pb.files.getURL(i, i.image, { thumb: "800x0" }),
+                caption: i.title ?? "",
+              })),
+            serviceCards: myLanding
+              .filter((i) => i.kind === "service_card")
+              .map((i) => ({
+                title: i.title ?? "",
+                description: i.description ?? "",
+                priceText: i.price_text ?? "",
+                durationText: i.duration_text ?? "",
+                imageUrl: i.image ? pb.files.getURL(i, i.image) : undefined,
+                thumbUrl: i.image ? pb.files.getURL(i, i.image, { thumb: "800x0" }) : undefined,
+              })),
+            presentations: myLanding
+              .filter((i) => i.kind === "presentation" && i.document)
+              .map((i) => ({
+                title: i.title ?? "",
+                description: i.description ?? "",
+                fileUrl: pb.files.getURL(i, i.document),
+                format: (String(i.document).split(".").pop() ?? "").toUpperCase(),
+                previewUrl: i.image ? pb.files.getURL(i, i.image, { thumb: "800x0" }) : undefined,
+              })),
+            videoUrl: video?.video_url || undefined,
+            videoPitchLabel: "",
+            team: [],
+            certificates: [],
+          }
+        : undefined;
 
     return {
       id: p.id,
@@ -104,7 +192,7 @@ export async function fetchSpecialists(): Promise<Specialist[]> {
       fullDescription: p.full_description,
       category,
       categories,
-      skills: [],
+      skills: mySkills,
       priceFrom: formatPriceFrom(p.project_rate_from),
       experienceYears: p.experience_years,
       responseTime: formatResponseTime(p.response_time),
@@ -112,9 +200,11 @@ export async function fetchSpecialists(): Promise<Specialist[]> {
       reviewsCount: p.reviews_count,
       location: formatLocation(p.city, p.remote_work),
       badges,
+      promotionRank,
       avatarInitials: computeInitials(p.public_name),
       services,
       reviews: [],
+      premium,
     };
   });
 }

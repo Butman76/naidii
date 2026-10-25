@@ -1,9 +1,13 @@
 // Слаги типов результата, для которых уже загружена настоящая обложка в
-// web/public/covers/{slug}.png (см. COVER_ART_PROMPTS.md). Список ведётся
+// web/public/covers/{slug}.jpg (см. COVER_ART_PROMPTS.md). Список ведётся
 // вручную по мере добавления картинок — файлы в web/public/covers/ не
 // сканируются на лету, потому что mock-services.ts (через ResultTypePlate)
 // подключается и в клиентские компоненты ("use client" в ServicesCatalog),
 // а там нет доступа к fs.
+//
+// .jpg, не .png: исходники весили ~1.8 МБ каждый (42 штуки — 73 МБ только
+// на обложки каталога услуг), пересжаты в JPEG ~900px по ширине — та же
+// картинка, в 15-20 раз меньше веса (см. STATUS.md, 2026-09-22).
 export const COVER_MANIFEST: ReadonlySet<string> = new Set([
   "ai-agents-prodazhi-i-zayavki-prodayuschiy-ai-agent-dlya-sayt",
   "ai-agents-prodazhi-i-zayavki-ai-agent-kvalifikacii-lidov-dly",
@@ -50,5 +54,5 @@ export const COVER_MANIFEST: ReadonlySet<string> = new Set([
 ]);
 
 export function getCoverImagePath(slug: string): string | undefined {
-  return COVER_MANIFEST.has(slug) ? `/covers/${slug}.png` : undefined;
+  return COVER_MANIFEST.has(slug) ? `/covers/${slug}.jpg` : undefined;
 }

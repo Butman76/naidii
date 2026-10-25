@@ -4,8 +4,10 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SpecialistCard from "@/components/SpecialistCard";
+import UnclaimedCard from "@/components/unclaimed/UnclaimedCard";
 import { CATEGORIES } from "@/data/categories";
 import { fetchSpecialists } from "@/lib/specialists";
+import { fetchActiveUnclaimedListings, isUnclaimedListing, mixIn } from "@/lib/unclaimed";
 
 function getCategory(slug: string) {
   return CATEGORIES.find((c) => c.slug === slug);
@@ -44,13 +46,15 @@ export default async function CategoryPage({
   const category = getCategory(slug);
   if (!category) notFound();
 
-  const allSpecialists = await fetchSpecialists();
+  const [allSpecialists, allUnclaimed] = await Promise.all([fetchSpecialists(), fetchActiveUnclaimedListings()]);
   const specialists = allSpecialists.filter((s) => s.category === slug);
+  const unclaimed = allUnclaimed.filter((l) => l.categories.includes(slug));
+  const mixed = mixIn(specialists, unclaimed);
 
   return (
     <>
       <Header />
-      <main className="flex-1 bg-zinc-50">
+      <main className="flex-1">
         <div className="border-b border-zinc-200 bg-white">
           <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
             <p className="text-sm text-zinc-500">
@@ -78,11 +82,15 @@ export default async function CategoryPage({
             </p>
           </div>
 
-          {specialists.length > 0 ? (
+          {mixed.length > 0 ? (
             <div className="mt-4 grid grid-cols-1 gap-4 min-[640px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-              {specialists.map((specialist) => (
-                <SpecialistCard key={specialist.id} specialist={specialist} />
-              ))}
+              {mixed.map((item) =>
+                isUnclaimedListing(item) ? (
+                  <UnclaimedCard key={item.id} listing={item} />
+                ) : (
+                  <SpecialistCard key={item.id} specialist={item} />
+                )
+              )}
             </div>
           ) : (
             <p className="mt-6 text-sm text-zinc-500">

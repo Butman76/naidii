@@ -85,9 +85,9 @@ export default function SpecialistJobBoard({
   currentUserId: string;
 }) {
   const [posts, setPosts] = useState<JobPost[] | null>(null);
-  const [ownResponses, setOwnResponses] = useState<Record<string, string>>({});
+  const [ownResponses, setOwnResponses] = useState<Record<string, { leadId: string; status: string }>>({});
   const [respondingTo, setRespondingTo] = useState<string | null>(null);
-  const [openLead, setOpenLead] = useState<{ leadId: string; post: JobPost } | null>(null);
+  const [openLead, setOpenLead] = useState<{ leadId: string; status: string; post: JobPost } | null>(null);
 
   const refresh = useCallback(() => {
     return Promise.all([
@@ -95,8 +95,8 @@ export default function SpecialistJobBoard({
       fetchOwnJobPostResponses(pbClient, specialistProfileId),
     ]).then(([openPosts, responses]) => {
       setPosts(openPosts);
-      const map: Record<string, string> = {};
-      for (const r of responses) map[r.jobPostId] = r.leadId;
+      const map: Record<string, { leadId: string; status: string }> = {};
+      for (const r of responses) map[r.jobPostId] = { leadId: r.leadId, status: r.status };
       setOwnResponses(map);
     });
   }, [specialistProfileId]);
@@ -122,6 +122,7 @@ export default function SpecialistJobBoard({
           customerId={openLead.post.customerId}
           specialistProfileId={specialistProfileId}
           otherPartyName={openLead.post.customerName}
+          leadStatus={openLead.status}
           onClose={() => setOpenLead(null)}
         />
       </div>
@@ -141,7 +142,7 @@ export default function SpecialistJobBoard({
       {posts.map((post) => {
         const accent = getCategoryAccent(post.categorySlug || "other");
         const style = getCategoryStyle(post.categorySlug || "other");
-        const existingLeadId = ownResponses[post.id];
+        const existingResponse = ownResponses[post.id];
         return (
           <div key={post.id} className={`rounded-2xl border p-4 ${accent.border} ${accent.tint}`}>
             <div className="flex items-center justify-between gap-2">
@@ -160,10 +161,10 @@ export default function SpecialistJobBoard({
             </div>
             <p className="mt-2 text-sm text-zinc-800">{post.description}</p>
 
-            {existingLeadId ? (
+            {existingResponse ? (
               <button
                 type="button"
-                onClick={() => setOpenLead({ leadId: existingLeadId, post })}
+                onClick={() => setOpenLead({ leadId: existingResponse.leadId, status: existingResponse.status, post })}
                 className="mt-3 rounded-full border border-zinc-300 bg-white px-4 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
               >
                 Открыть чат
@@ -173,9 +174,9 @@ export default function SpecialistJobBoard({
                 post={post}
                 specialistProfileId={specialistProfileId}
                 onResponded={(leadId) => {
-                  setOwnResponses((prev) => ({ ...prev, [post.id]: leadId }));
+                  setOwnResponses((prev) => ({ ...prev, [post.id]: { leadId, status: "new" } }));
                   setRespondingTo(null);
-                  setOpenLead({ leadId, post });
+                  setOpenLead({ leadId, status: "new", post });
                 }}
                 onCancel={() => setRespondingTo(null)}
               />

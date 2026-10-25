@@ -4,6 +4,10 @@ export interface SpecialistService {
   title: string;
   priceFrom: string;
   durationFrom: string;
+  // Первая картинка-пример из ServiceCreationForm.tsx (services.preview_images
+  // в PocketBase) — необязательное, у услуг без загруженного примера просто
+  // нет превью, а не сломанная картинка.
+  imageUrl?: string;
 }
 
 export interface SpecialistReview {
@@ -31,7 +35,34 @@ export interface SpecialistPremiumContent {
   // и логотип вместо дефолтного оформления.
   coverImageUrl?: string;
   logoImageUrl?: string;
-  gallery: string[];
+  // imageUrl необязателен: без реальной загруженной картинки постер рисует
+  // старое оформление (градиент + подпись) вместо сломанной картинки.
+  // thumbUrl — уменьшенная копия для сетки (полный imageUrl открывается
+  // по клику).
+  gallery: { imageUrl?: string; thumbUrl?: string; caption: string }[];
+  // Собственные карточки услуг лендинга (картинка + описание + цена/срок/
+  // рекламный текст) и презентации портфолио — только одобренные
+  // модерацией (landing_items, см. web/src/lib/landing.ts). Необязательные:
+  // у моков их нет, у специалистов без карточек блок не рисуется.
+  serviceCards?: {
+    title: string;
+    description: string;
+    priceText: string;
+    durationText: string;
+    imageUrl?: string;
+    thumbUrl?: string;
+  }[];
+  presentations?: {
+    title: string;
+    description: string;
+    fileUrl: string;
+    format: string;
+    previewUrl?: string;
+  }[];
+  // videoUrl — настоящий ролик (YouTube/RuTube), см. embedVideoUrl() в
+  // PremiumSpecialistProfile.tsx. videoPitchLabel без videoUrl — старое
+  // поведение (статичная заглушка с подписью, как в моках).
+  videoUrl?: string;
   videoPitchLabel: string;
   team: SpecialistTeamMember[];
   certificates: string[];
@@ -60,6 +91,8 @@ export interface Specialist {
   reviewsCount: number;
   location: string;
   badges: SpecialistBadge[];
+  /** 0 — не продвигается; 1 Pro, 2 Enterprise, 3 ручное продвижение админом (lib/promotion.ts). */
+  promotionRank?: number;
   avatarInitials: string;
   services: SpecialistService[];
   reviews: SpecialistReview[];

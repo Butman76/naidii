@@ -1,6 +1,16 @@
 import type { Specialist } from "@/types/specialist";
+import NewsBody from "@/components/news/NewsBody";
+import SpecialistBlog from "@/components/SpecialistBlog";
+import type { NewsPost } from "@/lib/news";
 import { CATEGORIES } from "@/data/categories";
 import { withBasePath } from "@/lib/base-path";
+import { embedVideoUrl } from "@/lib/video-embed";
+
+// Загруженные файлы приходят абсолютными адресами PocketBase (их нельзя
+// префиксовать basePath GitHub Pages), а статичные картинки моков лежат в
+// /public и префикс требуют.
+const asset = (url: string) =>
+  url.startsWith("http://") || url.startsWith("https://") ? url : withBasePath(url);
 
 const BADGE_LABELS: Record<string, string> = {
   top: "Топ",
@@ -21,8 +31,10 @@ const GALLERY_GRADIENTS = [
 // всех, кто на этом тарифе, оформление (coverGradient) — разное.
 export default function PremiumSpecialistProfile({
   specialist,
+  posts = [],
 }: {
   specialist: Specialist;
+  posts?: NewsPost[];
 }) {
   const premium = specialist.premium;
   if (!premium) return null;
@@ -44,7 +56,7 @@ export default function PremiumSpecialistProfile({
         {premium.coverImageUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={withBasePath(premium.coverImageUrl)}
+            src={asset(premium.coverImageUrl)}
             alt=""
             className="absolute inset-0 h-full w-full object-cover"
           />
@@ -64,7 +76,7 @@ export default function PremiumSpecialistProfile({
             {premium.logoImageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={withBasePath(premium.logoImageUrl)}
+                src={asset(premium.logoImageUrl)}
                 alt={specialist.name}
                 className="relative z-10 -mt-14 h-28 w-28 shrink-0 rounded-3xl border-4 border-white object-cover shadow-xl sm:-mt-20 sm:h-40 sm:w-40"
               />
@@ -142,9 +154,9 @@ export default function PremiumSpecialistProfile({
           <h2 className="text-lg font-semibold text-zinc-900">
             О специалисте
           </h2>
-          <p className="mt-3 text-sm leading-relaxed text-zinc-600">
-            {specialist.fullDescription}
-          </p>
+          <div className="mt-3">
+            <NewsBody body={specialist.fullDescription} />
+          </div>
           <div className="mt-4 flex flex-wrap gap-1">
             {specialist.skills.map((skill) => (
               <span
@@ -157,20 +169,94 @@ export default function PremiumSpecialistProfile({
           </div>
         </section>
 
-        {premium.videoPitchLabel && (
-          <section className="mt-10">
-            <h2 className="text-lg font-semibold text-zinc-900">
-              Видео-презентация
-            </h2>
-            <div className="mt-4 flex aspect-video items-center justify-center rounded-2xl bg-zinc-900 text-white">
-              <div className="flex flex-col items-center gap-2 px-4 text-center">
-                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/15 text-2xl">
-                  ▶
-                </span>
-                <p className="text-sm text-zinc-300">
-                  {premium.videoPitchLabel}
-                </p>
+        <SpecialistBlog posts={posts} />
+
+        {(() => {
+          const embedUrl = premium.videoUrl ? embedVideoUrl(premium.videoUrl) : null;
+          if (embedUrl) {
+            return (
+              <section className="mt-10">
+                <h2 className="text-lg font-semibold text-zinc-900">
+                  Видео-презентация
+                </h2>
+                <div className="mt-4 aspect-video overflow-hidden rounded-2xl bg-zinc-900">
+                  <iframe
+                    src={embedUrl}
+                    className="h-full w-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+                {premium.videoPitchLabel && (
+                  <p className="mt-2 text-sm text-zinc-500">{premium.videoPitchLabel}</p>
+                )}
+              </section>
+            );
+          }
+          // Ссылка не распознана (или её нет) — старая статичная заглушка,
+          // как было в моках, только если хотя бы подпись задана.
+          if (!premium.videoPitchLabel) return null;
+          return (
+            <section className="mt-10">
+              <h2 className="text-lg font-semibold text-zinc-900">
+                Видео-презентация
+              </h2>
+              <div className="mt-4 flex aspect-video items-center justify-center rounded-2xl bg-zinc-900 text-white">
+                <div className="flex flex-col items-center gap-2 px-4 text-center">
+                  <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/15 text-2xl">
+                    ▶
+                  </span>
+                  <p className="text-sm text-zinc-300">{premium.videoPitchLabel}</p>
+                </div>
               </div>
+            </section>
+          );
+        })()}
+
+        {(premium.serviceCards?.length ?? 0) > 0 && (
+          <section className="mt-10">
+            <h2 className="text-lg font-semibold text-zinc-900">Услуги</h2>
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {premium.serviceCards!.map((card, i) => (
+                <article
+                  key={`${card.title}-${i}`}
+                  className="flex flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-shadow hover:shadow-md"
+                >
+                  {card.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- статический экспорт, без оптимизатора изображений
+                    <img
+                      src={asset(card.thumbUrl ?? card.imageUrl)}
+                      alt={card.title}
+                      loading="lazy"
+                      className="aspect-[4/3] w-full object-cover"
+                    />
+                  ) : (
+                    <div
+                      className={`aspect-[4/3] w-full ${GALLERY_GRADIENTS[i % GALLERY_GRADIENTS.length]}`}
+                    />
+                  )}
+                  <div className="flex flex-1 flex-col p-4">
+                    <h3 className="text-base font-semibold leading-snug text-zinc-900">
+                      {card.title}
+                    </h3>
+                    {card.description && (
+                      <p className="mt-1.5 whitespace-pre-line text-sm leading-relaxed text-zinc-600">
+                        {card.description}
+                      </p>
+                    )}
+                    {(card.priceText || card.durationText) && (
+                      <div className="mt-auto flex flex-wrap items-baseline gap-x-3 gap-y-1 pt-4">
+                        {card.priceText && (
+                          <span className="text-base font-bold text-zinc-900">{card.priceText}</span>
+                        )}
+                        {card.durationText && (
+                          <span className="text-xs text-zinc-500">Срок: {card.durationText}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </article>
+              ))}
             </div>
           </section>
         )}
@@ -178,41 +264,116 @@ export default function PremiumSpecialistProfile({
         {premium.gallery.length > 0 && (
           <section className="mt-10">
             <h2 className="text-lg font-semibold text-zinc-900">
-              Скриншоты и работы
+              Портфолио
             </h2>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {premium.gallery.map((item, i) => (
-                <div
-                  key={item}
-                  className={`flex aspect-video items-end rounded-2xl p-4 text-sm font-medium text-white ${
-                    GALLERY_GRADIENTS[i % GALLERY_GRADIENTS.length]
-                  }`}
+              {premium.gallery.map((item, i) =>
+                item.imageUrl ? (
+                  <a
+                    key={item.imageUrl}
+                    href={asset(item.imageUrl)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block overflow-hidden rounded-2xl border border-zinc-200 bg-white transition-shadow hover:shadow-md"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element -- статический экспорт, без оптимизатора изображений */}
+                    <img
+                      src={asset(item.thumbUrl ?? item.imageUrl)}
+                      alt={item.caption}
+                      loading="lazy"
+                      className="aspect-video w-full object-cover"
+                    />
+                    {item.caption && (
+                      <p className="p-3 text-sm font-medium text-zinc-900">{item.caption}</p>
+                    )}
+                  </a>
+                ) : (
+                  <div
+                    key={item.caption}
+                    className={`flex aspect-video items-end rounded-2xl p-4 text-sm font-medium text-white ${
+                      GALLERY_GRADIENTS[i % GALLERY_GRADIENTS.length]
+                    }`}
+                  >
+                    {item.caption}
+                  </div>
+                )
+              )}
+            </div>
+          </section>
+        )}
+
+        {(premium.presentations?.length ?? 0) > 0 && (
+          <section className="mt-10">
+            <h2 className="text-lg font-semibold text-zinc-900">Презентации</h2>
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {premium.presentations!.map((deck, i) => (
+                <a
+                  key={`${deck.fileUrl}-${i}`}
+                  href={deck.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex gap-4 rounded-2xl border border-zinc-200 bg-white p-4 transition-shadow hover:shadow-md"
                 >
-                  {item}
-                </div>
+                  {deck.previewUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- статический экспорт, без оптимизатора изображений
+                    <img
+                      src={deck.previewUrl}
+                      alt=""
+                      loading="lazy"
+                      className="h-20 w-28 shrink-0 rounded-lg border border-zinc-100 object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-20 w-28 shrink-0 items-center justify-center rounded-lg bg-zinc-900 text-sm font-bold tracking-wide text-white">
+                      {deck.format || "FILE"}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-zinc-900 group-hover:underline">
+                      {deck.title || "Презентация"}
+                    </p>
+                    {deck.description && (
+                      <p className="mt-1 line-clamp-3 text-xs leading-relaxed text-zinc-600">
+                        {deck.description}
+                      </p>
+                    )}
+                    <p className="mt-2 text-xs font-medium text-zinc-500">
+                      {deck.format} · открыть
+                    </p>
+                  </div>
+                </a>
               ))}
             </div>
           </section>
         )}
 
-        {specialist.services.length > 0 && (
+        {(premium.serviceCards?.length ?? 0) === 0 && specialist.services.length > 0 && (
           <section className="mt-10">
             <h2 className="text-lg font-semibold text-zinc-900">Услуги</h2>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
               {specialist.services.map((service) => (
                 <div
                   key={service.title}
-                  className="rounded-2xl border border-zinc-200 bg-white p-4"
+                  className="overflow-hidden rounded-2xl border border-zinc-200 bg-white"
                 >
-                  <p className="text-sm font-medium text-zinc-900">
-                    {service.title}
-                  </p>
-                  <p className="mt-2 text-sm text-zinc-600">
-                    {service.priceFrom}
-                  </p>
-                  <p className="mt-1 text-xs text-zinc-500">
-                    Срок: {service.durationFrom}
-                  </p>
+                  {service.imageUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element -- статический экспорт, без оптимизатора изображений
+                    <img
+                      src={asset(service.imageUrl)}
+                      alt=""
+                      className="aspect-video w-full object-cover"
+                    />
+                  )}
+                  <div className="p-4">
+                    <p className="text-sm font-medium text-zinc-900">
+                      {service.title}
+                    </p>
+                    <p className="mt-2 text-sm text-zinc-600">
+                      {service.priceFrom}
+                    </p>
+                    <p className="mt-1 text-xs text-zinc-500">
+                      Срок: {service.durationFrom}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>

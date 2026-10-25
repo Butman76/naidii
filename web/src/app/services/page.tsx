@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ServicesCatalog from "@/components/ServicesCatalog";
+import PartnerAdsCarousel from "@/components/PartnerAdsCarousel";
 import { fetchCatalogData, summarizeResultTypes } from "@/lib/catalog";
+import { fetchActivePartnerAds } from "@/lib/partner-ads";
+import { fetchActiveUnclaimedListings, unclaimedForType } from "@/lib/unclaimed";
 
 // Без этого страница была полностью статической (собранной один раз при
 // билде) и не видела изменений в PocketBase (публикацию профиля/карточки
@@ -16,13 +19,19 @@ export const metadata: Metadata = {
 };
 
 export default async function ServicesPage() {
-  const { resultTypes, offers } = await fetchCatalogData();
-  const summaries = summarizeResultTypes(resultTypes, offers);
+  const [{ resultTypes, offers }, partnerAds, unclaimed] = await Promise.all([
+    fetchCatalogData(),
+    fetchActivePartnerAds(),
+    fetchActiveUnclaimedListings(),
+  ]);
+  const summaries = summarizeResultTypes(resultTypes, offers, { includeEmpty: true })
+    .map((s) => ({ ...s, companiesCount: unclaimedForType(unclaimed, s).length }))
+    .filter((s) => s.offersCount > 0 || s.companiesCount > 0);
 
   return (
     <>
       <Header />
-      <main className="flex-1 bg-zinc-50">
+      <main className="flex-1">
         <div className="border-b border-zinc-200 bg-white">
           <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
             <h1 className="text-2xl font-bold text-zinc-900 sm:text-3xl">
@@ -35,6 +44,7 @@ export default async function ServicesPage() {
             </p>
           </div>
         </div>
+        <PartnerAdsCarousel ads={partnerAds} />
         <ServicesCatalog resultTypes={summaries} offers={offers} />
       </main>
       <Footer />

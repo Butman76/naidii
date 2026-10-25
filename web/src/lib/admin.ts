@@ -45,12 +45,33 @@ export interface AdminUserRow {
   createdAt: string;
 }
 
+export interface SpecialistPlanRow {
+  id: string;
+  slug: string;
+  publicName: string;
+  ownerEmail: string;
+  profileStatus: string;
+  planCode: string;
+  subdomain: string;
+}
+
 export interface AdminLogEntry {
   id: string;
   adminName: string;
   action: string;
   entityType: string;
   entityId: string;
+  createdAt: string;
+}
+
+export interface LoginLogEntry {
+  id: string;
+  userName: string;
+  userEmail: string;
+  isImpersonation: boolean;
+  actorName: string;
+  ip: string;
+  region: string;
   createdAt: string;
 }
 
@@ -78,7 +99,16 @@ export async function fetchModerationData(pb: PocketBase): Promise<ModerationDat
       expand: "specialist_profile_id,customer_id",
       sort: "created",
     }),
-    pb.collection("users").getFullList({ sort: "-created" }),
+    // Аккаунты с ролью admin не показываем модераторам — владелец площадки не
+    // должен светиться в их списке пользователей (и случайно попадать под
+    // "block"/"delete"/"войти как"). Самим админам список полный: иначе
+    // назначенного админа нельзя было бы увидеть и снять (роль меняется в
+    // этой же таблице).
+    pb.collection("users").getFullList(
+      pb.authStore.record?.role === "admin"
+        ? { sort: "-created" }
+        : { filter: 'role != "admin"', sort: "-created" }
+    ),
   ]);
 
   const profiles: PendingProfile[] = profileRecords.map((p) => ({
@@ -124,6 +154,26 @@ export async function fetchModerationData(pb: PocketBase): Promise<ModerationDat
   return { profiles, resultTypes, reviews, users };
 }
 
+// Все специалисты (не только очередь на модерацию — тариф нужно менять и
+// уже опубликованным) — отдельная вкладка "Тарифы" в /admin, см.
+// AdminPanel.tsx. plan_code меняет только admin, см.
+// pocketbase/pb_hooks/plan_guard.pb.js.
+export async function fetchAllSpecialistProfiles(pb: PocketBase): Promise<SpecialistPlanRow[]> {
+  const records = await pb.collection("specialist_profiles").getFullList({
+    expand: "user_id",
+    sort: "-created",
+  });
+  return records.map((p) => ({
+    id: p.id,
+    slug: p.slug,
+    publicName: p.public_name || "Без названия",
+    ownerEmail: p.expand?.user_id?.email ?? "",
+    profileStatus: p.profile_status,
+    planCode: p.plan_code || "basic",
+    subdomain: p.subdomain || "",
+  }));
+}
+
 export async function logAdminAction(
   pb: PocketBase,
   params: {
@@ -163,6 +213,26 @@ export async function fetchAdminLogs(pb: PocketBase): Promise<AdminLogEntry[]> {
     action: r.action,
     entityType: r.entity_type,
     entityId: r.entity_id ?? "",
+    createdAt: r.created,
+  }));
+}
+
+// Журнал входов (кто и когда заходил) — отдельная вкладка "Входы" в /admin.
+// Последние 300 записей достаточно для статистики без пагинации в UI;
+// саму коллекцию см. pocketbase/pb_migrations/1755000047_login_logs.js.
+export async function fetchLoginLogs(pb: PocketBase): Promise<LoginLogEntry[]> {
+  const records = await pb.collection("login_logs").getList(1, 300, {
+    expand: "user_id,actor_id",
+    sort: "-created",
+  });
+  return records.items.map((r) => ({
+    id: r.id,
+    userName: r.expand?.user_id?.name ?? r.expand?.user_id?.email ?? "—",
+    userEmail: r.expand?.user_id?.email ?? "",
+    isImpersonation: Boolean(r.is_impersonation),
+    actorName: r.expand?.actor_id?.name ?? r.expand?.actor_id?.email ?? "",
+    ip: r.ip ?? "",
+    region: r.region ?? "",
     createdAt: r.created,
   }));
 }

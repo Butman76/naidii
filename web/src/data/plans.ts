@@ -1,10 +1,24 @@
-// Мок для /tariffs. Оплата ещё не подключена (см. STATUS.md), поэтому это
-// витрина без реального оформления заказа. Модель сменилась с чистой
-// подписки на вход/подписку + процент с подтверждённой сделки (эскроу) —
-// см. STATUS.md, договорённость от 2026-08-29. PocketBase-коллекция
-// pocketbase/pb_migrations/1755000008_plans.js под старую модель фронтендом
-// не используется (данные всегда шли из этого файла), поэтому её схему не
-// трогаем — почему это безопасно, см. комментарий в самой миграции.
+// Источник цен для /tariffs, кабинета специалиста и живой оплаты через
+// ЮKassa (web/src/lib/payments.ts читает именно эти цифры, не берёт их из
+// запроса клиента) — см. STATUS.md. Модель — только подписка.
+// PocketBase-коллекция pocketbase/pb_migrations/1755000008_plans.js под
+// старую модель фронтендом не используется (данные всегда шли из этого
+// файла), поэтому её схему не трогаем — почему это безопасно, см.
+// комментарий в самой миграции.
+//
+// Комиссия с подтверждённой сделки (эскроу/«безопасная сделка») временно
+// убрана из тарифов (2026-09-27): у ЮKassa такой механизм доступен только
+// при обороте площадки от 800 000 ₽/мес, у нас пока меньше. Поле
+// commissionPercent убрано из Plan — вернуть вместе с реальной интеграцией,
+// когда оборот это позволит; commissionPercent в pb_migrations/1755000008
+// не трогаем, он и так не используется фронтендом.
+//
+// Базовый — подписка 500 ₽/мес (2026-09-28: раньше по ошибке был
+// разовый вход 500 ₽ без подписки, поправлено по просьбе пользователя).
+// До конца октября 2026 действует акция: первая оплата Базового даёт не
+// 30, а 90 дней (3 месяца по цене одного) — см. BASIC_PROMO_END_ISO и
+// isBasicPromoActive() ниже, читает и страница тарифов (баннер со
+// счётчиком), и lib/payments.ts (реальный срок при оплате).
 export interface Plan {
   code: string;
   title: string;
@@ -12,10 +26,6 @@ export interface Plan {
   entryFee: number;
   /** Абонентская плата, ₽/мес. 0, если тариф без подписки. */
   monthlyFee: number;
-  /** Комиссия площадки с суммы подтверждённой сделки (безопасная сделка/эскроу), %. */
-  commissionPercent: number;
-  /** Снижение комиссии при объёме — например, для Enterprise. */
-  volumeDiscount?: { minDeals: number; commissionPercent: number };
   analyticsEnabled: boolean;
   promotionAccess: boolean;
   dedicatedManager: boolean;
@@ -29,28 +39,26 @@ export const PLANS: Plan[] = [
   {
     code: "basic",
     title: "Базовый",
-    entryFee: 500,
-    monthlyFee: 0,
-    commissionPercent: 12,
+    entryFee: 0,
+    monthlyFee: 500,
     analyticsEnabled: false,
     promotionAccess: false,
     dedicatedManager: false,
     prioritySupport: false,
     customLanding: false,
-    description: "Разовый вход на площадку, дальше — без абонентской платы. Комиссия берётся только с подтверждённых сделок.",
+    description: "Карточка в каталоге и приём заявок.",
   },
   {
     code: "pro",
     title: "Pro",
     entryFee: 0,
     monthlyFee: 990,
-    commissionPercent: 10,
     analyticsEnabled: true,
     promotionAccess: true,
     dedicatedManager: false,
     prioritySupport: false,
     customLanding: false,
-    description: "Ниже комиссия с каждой сделки, плюс аналитика профиля и продвижение в топ-20 каталога.",
+    description: "Аналитика профиля и продвижение в топ-20 каталога.",
     recommended: true,
   },
   {
@@ -58,8 +66,6 @@ export const PLANS: Plan[] = [
     title: "Enterprise",
     entryFee: 0,
     monthlyFee: 2900,
-    commissionPercent: 8,
-    volumeDiscount: { minDeals: 50, commissionPercent: 5 },
     analyticsEnabled: true,
     promotionAccess: true,
     dedicatedManager: true,
@@ -69,43 +75,67 @@ export const PLANS: Plan[] = [
   },
 ];
 
+// Акция на Базовый: первая оплата даёт 3 месяца вместо одного. Дата — конец
+// дня 31 октября 2026 по Москве (UTC+3, без перехода на зимнее время).
+export const BASIC_PROMO_END_ISO = "2026-10-31T20:59:59.000Z";
+export const BASIC_PROMO_MONTHS = 3;
+
+export function isBasicPromoActive(now: Date = new Date()): boolean {
+  return now.getTime() < new Date(BASIC_PROMO_END_ISO).getTime();
+}
+
+// kind: "check" — строка про наличие/отсутствие возможности (в таблице на
+// /tariffs рисуется галочкой/прочерком, а не словом "Есть"); без kind —
+// произвольный текст (например, цена). Карточка/кейсы/заявки не зависят от
+// поля Plan — они есть на любом тарифе, но не помешает показать это в
+// сравнении явно (см. /tariffs).
 export const PLAN_FEATURE_ROWS: Array<{
   label: string;
+  kind?: "check";
   getValue: (plan: Plan) => string;
 }> = [
-  {
-    label: "Вход на площадку",
-    getValue: (p) => (p.entryFee > 0 ? `${p.entryFee.toLocaleString("ru-RU")} ₽ разово` : "—"),
-  },
   {
     label: "Подписка",
     getValue: (p) => (p.monthlyFee > 0 ? `${p.monthlyFee.toLocaleString("ru-RU")} ₽/мес` : "—"),
   },
   {
-    label: "Комиссия с сделки",
-    getValue: (p) =>
-      p.volumeDiscount
-        ? `${p.commissionPercent}% (от ${p.volumeDiscount.minDeals} сделок — ${p.volumeDiscount.commissionPercent}%)`
-        : `${p.commissionPercent}%`,
+    label: "Карточка специалиста",
+    kind: "check",
+    getValue: () => "Есть",
+  },
+  {
+    label: "Кейсы и портфолио",
+    kind: "check",
+    getValue: () => "Есть",
+  },
+  {
+    label: "Приём заявок",
+    kind: "check",
+    getValue: () => "Есть",
   },
   {
     label: "Аналитика профиля",
+    kind: "check",
     getValue: (p) => (p.analyticsEnabled ? "Есть" : "—"),
   },
   {
     label: "Продвижение в топ-20",
+    kind: "check",
     getValue: (p) => (p.promotionAccess ? "Есть" : "—"),
   },
   {
     label: "Выделенный менеджер",
+    kind: "check",
     getValue: (p) => (p.dedicatedManager ? "Есть" : "—"),
   },
   {
     label: "Приоритетная поддержка",
+    kind: "check",
     getValue: (p) => (p.prioritySupport ? "Есть" : "—"),
   },
   {
     label: "Собственный лендинг",
+    kind: "check",
     getValue: (p) => (p.customLanding ? "Есть" : "—"),
   },
 ];

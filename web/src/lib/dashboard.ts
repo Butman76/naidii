@@ -36,9 +36,34 @@ export interface SpecialistDashboardLead {
 // чтобы не тянуть отдельный mock-каталог типов и не рисковать рассинхроном.
 export type SpecialistDashboardOffer = ServiceOffer & {
   resultTypeTitle: string;
+  /** Подкатегория (под-направление) типа результата — например «Продажи и заявки». */
+  subcategory: string;
+  /** Статус типа результата: услуга видна в каталоге, только если тип approved. */
+  typeStatus: "approved" | "pending" | "rejected";
   categorySlug: string;
   categoryName: string;
+  resultTypeId: string;
+  /** Описание собственного типа (для правки отклонённой/ожидающей услуги). */
+  typeDescription: string;
+  /** Причина отказа от модератора (пусто, если не писали). */
+  typeNote: string;
+  /** Тип создан этим исполнителем — его можно править и удалять, пока он не одобрен. */
+  typeIsMine: boolean;
 };
+
+export interface SkillOption {
+  id: string;
+  name: string;
+  category: string;
+}
+
+// Текущий выбор специалиста: skillId — что выбрано (для чекбоксов),
+// recordId — id самой строки specialist_skills (чтобы удалить именно её,
+// не гадая по паре specialist/skill — см. updateSpecialistSkills ниже).
+export interface MySkill {
+  recordId: string;
+  skillId: string;
+}
 
 export interface SpecialistDashboardData {
   specialist: Specialist;
@@ -48,6 +73,17 @@ export interface SpecialistDashboardData {
   offers: SpecialistDashboardOffer[];
   leads: SpecialistDashboardLead[];
   cases: DashboardCase[];
+  /** Весь активный справочник тегов (skills) — варианты для выбора в ProfileEditForm.tsx. */
+  allSkills: SkillOption[];
+  /** Что уже выбрано этим специалистом. */
+  mySkills: MySkill[];
+  // basic/pro/enterprise (web/src/data/plans.ts) — назначает вручную admin
+  // в /admin, см. AdminPanel.tsx. Отсутствие значения = "basic".
+  planCode: string;
+  /** ISO-дата конца оплаченного периода Pro/Enterprise; пусто — тариф без срока. */
+  planActiveUntil: string;
+  /** plan_code как в базе: пусто = тариф ещё не оплачен/не назначен (planCode тогда показывает "basic"). */
+  planCodeRaw: string;
 }
 
 export async function fetchOwnSpecialistDashboard(
@@ -58,7 +94,7 @@ export async function fetchOwnSpecialistDashboard(
     .collection("specialist_profiles")
     .getFirstListItem(pb.filter("user_id = {:id}", { id: userId }));
 
-  const [offerRecords, leadRecords, reviewRecords, caseRecords] = await Promise.all([
+  const [offerRecords, leadRecords, reviewRecords, caseRecords, skillOptionRecords, mySkillRecords] = await Promise.all([
     pb.collection("services").getFullList({
       filter: pb.filter("specialist_profile_id = {:id}", { id: profile.id }),
       expand: "result_type_id.category_id",
@@ -76,12 +112,31 @@ export async function fetchOwnSpecialistDashboard(
       filter: pb.filter("specialist_profile_id = {:id}", { id: profile.id }),
       sort: "-created",
     }),
+    pb.collection("skills").getFullList({ filter: 'status = "active"', sort: "category,name" }),
+    pb.collection("specialist_skills").getFullList({
+      filter: pb.filter("specialist_profile_id = {:id}", { id: profile.id }),
+    }),
   ]);
+
+  const allSkills: SkillOption[] = skillOptionRecords.map((s) => ({
+    id: s.id,
+    name: s.name,
+    category: s.category ?? "",
+  }));
+  const mySkills: MySkill[] = mySkillRecords.map((s) => ({ recordId: s.id, skillId: s.skill_id }));
+  const skillNameById = new Map(allSkills.map((s) => [s.id, s.name]));
 
   const offers: SpecialistDashboardOffer[] = offerRecords.map((o) => ({
     id: o.id,
+    resultTypeId: o.result_type_id ?? "",
+    typeDescription: o.expand?.result_type_id?.description ?? "",
+    typeNote: o.expand?.result_type_id?.moderation_note ?? "",
+    typeIsMine: Boolean(o.expand?.result_type_id?.created_by) && o.expand?.result_type_id?.created_by === profile.user_id,
     resultTypeSlug: o.expand?.result_type_id?.slug ?? "",
     resultTypeTitle: o.expand?.result_type_id?.title ?? "Своё направление (на модерации)",
+    subcategory: o.expand?.result_type_id?.subcategory ?? "",
+    typeStatus: (o.expand?.result_type_id?.status || "approved") as "approved" | "pending" | "rejected",
+
     categorySlug: o.expand?.result_type_id?.expand?.category_id?.slug ?? "",
     categoryName: o.expand?.result_type_id?.expand?.category_id?.name ?? "На модерации",
     tagline: o.tagline ?? "",
@@ -89,7 +144,6 @@ export async function fetchOwnSpecialistDashboard(
     priceValue: o.price_from ?? 0,
     durationFrom: o.duration_from ?? "",
     scopeLabel: o.scope_label ?? "",
-    revisionsIncluded: o.revisions_included ?? undefined,
     tags: (o.tags ?? []) as ServiceCardTag[],
     specialistProfileId: profile.id,
     specialistSlug: profile.slug,
@@ -113,7 +167,7 @@ export async function fetchOwnSpecialistDashboard(
     shortDescription: profile.short_description ?? "",
     fullDescription: profile.full_description ?? "",
     category: "",
-    skills: [],
+    skills: mySkills.map((s) => skillNameById.get(s.skillId)).filter((n): n is string => Boolean(n)),
     priceFrom: "",
     experienceYears: profile.experience_years ?? 0,
     responseTime: "",
@@ -147,11 +201,52 @@ export async function fetchOwnSpecialistDashboard(
     specialist,
     profileStatus: profile.profile_status,
     viewsCount: profile.views_count ?? 0,
-    leadsCount: profile.leads_count ?? 0,
+    // Реальное число заявок, а не поле profile.leads_count: его никто не
+    // обновляет, оно всегда 0.
+    leadsCount: leads.length,
     offers,
     leads,
     cases,
+    allSkills,
+    mySkills,
+    planCode: profile.plan_code || "basic",
+    planActiveUntil: profile.active_until || "",
+    planCodeRaw: profile.plan_code || "",
   };
+}
+
+// specialist_skills — связка (junction table), не одно поле на профиле, так
+// что "сохранить выбор" — это диф между тем, что было (current), и тем, что
+// отметил специалист сейчас (nextSkillIds): недостающие строки создаём,
+// снятые — удаляем. Вызывается из ProfileEditForm.tsx вместе с обновлением
+// specialist_profiles.
+export async function updateSpecialistSkills(
+  pb: PocketBase,
+  profileId: string,
+  current: MySkill[],
+  nextSkillIds: string[]
+): Promise<void> {
+  const currentIds = new Set(current.map((s) => s.skillId));
+  const nextIds = new Set(nextSkillIds);
+  const toAdd = nextSkillIds.filter((id) => !currentIds.has(id));
+  const toRemove = current.filter((s) => !nextIds.has(s.skillId));
+
+  // requestKey — иначе несколько одновременных запросов на один и тот же
+  // путь (POST .../specialist_skills/records) SDK по умолчанию считает
+  // дублями и отменяет все, кроме последнего (autoCancellation, см.
+  // pb-superuser.ts) — при выборе больше одного нового навыка сохранялся
+  // бы только последний, а остальные тихо падали с "request was aborted".
+  await Promise.all([
+    ...toAdd.map((skillId) =>
+      pb.collection("specialist_skills").create(
+        { specialist_profile_id: profileId, skill_id: skillId },
+        { requestKey: `specialist_skills:create:${skillId}` }
+      )
+    ),
+    ...toRemove.map((s) =>
+      pb.collection("specialist_skills").delete(s.recordId, { requestKey: `specialist_skills:delete:${s.recordId}` })
+    ),
+  ]);
 }
 
 export interface CustomerDashboardData {

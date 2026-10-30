@@ -8,6 +8,9 @@
 // допустимой хуком users_guard.pb.js.
 
 onRecordAfterCreateSuccess((e) => {
+  // служебные тестовые аккаунты (миграция 1755000073) на зарезервированном домене .invalid не уведомляют
+  if (String(e.record.get("email") || "").toLowerCase().endsWith(".invalid")) return e.next()
+
   try {
     const settings = e.app.settings()
     const esc = (s) => String(s || "—").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")

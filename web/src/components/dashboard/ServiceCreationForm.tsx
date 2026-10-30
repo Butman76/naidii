@@ -71,15 +71,46 @@ function Step({ n, title, hint, children }: { n: number; title: string; hint?: s
   );
 }
 
+// Замочек и подсказка «Доступно на уровне «Базовый»» для недоступного на
+// бесплатном уровне (бесплатно — одно направление и одна услуга). Подсказка
+// появляется при наведении, на телефоне — по нажатию (общая полоса вверху формы).
+function LockOverlay() {
+  return (
+    <>
+      <span className="pointer-events-none absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-zinc-700 shadow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true">
+          <rect x="4" y="11" width="16" height="9" rx="2" />
+          <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+        </svg>
+      </span>
+      <span className="pointer-events-none absolute -top-2 left-1/2 z-20 hidden -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white shadow-lg group-hover:block group-focus-within:block">
+        Доступно на уровне «Базовый»
+      </span>
+    </>
+  );
+}
+const LOCKED_CLS = "cursor-not-allowed opacity-40 blur-[1.5px] saturate-50";
+
 export default function ServiceCreationForm({
   specialist,
   onCreated,
   onCancel,
+  isPaid = true,
+  serviceCount = 0,
+  onOpenPlan,
 }: {
   specialist: Specialist;
   onCreated: () => void;
   onCancel: () => void;
+  /** Оплаченный тариф. Без него — одна услуга: одно направление и один тип. */
+  isPaid?: boolean;
+  /** Сколько услуг уже есть у специалиста. */
+  serviceCount?: number;
+  onOpenPlan?: () => void;
 }) {
+  const free = !isPaid;
+  const exhausted = free && serviceCount >= 1;
+  const [lockHint, setLockHint] = useState(false);
   const [liveTypes, setLiveTypes] = useState<FormResultType[]>([]);
   const [typesLoading, setTypesLoading] = useState(true);
 
@@ -198,7 +229,7 @@ export default function ServiceCreationForm({
     { label: "Заполнено краткое УТП", ok: hasTagline },
   ];
 
-  const canSubmit = checklist.every((c) => c.ok) && !submitting;
+  const canSubmit = checklist.every((c) => c.ok) && !submitting && !exhausted && !(free && useCustomType);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -303,35 +334,79 @@ export default function ServiceCreationForm({
         Пройдите 5 шагов. Обложка и оформление карточки формируются автоматически по единому шаблону площадки.
       </p>
 
+      {free && (
+        <div className="mt-4 rounded-2xl border-2 border-indigo-200 bg-indigo-50 p-4 text-sm text-indigo-900 sm:text-base">
+          <p className="font-bold">
+            {exhausted ? "Бесплатная услуга уже размещена" : "Бесплатно можно разместить одну услугу"}
+          </p>
+          <p className="mt-1">
+            {exhausted
+              ? "Другие направления и услуги (они показаны ниже размытыми) доступны на уровне «Базовый»: так вы покажете заказчикам весь спектр."
+              : "Одно направление и один тип услуги. Остальное, что видно размытым, откроется на уровне «Базовый»."}
+          </p>
+          {(exhausted || lockHint) && (
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <span className="font-semibold">Доступно на уровне «Базовый»</span>
+              {onOpenPlan && (
+                <button
+                  type="button"
+                  onClick={onOpenPlan}
+                  className="rounded-full bg-indigo-600 px-5 py-2 text-sm font-bold text-white hover:bg-indigo-700"
+                >
+                  Выбрать тариф
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Шаг 1: направление */}
       <Step n={1} title="Направление" hint="Выберите, в какой области ваша услуга.">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {CATEGORIES.filter((c) => c.slug !== "other").map((c) => {
             const on = categorySlug === c.slug;
+            const locked = exhausted || (free && categorySlug !== "" && c.slug !== categorySlug);
             return (
-              <button
-                key={c.slug}
-                type="button"
-                onClick={() => {
-                  setCategorySlug(c.slug);
-                  setSubcategory("");
-                  setResultTypeSlug("");
-                  setUseCustomType(false);
-                }}
-                aria-pressed={on}
-                className={`relative flex min-h-[64px] flex-col items-start justify-center gap-1 rounded-2xl border-b-4 bg-gradient-to-br px-3.5 py-3 text-left text-white transition-all duration-200 ${getCategory3D(c.slug)} ${
-                  on
-                    ? "-translate-y-1 scale-[1.03] shadow-xl ring-4 ring-white outline outline-2 outline-zinc-900/10"
-                    : "opacity-60 saturate-50 hover:opacity-90 hover:saturate-100"
-                }`}
-              >
-                <span className="text-sm font-extrabold leading-snug sm:text-base">{c.name}</span>
-                {on && (
-                  <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white text-sm font-black text-zinc-900">
-                    ✓
-                  </span>
-                )}
-              </button>
+              <div key={c.slug} className="group relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (locked) {
+                      setLockHint(true);
+                      return;
+                    }
+                    if (free && on) {
+                      setCategorySlug("");
+                      setSubcategory("");
+                      setResultTypeSlug("");
+                      setUseCustomType(false);
+                      return;
+                    }
+                    setCategorySlug(c.slug);
+                    setSubcategory("");
+                    setResultTypeSlug("");
+                    setUseCustomType(false);
+                  }}
+                  aria-pressed={on}
+                  aria-disabled={locked}
+                  className={`relative flex min-h-[64px] w-full flex-col items-start justify-center gap-1 rounded-2xl border-b-4 bg-gradient-to-br px-3.5 py-3 text-left text-white transition-all duration-200 ${getCategory3D(c.slug)} ${
+                    locked
+                      ? LOCKED_CLS
+                      : on
+                        ? "-translate-y-1 scale-[1.03] shadow-xl ring-4 ring-white outline outline-2 outline-zinc-900/10"
+                        : "opacity-60 saturate-50 hover:opacity-90 hover:saturate-100"
+                  }`}
+                >
+                  <span className="text-sm font-extrabold leading-snug sm:text-base">{c.name}</span>
+                  {on && (
+                    <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white text-sm font-black text-zinc-900">
+                      ✓
+                    </span>
+                  )}
+                </button>
+                {locked && <LockOverlay />}
+              </div>
             );
           })}
         </div>
@@ -361,25 +436,38 @@ export default function ServiceCreationForm({
           <div className="mt-4 flex flex-wrap gap-2.5">
             {subcategories.map((sub) => {
               const on = subcategory === sub;
+              const locked = free && subcategory !== "" && sub !== subcategory;
               return (
-                <button
-                  key={sub}
-                  type="button"
-                  onClick={() => {
-                    setSubcategory(sub);
-                    setResultTypeSlug("");
-                  }}
-                  aria-pressed={on}
-                  className="min-h-[48px] rounded-xl border-2 px-4 py-2.5 text-base font-bold transition-all"
-                  style={
-                    on
-                      ? { backgroundColor: accent, borderColor: accent, color: "#fff", boxShadow: `0 8px 18px -8px ${accent}` }
-                      : { backgroundColor: "#fff", borderColor: `${accent}66`, color: "#27272a" }
-                  }
-                >
-                  {on ? "✓ " : ""}
-                  {sub}
-                </button>
+                <div key={sub} className="group relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (locked) {
+                        setLockHint(true);
+                        return;
+                      }
+                      if (free && on) {
+                        setSubcategory("");
+                        setResultTypeSlug("");
+                        return;
+                      }
+                      setSubcategory(sub);
+                      setResultTypeSlug("");
+                    }}
+                    aria-pressed={on}
+                    aria-disabled={locked}
+                    className={`min-h-[48px] rounded-xl border-2 px-4 py-2.5 text-base font-bold transition-all ${locked ? LOCKED_CLS : ""}`}
+                    style={
+                      on
+                        ? { backgroundColor: accent, borderColor: accent, color: "#fff", boxShadow: `0 8px 18px -8px ${accent}` }
+                        : { backgroundColor: "#fff", borderColor: `${accent}66`, color: "#27272a" }
+                    }
+                  >
+                    {on ? "✓ " : ""}
+                    {sub}
+                  </button>
+                  {locked && <LockOverlay />}
+                </div>
               );
             })}
           </div>
@@ -393,43 +481,65 @@ export default function ServiceCreationForm({
             <div className="flex flex-col gap-2.5">
               {resultTypes.map((t) => {
                 const on = resultTypeSlug === t.slug;
+                const locked = free && resultTypeSlug !== "" && t.slug !== resultTypeSlug;
                 return (
-                  <button
-                    key={t.slug}
-                    type="button"
-                    onClick={() => setResultTypeSlug(t.slug)}
-                    aria-pressed={on}
-                    className={`flex min-h-[56px] items-center gap-3 rounded-xl border-2 px-4 py-3 text-left transition-all ${
-                      on ? "border-indigo-600 bg-indigo-50 shadow-md" : "border-zinc-300 bg-white hover:border-indigo-300"
-                    }`}
-                  >
-                    <span
-                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 text-xs font-black ${
-                        on ? "border-indigo-600 bg-indigo-600 text-white" : "border-zinc-300 text-transparent"
+                  <div key={t.slug} className="group relative">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (locked) {
+                          setLockHint(true);
+                          return;
+                        }
+                        setResultTypeSlug(free && on ? "" : t.slug);
+                      }}
+                      aria-pressed={on}
+                      aria-disabled={locked}
+                      className={`flex min-h-[56px] w-full items-center gap-3 rounded-xl border-2 px-4 py-3 text-left transition-all ${
+                        locked
+                          ? `border-zinc-300 bg-white ${LOCKED_CLS}`
+                          : on
+                            ? "border-indigo-600 bg-indigo-50 shadow-md"
+                            : "border-zinc-300 bg-white hover:border-indigo-300"
                       }`}
                     >
-                      ✓
-                    </span>
-                    <span>
-                      <span className="block text-base font-bold text-zinc-900">{t.title}</span>
-                      {t.scopeLabel && <span className="block text-sm text-zinc-500">{t.scopeLabel}</span>}
-                    </span>
-                  </button>
+                      <span
+                        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 text-xs font-black ${
+                          on ? "border-indigo-600 bg-indigo-600 text-white" : "border-zinc-300 text-transparent"
+                        }`}
+                      >
+                        ✓
+                      </span>
+                      <span>
+                        <span className="block text-base font-bold text-zinc-900">{t.title}</span>
+                        {t.scopeLabel && <span className="block text-sm text-zinc-500">{t.scopeLabel}</span>}
+                      </span>
+                    </button>
+                    {locked && <LockOverlay />}
+                  </div>
                 );
               })}
             </div>
           )}
 
-          <button
-            type="button"
-            onClick={() => {
-              setUseCustomType((v) => !v);
-              setResultTypeSlug("");
-            }}
-            className="mt-3 min-h-[48px] w-full rounded-xl border-2 border-dashed border-zinc-400 px-4 py-2.5 text-base font-semibold text-zinc-700 hover:border-indigo-500 hover:text-indigo-700"
-          >
-            {useCustomType ? "← Выбрать из списка" : "＋ Нет нужного? Предложить свой тип (на модерацию)"}
-          </button>
+          <div className="group relative mt-3">
+            <button
+              type="button"
+              onClick={() => {
+                if (free) {
+                  setLockHint(true);
+                  return;
+                }
+                setUseCustomType((v) => !v);
+                setResultTypeSlug("");
+              }}
+              aria-disabled={free}
+              className={`min-h-[48px] w-full rounded-xl border-2 border-dashed border-zinc-400 px-4 py-2.5 text-base font-semibold text-zinc-700 hover:border-indigo-500 hover:text-indigo-700 ${free ? LOCKED_CLS : ""}`}
+            >
+              {useCustomType ? "← Выбрать из списка" : "＋ Нет нужного? Предложить свой тип (на модерацию)"}
+            </button>
+            {free && <LockOverlay />}
+          </div>
 
           {useCustomType && (
             <div className="mt-3 flex flex-col gap-3">

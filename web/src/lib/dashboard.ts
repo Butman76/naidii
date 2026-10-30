@@ -43,6 +43,8 @@ export type SpecialistDashboardOffer = ServiceOffer & {
   categorySlug: string;
   categoryName: string;
   resultTypeId: string;
+  /** Единственная видимая услуга специалиста без оплаченного тарифа (is_free_slot). */
+  isFreeSlot: boolean;
   /** Описание собственного типа (для правки отклонённой/ожидающей услуги). */
   typeDescription: string;
   /** Причина отказа от модератора (пусто, если не писали). */
@@ -86,6 +88,8 @@ export interface SpecialistDashboardData {
   planCodeRaw: string;
   /** Оплаченный и не истёкший тариф (или назначенный админом без срока). Без него профиль скрыт, заявки закрыты. */
   isPaid: boolean;
+  /** Профиль виден в каталоге: тариф оплачен либо есть бесплатная услуга. */
+  isListed: boolean;
   /** Сколько заявок ждут специалиста — число без содержимого, для подсказки неоплатившему. */
   leadsTeaser: number;
 }
@@ -144,6 +148,7 @@ export async function fetchOwnSpecialistDashboard(
   const offers: SpecialistDashboardOffer[] = offerRecords.map((o) => ({
     id: o.id,
     resultTypeId: o.result_type_id ?? "",
+    isFreeSlot: Boolean(o.is_free_slot),
     typeDescription: o.expand?.result_type_id?.description ?? "",
     typeNote: o.expand?.result_type_id?.moderation_note ?? "",
     typeIsMine: Boolean(o.expand?.result_type_id?.created_by) && o.expand?.result_type_id?.created_by === profile.user_id,
@@ -228,6 +233,7 @@ export async function fetchOwnSpecialistDashboard(
     planActiveUntil: profile.active_until || "",
     planCodeRaw: profile.plan_code || "",
     isPaid,
+    isListed: isPaid || offers.some((o) => o.isFreeSlot),
     leadsTeaser,
   };
 }

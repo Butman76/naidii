@@ -46,7 +46,7 @@ export const PLANS: Plan[] = [
     dedicatedManager: false,
     prioritySupport: false,
     customLanding: false,
-    description: "Профиль в каталоге, приём заявок и доска объявлений.",
+    description: "Весь спектр услуг, все заказы и приём заявок.",
   },
   {
     code: "pro",

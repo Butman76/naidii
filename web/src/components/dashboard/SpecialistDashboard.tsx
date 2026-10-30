@@ -83,7 +83,7 @@ export default function SpecialistDashboard({
   data: SpecialistDashboardData;
   refresh: () => void;
 }) {
-  const { specialist, profileStatus, viewsCount, leadsCount, offers, leads, cases, allSkills, mySkills, planCode, planActiveUntil, planCodeRaw, isPaid, leadsTeaser } = data;
+  const { specialist, profileStatus, viewsCount, leadsCount, offers, leads, cases, allSkills, mySkills, planCode, planActiveUntil, planCodeRaw, isPaid, isListed, leadsTeaser } = data;
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const requestedTab = searchParams.get("tab");
@@ -122,7 +122,9 @@ export default function SpecialistDashboard({
 
   // Без оплаченного тарифа закрыты заявки, доска объявлений и заказы (на уровне
   // базы тоже — миграция 1755000071), профиль и услуги скрыты от посетителей.
-  const lockedTabs = isPaid ? [] : ["leads", "jobboard", "orders", "archive"];
+  // На бесплатном уровне (одна услуга) профиль виден, заявки приходят по ней, а доска
+  // показывает заказы только этого подраздела; закрыто всё, пока нет ни тарифа, ни услуги.
+  const lockedTabs = isListed ? [] : ["leads", "jobboard", "orders", "archive"];
   const shownTab = lockedTabs.includes(tab) ? "locked" : tab;
   const newLeadsCount = leads.filter((l) => l.status === "new").length;
 
@@ -137,7 +139,15 @@ export default function SpecialistDashboard({
       {!isPaid && (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
           <p className="min-w-0 flex-1">
-            <span className="font-bold">Профиль пока скрыт от посетителей.</span> Регистрация бесплатная. Чтобы профиль и услуги появились в каталоге, а вы получали заявки, подключите тариф «Базовый»: {promoPriceText()}.
+            {isListed ? (
+              <>
+                <span className="font-bold">Бесплатный уровень: в каталоге одна услуга.</span> Чтобы разместить весь спектр услуг во всех направлениях и видеть все заказы, подключите тариф «Базовый»: {promoPriceText()}.
+              </>
+            ) : (
+              <>
+                <span className="font-bold">Профиль пока скрыт от посетителей.</span> Регистрация бесплатная. Добавьте одну услугу бесплатно, и профиль появится в каталоге. Весь спектр услуг и все заказы открываются на тарифе «Базовый»: {promoPriceText()}.
+              </>
+            )}
           </p>
           <button
             type="button"
@@ -179,7 +189,7 @@ export default function SpecialistDashboard({
           name={specialist.name}
           initials={specialist.avatarInitials}
           locked={lockedTabs}
-          planLabel={isPaid ? `Тариф «${currentPlan.title}»` : "Тариф не оплачен"}
+          planLabel={isPaid ? `Тариф «${currentPlan.title}»` : "Бесплатный уровень"}
         />
         <div className="min-w-0">
       <div className="mt-6">
@@ -191,15 +201,15 @@ export default function SpecialistDashboard({
                   ? `Вас ждут заявок: ${leadsTeaser}`
                   : "Заявки откроются после оплаты тарифа"
                 : tab === "jobboard"
-                  ? "Доска объявлений откроется после оплаты тарифа"
-                  : "Заказы откроются после оплаты тарифа"
+                  ? "Доска объявлений откроется после добавления услуги"
+                  : "Заказы откроются после добавления услуги"
             }
             text={
               tab === "leads"
-                ? "Имена и тексты заявок видны специалистам с оплаченным тарифом. Подключите тариф, чтобы открыть заявки и отвечать заказчикам."
+                ? "Заявки приходят специалистам, чей профиль виден в каталоге. Добавьте одну услугу бесплатно или подключите тариф «Базовый»."
                 : tab === "jobboard"
-                  ? "Здесь заказчики публикуют задачи, на которые специалисты откликаются. Доступ только с оплаченным тарифом."
-                  : "Заказы и архив сделок доступны с оплаченным тарифом."
+                  ? "Здесь заказчики публикуют задачи, на которые специалисты откликаются. На бесплатном уровне видны заказы вашего подраздела, на «Базовом» все."
+                  : "Заказы и архив сделок доступны специалистам, чей профиль виден в каталоге."
             }
             onOpenPlan={() => setTab("plan")}
           />
@@ -339,7 +349,7 @@ export default function SpecialistDashboard({
           <div className="flex flex-col gap-6">
             {!isPaid && (
               <p className="rounded-xl bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
-                Эти услуги пока видите только вы. Они появятся в каталоге после оплаты тарифа.
+                Бесплатный уровень: в каталоге видна одна услуга. Остальные направления и услуги откроются на уровне «Базовый».
               </p>
             )}
             {groupOffersByCategory(offers).map((group) => {
@@ -465,6 +475,12 @@ export default function SpecialistDashboard({
               <ServiceFormModal onClose={() => setShowCreationForm(false)}>
                 <ServiceCreationForm
                   specialist={specialist}
+                  isPaid={isPaid}
+                  serviceCount={offers.length}
+                  onOpenPlan={() => {
+                    setShowCreationForm(false);
+                    setTab("plan");
+                  }}
                   onCreated={refresh}
                   onCancel={() => setShowCreationForm(false)}
                 />

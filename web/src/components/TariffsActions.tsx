@@ -30,6 +30,22 @@ const BASE_CLASS =
 // например попытка понизиться, её блокирует сервер) — уходим в кабинет на
 // вкладку "Тариф", там та же оплата плюс понятные сообщения об ошибках и
 // история платежей.
+// Кнопка карточки «Старт»: бесплатный, платить нечего. Гостю и заказчику — на
+// регистрацию, специалисту — в кабинет.
+export function StartPlanButton() {
+  const { user } = useAuth();
+  const isSpecialist = user?.role === "specialist";
+  return (
+    <Link
+      href={isSpecialist ? "/dashboard" : "/register"}
+      className={`${BASE_CLASS} border border-emerald-300 text-emerald-800 hover:bg-emerald-50 focus-visible:ring-emerald-500`}
+    >
+      {isSpecialist ? "Открыть кабинет" : "Начать бесплатно"}
+      <span aria-hidden="true">→</span>
+    </Link>
+  );
+}
+
 export function PlanChooseButton({
   planCode,
   recommended,

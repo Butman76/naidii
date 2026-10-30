@@ -337,7 +337,7 @@ export default function ServiceCreationForm({
       {free && (
         <div className="mt-4 rounded-2xl border-2 border-indigo-200 bg-indigo-50 p-4 text-sm text-indigo-900 sm:text-base">
           <p className="font-bold">
-            {exhausted ? "Бесплатная услуга уже размещена" : "Бесплатно можно разместить одну услугу"}
+            {exhausted ? "Услуга тарифа «Старт» уже размещена" : "Тариф «Старт»: бесплатно одна услуга"}
           </p>
           <p className="mt-1">
             {exhausted

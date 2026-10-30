@@ -141,7 +141,7 @@ export default function SpecialistDashboard({
           <p className="min-w-0 flex-1">
             {isListed ? (
               <>
-                <span className="font-bold">Бесплатный уровень: в каталоге одна услуга.</span> Чтобы разместить весь спектр услуг во всех направлениях и видеть все заказы, подключите тариф «Базовый»: {promoPriceText()}.
+                <span className="font-bold">Тариф «Старт»: в каталоге одна услуга.</span> Чтобы разместить весь спектр услуг во всех направлениях и видеть все заказы, подключите тариф «Базовый»: {promoPriceText()}.
               </>
             ) : (
               <>
@@ -189,7 +189,7 @@ export default function SpecialistDashboard({
           name={specialist.name}
           initials={specialist.avatarInitials}
           locked={lockedTabs}
-          planLabel={isPaid ? `Тариф «${currentPlan.title}»` : "Бесплатный уровень"}
+          planLabel={isPaid ? `Тариф «${currentPlan.title}»` : "Тариф «Старт»"}
         />
         <div className="min-w-0">
       <div className="mt-6">
@@ -349,7 +349,7 @@ export default function SpecialistDashboard({
           <div className="flex flex-col gap-6">
             {!isPaid && (
               <p className="rounded-xl bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
-                Бесплатный уровень: в каталоге видна одна услуга. Остальные направления и услуги откроются на уровне «Базовый».
+                Тариф «Старт»: в каталоге видна одна услуга. Остальные направления и услуги откроются на уровне «Базовый».
               </p>
             )}
             {groupOffersByCategory(offers).map((group) => {

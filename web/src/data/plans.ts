@@ -75,6 +75,24 @@ export const PLANS: Plan[] = [
   },
 ];
 
+// Бесплатный тариф «Старт» (2026-10-30): только для показа на /tariffs и в
+// сравнении, в PLANS его нет — платить за него нечего, а PLANS читает оплата
+// (lib/payments.ts, PlanPaymentPanel). Реальные ограничения старта (одна услуга,
+// заказы только своего подраздела) — в правилах PocketBase и хуке
+// services_free_limit.pb.js (миграция 1755000072).
+export const START_PLAN: Plan = {
+  code: "start",
+  title: "Старт",
+  entryFee: 0,
+  monthlyFee: 0,
+  analyticsEnabled: false,
+  promotionAccess: false,
+  dedicatedManager: false,
+  prioritySupport: false,
+  customLanding: false,
+  description: "Профиль и одна услуга в каталоге, заявки по ней.",
+};
+
 // Акция на Базовый: оплата даёт 2 месяца вместо одного (500 ₽). Дата — конец
 // дня 31 декабря 2026 по Москве (UTC+3, без перехода на зимнее время).
 export const BASIC_PROMO_END_ISO = "2026-12-31T20:59:59.000Z";
@@ -96,7 +114,19 @@ export const PLAN_FEATURE_ROWS: Array<{
 }> = [
   {
     label: "Подписка",
-    getValue: (p) => (p.monthlyFee > 0 ? `${p.monthlyFee.toLocaleString("ru-RU")} ₽/мес` : "—"),
+    getValue: (p) => (p.monthlyFee > 0 ? `${p.monthlyFee.toLocaleString("ru-RU")} ₽/мес` : "Бесплатно"),
+  },
+  {
+    label: "Услуг в каталоге",
+    getValue: (p) => (p.code === "start" ? "1" : "Все"),
+  },
+  {
+    label: "Направления",
+    getValue: (p) => (p.code === "start" ? "Одно" : "Все 9"),
+  },
+  {
+    label: "Заказы на доске объявлений",
+    getValue: (p) => (p.code === "start" ? "Своего подраздела" : "Все"),
   },
   {
     label: "Карточка специалиста",

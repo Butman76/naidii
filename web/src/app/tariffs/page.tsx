@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { PLANS, PLAN_FEATURE_ROWS, BASIC_PROMO_MONTHS, isBasicPromoActive } from "@/data/plans";
+import { PLANS, START_PLAN, PLAN_FEATURE_ROWS, BASIC_PROMO_MONTHS, isBasicPromoActive } from "@/data/plans";
 import { PLAN_SHELL, PLAN_TAGLINE } from "@/data/plan-style";
-import { PlanChooseButton, PromoCountdown } from "@/components/TariffsActions";
+import { PlanChooseButton, PromoCountdown, StartPlanButton } from "@/components/TariffsActions";
 
 export const metadata: Metadata = {
   title: "Тарифы для специалистов — НайдИИ",
@@ -35,6 +35,17 @@ const HERO_HIGHLIGHTS = ["Карточка специалиста и кейсы"
 // features — не то же самое, что plan.description: тут отдельные пункты
 // списком, а не одна фраза.
 const PLAN_CONTENT: Record<string, { features: string[]; ctaLabel: string; ctaHint?: string }> = {
+  start: {
+    features: [
+      "Профиль в каталоге НайдИИ",
+      "Одна услуга в одном направлении",
+      "Заявки по ней и переписка с заказчиками",
+      "Заказы вашего подраздела на доске объявлений",
+      "Блог: 1 статья в неделю",
+    ],
+    ctaLabel: "Начать бесплатно",
+    ctaHint: "Без оплаты и без срока",
+  },
   basic: {
     features: ["Все направления и услуги в каталоге", "Кейсы и портфолио", "Все заказы на доске объявлений", "Приём заявок и переписка с заказчиками"],
     ctaLabel: "Выбрать Базовый",
@@ -63,11 +74,13 @@ const PLAN_CONTENT: Record<string, { features: string[]; ctaLabel: string; ctaHi
 // Подсветка колонок в таблице возможностей — иначе три одинаковые по цвету
 // колонки сливаются. Цвета повторяют акценты карточек выше.
 const COLUMN_TINT: Record<string, string> = {
+  start: "bg-emerald-50/60",
   basic: "bg-zinc-50",
   pro: "bg-violet-50",
   enterprise: "bg-amber-50/70",
 };
 const COLUMN_ACCENT: Record<string, string> = {
+  start: "text-emerald-600",
   basic: "text-blue-600",
   pro: "text-violet-600",
   enterprise: "text-amber-600",
@@ -77,17 +90,17 @@ const FAQ_ITEMS: Array<{ question: string; answer: string }> = [
   {
     question: "Можно ли изменить тариф позже?",
     answer:
-      "Да, перейти на более высокий тариф можно в любой момент в личном кабинете. Если оплаченный период закончится без продления, в каталоге останется одна ваша услуга (самая ранняя), остальные скроются, пока вы не продлите тариф. Кабинет и все данные сохраняются.",
+      "Да, перейти на более высокий тариф можно в любой момент в личном кабинете. Если оплаченный период закончится без продления, вы вернётесь на тариф «Старт»: в каталоге останется одна ваша услуга (самая ранняя), остальные скроются, пока вы не продлите тариф. Кабинет и все данные сохраняются.",
   },
   {
     question: "Сколько стоит регистрация?",
     answer:
-      "Регистрация бесплатная. Бесплатно в каталоге размещается одна услуга (одно направление и один тип услуги), заявки по ней приходят вам. Чтобы разместить весь спектр услуг во всех направлениях, нужен любой тариф, от 500 ₽.",
+      "Регистрация бесплатная, и вместе с ней вы получаете тариф «Старт»: в каталоге размещается одна услуга (одно направление и один тип услуги), заявки по ней приходят вам. Чтобы разместить весь спектр услуг во всех направлениях, нужен тариф «Базовый» или выше, от 500 ₽.",
   },
   {
-    question: "Что доступно без оплаты тарифа?",
+    question: "Что входит в тариф «Старт»?",
     answer:
-      "Профиль, одна услуга в каталоге, заявки по ней и переписка, заказы вашего подраздела на доске объявлений, отзывы и блог (1 статья в неделю). Остальные направления и услуги и собственные типы услуг доступны на тарифах.",
+      "Профиль, одна услуга в каталоге, заявки по ней и переписка, заказы вашего подраздела на доске объявлений, отзывы и блог (1 статья в неделю). Другие направления и услуги и собственные типы услуг доступны на платных тарифах.",
   },
   {
     question: "Что входит в карточку специалиста?",
@@ -111,6 +124,8 @@ const FAQ_ITEMS: Array<{ question: string; answer: string }> = [
   },
 ];
 
+const DISPLAY_PLANS = [START_PLAN, ...PLANS];
+
 export default function TariffsPage() {
   const basicPromo = isBasicPromoActive();
 
@@ -124,7 +139,7 @@ export default function TariffsPage() {
               Выберите формат присутствия в НайдИИ
             </h1>
             <p className="mt-3 max-w-2xl text-base text-zinc-600">
-              Регистрация бесплатная, и бесплатно можно разместить одну услугу. Тарифы открывают весь спектр направлений и услуг.
+              Регистрация бесплатная, и тариф «Старт» тоже бесплатный: одна услуга в каталоге. Платные тарифы открывают весь спектр направлений и услуг.
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
               {HERO_HIGHLIGHTS.map((text) => (
@@ -139,11 +154,11 @@ export default function TariffsPage() {
           </div>
         </div>
 
-        <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
           {basicPromo && <PromoCountdown />}
 
-          <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-3">
-            {PLANS.map((plan) => {
+          <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {DISPLAY_PLANS.map((plan) => {
               const showPromo = plan.code === "basic" && basicPromo;
               const inverted = Boolean(plan.recommended);
               const content = PLAN_CONTENT[plan.code];
@@ -160,7 +175,7 @@ export default function TariffsPage() {
                 >
                   <div
                     className={`flex h-full flex-col rounded-[18.5px] p-6 ${
-                      inverted ? "bg-zinc-900 text-white" : "bg-white"
+                      inverted ? "bg-zinc-900 text-white" : "bg-white text-zinc-900"
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2">
@@ -183,7 +198,7 @@ export default function TariffsPage() {
                       <div className="mt-4 flex items-baseline gap-2">
                         <span className="text-4xl font-bold tracking-tight">{formatMoney(plan.monthlyFee)}</span>
                         <span className="text-sm text-zinc-400 line-through">
-                          {formatMoney(plan.monthlyFee * 3)}
+                          {formatMoney(plan.monthlyFee * BASIC_PROMO_MONTHS)}
                         </span>
                       </div>
                     ) : (
@@ -192,7 +207,7 @@ export default function TariffsPage() {
                       </div>
                     )}
                     <p className={`mt-1 text-xs font-medium ${inverted ? "text-zinc-400" : "text-zinc-500"}`}>
-                      {showPromo ? `за ${BASIC_PROMO_MONTHS} месяца по акции` : "в месяц"}
+                      {plan.code === "start" ? "бесплатно" : showPromo ? `за ${BASIC_PROMO_MONTHS} месяца по акции` : "в месяц"}
                     </p>
 
                     <ul className="mt-5 flex flex-col gap-2.5 text-sm">
@@ -210,12 +225,16 @@ export default function TariffsPage() {
                     </ul>
 
                     <div className="mt-auto pt-6">
-                      <PlanChooseButton
-                        planCode={plan.code}
-                        recommended={plan.recommended}
-                        inverted={inverted}
-                        label={content.ctaLabel}
-                      />
+                      {plan.code === "start" ? (
+                        <StartPlanButton />
+                      ) : (
+                        <PlanChooseButton
+                          planCode={plan.code}
+                          recommended={plan.recommended}
+                          inverted={inverted}
+                          label={content.ctaLabel}
+                        />
+                      )}
                       {content.ctaHint && (
                         <p className={`mt-2 text-center text-[11px] ${inverted ? "text-zinc-500" : "text-zinc-400"}`}>
                           {content.ctaHint}
@@ -231,11 +250,11 @@ export default function TariffsPage() {
           <div className="mt-14">
             <h2 className="text-lg font-semibold text-zinc-900">Сравните возможности тарифов</h2>
             <div className="mt-4 overflow-x-auto rounded-2xl border border-zinc-200 bg-white shadow-md">
-              <table className="w-full min-w-[480px] text-left text-sm">
+              <table className="w-full min-w-[620px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-zinc-200">
                     <th className="px-4 py-3 font-medium text-zinc-500">Возможность</th>
-                    {PLANS.map((plan) => (
+                    {DISPLAY_PLANS.map((plan) => (
                       <th
                         key={plan.code}
                         className={`px-4 py-3 text-center font-semibold text-zinc-900 ${COLUMN_TINT[plan.code] ?? ""}`}
@@ -249,7 +268,7 @@ export default function TariffsPage() {
                   {PLAN_FEATURE_ROWS.map((row) => (
                     <tr key={row.label} className="border-b border-zinc-100 last:border-0">
                       <td className="px-4 py-3 text-zinc-600">{row.label}</td>
-                      {PLANS.map((plan) => {
+                      {DISPLAY_PLANS.map((plan) => {
                         const value = row.getValue(plan);
                         return (
                           <td

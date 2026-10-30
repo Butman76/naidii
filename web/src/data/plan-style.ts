@@ -6,13 +6,15 @@
 // оформление.
 
 export const PLAN_SHELL: Record<string, string> = {
+  start: "bg-gradient-to-b from-emerald-400 via-emerald-100 to-transparent",
   basic: "bg-gradient-to-b from-blue-400 via-blue-100 to-transparent",
   pro: "bg-gradient-to-br from-blue-500 via-violet-500 to-cyan-400",
   enterprise: "bg-gradient-to-br from-violet-300 via-zinc-200 to-amber-300",
 };
 
 export const PLAN_TAGLINE: Record<string, { text: string; color: string }> = {
-  basic: { text: "Чтобы начать и показать свою экспертизу", color: "text-blue-600" },
+  start: { text: "Бесплатно: попробовать площадку", color: "text-emerald-600" },
+  basic: { text: "Весь спектр услуг и все заказы", color: "text-blue-600" },
   pro: { text: "Для специалистов, которым нужна заметность", color: "text-zinc-400" },
   enterprise: { text: "Для студий, агентств и команд с объёмом", color: "text-violet-600" },
 };

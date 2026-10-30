@@ -318,7 +318,12 @@ export async function fetchUserDeals(
 
   const records = await pb.collection("deals").getFullList({
     filter,
-    expand: "customer_id,specialist_profile_id",
+    // lead_id тоже разворачиваем: users.viewRule (1755000022) не даёт
+    // специалисту прочитать чужую запись customer_id, поэтому expand
+    // customer_id молча пустой для роли specialist — leads.customer_name
+    // денормализован на самой заявке именно ради этого случая (тот же
+    // приём, что и в dashboard.ts для вкладки "Заявки").
+    expand: "customer_id,specialist_profile_id,lead_id",
     sort: "-created",
   });
 
@@ -328,7 +333,7 @@ export async function fetchUserDeals(
     otherPartyName:
       role === "customer"
         ? (r.expand?.specialist_profile_id?.public_name ?? "Специалист")
-        : (r.expand?.customer_id?.name ?? r.expand?.customer_id?.email ?? "Заказчик"),
+        : (r.expand?.lead_id?.customer_name ?? r.expand?.customer_id?.name ?? r.expand?.customer_id?.email ?? "Заказчик"),
     customerId: r.customer_id,
     specialistProfileId: r.specialist_profile_id,
   }));

@@ -54,6 +54,14 @@ textarea,
   user-select: text;
   -webkit-user-select: text;
 }
+/* Текст новостей и статей копируют только админы — см. StaffSelectable.tsx.
+   `*` выше действует на каждый элемент напрямую, наследование не
+   срабатывает, поэтому правило явно перечисляет потомков. */
+.staff-selectable,
+.staff-selectable * {
+  user-select: text;
+  -webkit-user-select: text;
+}
 
 /* Лёгкий 3D-наклон карточек услуг при наведении — см. ResultTypePlate.tsx.
    Обычный CSS, а не Tailwind-утилиты, чтобы не зависеть от того, есть ли в

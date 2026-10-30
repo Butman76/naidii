@@ -55,7 +55,7 @@ export function mapPost(pb: PocketBase, r: RecordModel): NewsPost {
     publishedAt: String(r.published_at ?? "") || String(r.created ?? ""),
     created: String(r.created ?? ""),
     authorProfileId: String(r.author_profile_id ?? ""),
-    authorName: String(r.expand?.author_profile_id?.public_name ?? ""),
+    authorName: String(r.expand?.author_profile_id?.public_name ?? r.author_name ?? ""),
     authorSlug: String(r.expand?.author_profile_id?.slug ?? ""),
     moderationNote: String(r.moderation_note ?? ""),
   };

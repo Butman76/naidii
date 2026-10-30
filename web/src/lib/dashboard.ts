@@ -84,6 +84,10 @@ export interface SpecialistDashboardData {
   planActiveUntil: string;
   /** plan_code как в базе: пусто = тариф ещё не оплачен/не назначен (planCode тогда показывает "basic"). */
   planCodeRaw: string;
+  /** Оплаченный и не истёкший тариф (или назначенный админом без срока). Без него профиль скрыт, заявки закрыты. */
+  isPaid: boolean;
+  /** Сколько заявок ждут специалиста — число без содержимого, для подсказки неоплатившему. */
+  leadsTeaser: number;
 }
 
 export async function fetchOwnSpecialistDashboard(
@@ -94,7 +98,11 @@ export async function fetchOwnSpecialistDashboard(
     .collection("specialist_profiles")
     .getFirstListItem(pb.filter("user_id = {:id}", { id: userId }));
 
-  const [offerRecords, leadRecords, reviewRecords, caseRecords, skillOptionRecords, mySkillRecords] = await Promise.all([
+  const isPaid =
+    Boolean(profile.plan_code) &&
+    (!profile.active_until || new Date(String(profile.active_until).replace(" ", "T")).getTime() > Date.now());
+
+  const [offerRecords, leadRecords, reviewRecords, caseRecords, skillOptionRecords, mySkillRecords, leadsTeaser] = await Promise.all([
     pb.collection("services").getFullList({
       filter: pb.filter("specialist_profile_id = {:id}", { id: profile.id }),
       expand: "result_type_id.category_id",
@@ -116,6 +124,13 @@ export async function fetchOwnSpecialistDashboard(
     pb.collection("specialist_skills").getFullList({
       filter: pb.filter("specialist_profile_id = {:id}", { id: profile.id }),
     }),
+    // Число заявок без содержимого (view leads_count_own) — для подсказки тому,
+    // у кого тариф не оплачен и сами заявки закрыты правилами базы.
+    pb
+      .collection("leads_count_own")
+      .getOne(profile.id)
+      .then((r) => Number(r.total) || 0)
+      .catch(() => 0),
   ]);
 
   const allSkills: SkillOption[] = skillOptionRecords.map((s) => ({
@@ -203,7 +218,7 @@ export async function fetchOwnSpecialistDashboard(
     viewsCount: profile.views_count ?? 0,
     // Реальное число заявок, а не поле profile.leads_count: его никто не
     // обновляет, оно всегда 0.
-    leadsCount: leads.length,
+    leadsCount: isPaid ? leads.length : leadsTeaser,
     offers,
     leads,
     cases,
@@ -212,6 +227,8 @@ export async function fetchOwnSpecialistDashboard(
     planCode: profile.plan_code || "basic",
     planActiveUntil: profile.active_until || "",
     planCodeRaw: profile.plan_code || "",
+    isPaid,
+    leadsTeaser,
   };
 }
 

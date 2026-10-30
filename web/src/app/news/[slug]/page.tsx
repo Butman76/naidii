@@ -99,17 +99,19 @@ export default async function NewsPostPage({ params }: { params: Promise<{ slug:
             <NewsBody body={post.body} />
           </div>
 
-          {post.authorProfileId && post.authorSlug && (
+          {post.authorProfileId && post.authorName && (
             <div className="mt-8 flex flex-wrap items-center gap-3 rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
               <p className="min-w-0 flex-1 text-sm text-zinc-700">
                 Автор: <span className="font-semibold text-zinc-900">{post.authorName}</span>
               </p>
-              <Link
-                href={`/specialist/${post.authorSlug}`}
-                className="rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-zinc-700"
-              >
-                Профиль
-              </Link>
+              {post.authorSlug && (
+                <Link
+                  href={`/specialist/${post.authorSlug}`}
+                  className="rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-zinc-700"
+                >
+                  Профиль
+                </Link>
+              )}
             </div>
           )}
 

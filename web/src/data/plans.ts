@@ -15,8 +15,8 @@
 //
 // Базовый — подписка 500 ₽/мес (2026-09-28: раньше по ошибке был
 // разовый вход 500 ₽ без подписки, поправлено по просьбе пользователя).
-// До конца октября 2026 действует акция: первая оплата Базового даёт не
-// 30, а 90 дней (3 месяца по цене одного) — см. BASIC_PROMO_END_ISO и
+// До конца 2026 года действует акция: оплата Базового даёт не 30, а 60 дней
+// (2 месяца по цене одного; с 2026-10-30 было 3 месяца до конца октября) — см. BASIC_PROMO_END_ISO и
 // isBasicPromoActive() ниже, читает и страница тарифов (баннер со
 // счётчиком), и lib/payments.ts (реальный срок при оплате).
 export interface Plan {
@@ -46,7 +46,7 @@ export const PLANS: Plan[] = [
     dedicatedManager: false,
     prioritySupport: false,
     customLanding: false,
-    description: "Карточка в каталоге и приём заявок.",
+    description: "Профиль в каталоге, приём заявок и доска объявлений.",
   },
   {
     code: "pro",
@@ -75,10 +75,10 @@ export const PLANS: Plan[] = [
   },
 ];
 
-// Акция на Базовый: первая оплата даёт 3 месяца вместо одного. Дата — конец
-// дня 31 октября 2026 по Москве (UTC+3, без перехода на зимнее время).
-export const BASIC_PROMO_END_ISO = "2026-10-31T20:59:59.000Z";
-export const BASIC_PROMO_MONTHS = 3;
+// Акция на Базовый: оплата даёт 2 месяца вместо одного (500 ₽). Дата — конец
+// дня 31 декабря 2026 по Москве (UTC+3, без перехода на зимнее время).
+export const BASIC_PROMO_END_ISO = "2026-12-31T20:59:59.000Z";
+export const BASIC_PROMO_MONTHS = 2;
 
 export function isBasicPromoActive(now: Date = new Date()): boolean {
   return now.getTime() < new Date(BASIC_PROMO_END_ISO).getTime();

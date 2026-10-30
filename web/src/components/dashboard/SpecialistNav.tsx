@@ -81,6 +81,15 @@ const ICONS: Record<string, ReactNode> = {
   ),
 };
 
+function LockMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-label="Откроется после оплаты тарифа">
+      <rect x="4" y="11" width="16" height="9" rx="2" />
+      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+    </svg>
+  );
+}
+
 function NavIcon({ id, className }: { id: string; className?: string }) {
   return (
     <svg
@@ -113,6 +122,7 @@ export default function SpecialistNav({
   name,
   initials,
   planLabel,
+  locked = [],
 }: {
   items: NavItem[];
   active: string;
@@ -121,6 +131,8 @@ export default function SpecialistNav({
   name: string;
   initials: string;
   planLabel: string;
+  /** id разделов, закрытых до оплаты тарифа — рядом рисуется замочек. */
+  locked?: string[];
 }) {
   const byId = new Map(items.map((i) => [i.id, i]));
 
@@ -164,6 +176,7 @@ export default function SpecialistNav({
                     >
                       <NavIcon id={it.id} className="h-5 w-5 shrink-0" />
                       <span className="min-w-0 flex-1 truncate">{it.label}</span>
+                      {locked.includes(it.id) && <LockMark className="h-3.5 w-3.5 shrink-0 opacity-70" />}
                       {badge > 0 && (
                         <span
                           className={`rounded-full px-2 py-0.5 text-xs font-bold ${
@@ -209,6 +222,7 @@ export default function SpecialistNav({
                     }`}
                   >
                     <NavIcon id={it.id} className="h-5 w-5" />
+                    {locked.includes(it.id) && <LockMark className="absolute -right-1 -top-1 h-3.5 w-3.5 rounded-full bg-white p-0.5 text-zinc-500" />}
                     {badge > 0 && (
                       <span className="absolute -right-0.5 -top-1 rounded-full bg-rose-500 px-1.5 text-[10px] font-bold leading-4 text-white">
                         {badge}

@@ -25,6 +25,7 @@ import { useAuth } from "@/lib/use-auth";
 import { pbClient } from "@/lib/auth-client";
 import SpecialistNav from "./SpecialistNav";
 import SpecialistBlogTab from "./SpecialistBlogTab";
+import PaidLock, { promoPriceText } from "./PaidLock";
 import NewsBody from "@/components/news/NewsBody";
 
 type Tab = "overview" | "profile" | "blog" | "services" | "leads" | "jobboard" | "orders" | "archive" | "reviews" | "analytics" | "plan" | "landing";
@@ -82,7 +83,7 @@ export default function SpecialistDashboard({
   data: SpecialistDashboardData;
   refresh: () => void;
 }) {
-  const { specialist, profileStatus, viewsCount, leadsCount, offers, leads, cases, allSkills, mySkills, planCode, planActiveUntil, planCodeRaw } = data;
+  const { specialist, profileStatus, viewsCount, leadsCount, offers, leads, cases, allSkills, mySkills, planCode, planActiveUntil, planCodeRaw, isPaid, leadsTeaser } = data;
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const requestedTab = searchParams.get("tab");
@@ -118,6 +119,11 @@ export default function SpecialistDashboard({
   const [editingProfile, setEditingProfile] = useState(false);
 
   const totalOfferCount = offers.length;
+
+  // Без оплаченного тарифа закрыты заявки, доска объявлений и заказы (на уровне
+  // базы тоже — миграция 1755000071), профиль и услуги скрыты от посетителей.
+  const lockedTabs = isPaid ? [] : ["leads", "jobboard", "orders", "archive"];
+  const shownTab = lockedTabs.includes(tab) ? "locked" : tab;
   const newLeadsCount = leads.filter((l) => l.status === "new").length;
 
   // "Лендинг" — только на тарифе с профилем-лендингом вместо обычной
@@ -128,6 +134,21 @@ export default function SpecialistDashboard({
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-28 pt-8 sm:px-6 lg:px-8 lg:pb-8">
+      {!isPaid && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border-2 border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
+          <p className="min-w-0 flex-1">
+            <span className="font-bold">Профиль пока скрыт от посетителей.</span> Регистрация бесплатная. Чтобы профиль и услуги появились в каталоге, а вы получали заявки, подключите тариф «Базовый»: {promoPriceText()}.
+          </p>
+          <button
+            type="button"
+            onClick={() => setTab("plan")}
+            className="shrink-0 rounded-full bg-indigo-600 px-5 py-2 text-sm font-bold text-white hover:bg-indigo-700"
+          >
+            Выбрать тариф
+          </button>
+        </div>
+      )}
+
       {profileStatus === "pending" && (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           Ваш профиль на модерации — станет виден в каталоге, когда его
@@ -157,11 +178,34 @@ export default function SpecialistDashboard({
           badges={{ leads: newLeadsCount }}
           name={specialist.name}
           initials={specialist.avatarInitials}
-          planLabel={`Тариф «${currentPlan.title}»`}
+          locked={lockedTabs}
+          planLabel={isPaid ? `Тариф «${currentPlan.title}»` : "Тариф не оплачен"}
         />
         <div className="min-w-0">
       <div className="mt-6">
-        {tab === "overview" && (
+        {shownTab === "locked" && (
+          <PaidLock
+            title={
+              tab === "leads"
+                ? leadsTeaser > 0
+                  ? `Вас ждут заявок: ${leadsTeaser}`
+                  : "Заявки откроются после оплаты тарифа"
+                : tab === "jobboard"
+                  ? "Доска объявлений откроется после оплаты тарифа"
+                  : "Заказы откроются после оплаты тарифа"
+            }
+            text={
+              tab === "leads"
+                ? "Имена и тексты заявок видны специалистам с оплаченным тарифом. Подключите тариф, чтобы открыть заявки и отвечать заказчикам."
+                : tab === "jobboard"
+                  ? "Здесь заказчики публикуют задачи, на которые специалисты откликаются. Доступ только с оплаченным тарифом."
+                  : "Заказы и архив сделок доступны с оплаченным тарифом."
+            }
+            onOpenPlan={() => setTab("plan")}
+          />
+        )}
+
+        {shownTab === "overview" && (
           <div className="flex flex-col gap-6">
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
               <StatCard label="Просмотры профиля" value={viewsCount} />
@@ -223,7 +267,7 @@ export default function SpecialistDashboard({
           </div>
         )}
 
-        {tab === "profile" && (
+        {shownTab === "profile" && (
           <div className="rounded-2xl border border-zinc-200 bg-white p-5">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold text-zinc-900">
@@ -291,8 +335,13 @@ export default function SpecialistDashboard({
           </div>
         )}
 
-        {tab === "services" && (
+        {shownTab === "services" && (
           <div className="flex flex-col gap-6">
+            {!isPaid && (
+              <p className="rounded-xl bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
+                Эти услуги пока видите только вы. Они появятся в каталоге после оплаты тарифа.
+              </p>
+            )}
             {groupOffersByCategory(offers).map((group) => {
               const style = getCategoryStyle(group.categorySlug);
               return (
@@ -424,7 +473,7 @@ export default function SpecialistDashboard({
           </div>
         )}
 
-        {tab === "leads" && openLeadId && (() => {
+        {shownTab === "leads" && openLeadId && (() => {
           const lead = leads.find((l) => l.id === openLeadId);
           if (!lead || !user) return null;
           return (
@@ -450,7 +499,7 @@ export default function SpecialistDashboard({
           );
         })()}
 
-        {tab === "leads" && !openLeadId && (
+        {shownTab === "leads" && !openLeadId && (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {leads.length === 0 && (
               <p className="col-span-full text-sm text-zinc-500">У вас пока нет заявок.</p>
@@ -493,14 +542,14 @@ export default function SpecialistDashboard({
           </div>
         )}
 
-        {tab === "jobboard" && user && (
+        {shownTab === "jobboard" && user && (
           <SpecialistJobBoard specialistProfileId={specialist.id} currentUserId={user.id} />
         )}
 
-        {tab === "orders" && <OrdersTab role="specialist" ownId={specialist.id} archive={false} />}
-        {tab === "archive" && <OrdersTab role="specialist" ownId={specialist.id} archive={true} />}
+        {shownTab === "orders" && <OrdersTab role="specialist" ownId={specialist.id} archive={false} />}
+        {shownTab === "archive" && <OrdersTab role="specialist" ownId={specialist.id} archive={true} />}
 
-        {tab === "reviews" && (
+        {shownTab === "reviews" && (
           <div className="flex flex-col gap-3">
             {specialist.reviews.length === 0 && (
               <p className="text-sm text-zinc-500">Отзывов пока нет.</p>
@@ -528,11 +577,11 @@ export default function SpecialistDashboard({
           </div>
         )}
 
-        {tab === "analytics" && (
+        {shownTab === "analytics" && (
           <AnalyticsPanel planCodeRaw={planCodeRaw} activeUntil={planActiveUntil} onOpenPlan={() => setTab("plan")} />
         )}
 
-        {tab === "plan" && (
+        {shownTab === "plan" && (
           <div className="flex flex-col gap-4">
             <div className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5">
               <span
@@ -578,7 +627,7 @@ export default function SpecialistDashboard({
           </div>
         )}
 
-        {tab === "blog" && (
+        {shownTab === "blog" && (
           <SpecialistBlogTab
             profileId={specialist.id}
             profileStatus={profileStatus}
@@ -587,7 +636,7 @@ export default function SpecialistDashboard({
           />
         )}
 
-        {tab === "landing" && currentPlan.customLanding && (
+        {shownTab === "landing" && currentPlan.customLanding && (
           <PremiumLandingEditor specialistId={specialist.id} />
         )}
       </div>

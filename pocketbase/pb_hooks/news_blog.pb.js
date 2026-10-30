@@ -12,6 +12,7 @@ onRecordCreateRequest((e) => {
     const profile = lib.loadAuthor(e.record, e.auth ? e.auth.id : "")
     lib.checkContent(e.record)
     lib.checkRate(profile)
+    e.record.set("author_name", profile.get("public_name"))
     e.record.set("status", "pending")
     e.record.set("kind", "article")
     e.record.set("moderation_note", "")
@@ -24,8 +25,9 @@ onRecordUpdateRequest((e) => {
   const isAdmin = e.hasSuperuserAuth() || callerRole === "admin"
   if (!isAdmin && e.record.get("author_profile_id")) {
     const lib = require(`${__hooks}/news_blog_lib.js`)
-    lib.loadAuthor(e.record, e.auth ? e.auth.id : "")
+    const profile = lib.loadAuthor(e.record, e.auth ? e.auth.id : "")
     lib.checkContent(e.record)
+    e.record.set("author_name", profile.get("public_name"))
     // повторная отправка после отказа/правка на модерации: частота не
     // проверяется, статус всегда pending, прежняя причина отказа снимается
     e.record.set("status", "pending")

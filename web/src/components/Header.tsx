@@ -7,7 +7,6 @@ import HeaderCta from "./HeaderCta";
 
 const NAV_LINKS = [
   { href: "/services", label: "Услуги" },
-  { href: "/specialists", label: "Специалисты" },
   { href: "/categories", label: "Категории" },
   { href: "/events", label: "AI-события" },
   { href: "/news", label: "Новости" },

@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import NewsBody from "@/components/news/NewsBody";
+import { htmlToMarkdown } from "@/lib/html-to-markdown";
 
 // Редактор текста с кнопками форматирования и живым предпросмотром — тот же,
 // что в админке для новостей (admin/NewsTab.tsx), вынесен сюда, чтобы
@@ -90,6 +91,22 @@ export default function MarkdownEditor({
     setBody(value.slice(0, s) + text + value.slice(e), s + text.length, s + text.length);
   }
 
+  // Вставка из Word / Google Docs / сайта: если в буфере есть форматирование,
+  // переводим его в Markdown (см. lib/html-to-markdown.ts). Ctrl+Shift+V и
+  // текст без разметки вставляются как обычно.
+  function handlePaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
+    const html = e.clipboardData.getData("text/html");
+    if (!html) return;
+    const md = htmlToMarkdown(html);
+    if (!md) return;
+    e.preventDefault();
+    const el = ref.current;
+    const s = el ? el.selectionStart : value.length;
+    const isBlock = md.includes("\n");
+    const lead = isBlock && s > 0 && value[s - 1] !== "\n" ? "\n\n" : "";
+    insertText(lead + md + (isBlock ? "\n\n" : ""));
+  }
+
   async function insertImage(file: File) {
     if (!uploadImage) return;
     setBusy(true);
@@ -151,6 +168,7 @@ export default function MarkdownEditor({
           ref={ref}
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          onPaste={handlePaste}
           rows={rows}
           className={`${fieldClass} font-mono leading-relaxed`}
           placeholder={placeholder ?? "## Заголовок раздела\n\nОбычный абзац. Можно **жирный**, *курсив*, [ссылку](https://…).\n\n### Подзаголовок\n\n- пункт списка"}
@@ -163,6 +181,8 @@ export default function MarkdownEditor({
       </div>
       <p className="mt-1 text-[11px] text-zinc-400">
         Заголовки: ## крупный, ### средний, #### мелкий. **жирный**, *курсив*. Пустая строка между абзацами.
+        Текст из Word/Google Docs можно вставлять сразу: заголовки, жирный, курсив, списки и ссылки сохранятся
+        (шрифты, цвета и красная строка не переносятся; Ctrl+Shift+V вставляет без форматирования).
       </p>
       {error && <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
     </div>

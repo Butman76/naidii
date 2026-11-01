@@ -18,7 +18,7 @@ export default function Header() {
   const pathname = usePathname();
 
   return (
-    <header className="bg-zinc-900 shadow-[inset_0_-1px_0_theme(colors.zinc.800)]">
+    <header className="relative bg-[#2e1065]">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-4 py-4 sm:px-6 lg:px-8">
         <Link
           href="/"
@@ -56,6 +56,7 @@ export default function Header() {
           <HeaderCta />
         </div>
       </div>
+      <span aria-hidden="true" className="neon-line" />
     </header>
   );
 }

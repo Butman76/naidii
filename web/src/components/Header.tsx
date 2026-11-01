@@ -19,13 +19,15 @@ export default function Header() {
   const pathname = usePathname();
 
   return (
-    <header className="bg-white shadow-[inset_0_-1px_0_theme(colors.zinc.200)]">
+    <header className="bg-zinc-900 shadow-[inset_0_-1px_0_theme(colors.zinc.800)]">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-4 py-4 sm:px-6 lg:px-8">
         <Link
           href="/"
-          className="font-[family-name:var(--font-golos)] text-xl font-extrabold tracking-tight text-zinc-900"
+          aria-label="НайдИИ"
+          className="font-[family-name:var(--font-unbounded)] text-2xl font-extrabold tracking-tight sm:text-3xl"
         >
-          НайдИИ
+          <span className="neon-green">Найд</span>
+          <span className="neon-red">ИИ</span>
         </Link>
 
         <nav className="hidden items-center gap-6 font-[family-name:var(--font-golos)] text-sm font-medium lg:flex">
@@ -36,12 +38,12 @@ export default function Header() {
                 key={link.href}
                 href={link.href}
                 className={`group relative pb-1 transition-colors ${
-                  active ? "text-zinc-900" : "text-zinc-600 hover:text-zinc-900"
+                  active ? "text-white" : "text-zinc-300 hover:text-white"
                 }`}
               >
                 {link.label}
                 <span
-                  className={`absolute inset-x-0 -bottom-px h-0.5 origin-left scale-x-0 bg-gradient-to-r from-blue-600 to-cyan-500 transition-transform duration-200 group-hover:scale-x-100 ${
+                  className={`absolute inset-x-0 -bottom-px h-0.5 origin-left scale-x-0 bg-gradient-to-r from-blue-400 to-cyan-300 transition-transform duration-200 group-hover:scale-x-100 ${
                     active ? "scale-x-100" : ""
                   }`}
                 />

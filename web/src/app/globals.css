@@ -63,6 +63,68 @@ textarea,
   -webkit-user-select: text;
 }
 
+/* Логотип в шапке как неоновая вывеска (Header.tsx). «Найд» горит зелёным
+   сразу; «ИИ» после загрузки страницы стоит погасшей серой трубкой, потом
+   несколько раз промаргивается и остаётся гореть красным. Свечение — это
+   стопка text-shadow: белая "раскалённая" сердцевина + всё более широкие
+   цветные ореолы. Базовый стиль уже конечное состояние (горит), анимация
+   включается только при обычных настройках движения — при
+   prefers-reduced-motion логотип просто горит без мигания. */
+.neon-green {
+  color: #e6ffec;
+  text-shadow:
+    0 0 2px #fff,
+    0 0 7px #39ff6a,
+    0 0 16px #1fff55,
+    0 0 34px #00e03c,
+    0 0 60px rgba(0, 224, 60, 0.55);
+}
+.neon-red {
+  color: #ffe3e3;
+  text-shadow:
+    0 0 2px #fff,
+    0 0 7px #ff3b3b,
+    0 0 16px #ff1a1a,
+    0 0 34px #e60000,
+    0 0 60px rgba(230, 0, 0, 0.55);
+}
+@keyframes neon-ignite {
+  0%,
+  9%,
+  15%,
+  19%,
+  31%,
+  35% {
+    color: #52525b;
+    text-shadow: none;
+  }
+  10%,
+  13%,
+  21%,
+  29%,
+  37%,
+  46%,
+  100% {
+    color: #ffe3e3;
+    text-shadow:
+      0 0 2px #fff,
+      0 0 7px #ff3b3b,
+      0 0 16px #ff1a1a,
+      0 0 34px #e60000,
+      0 0 60px rgba(230, 0, 0, 0.55);
+  }
+  40%,
+  43% {
+    color: #8a4a4a;
+    text-shadow: 0 0 6px rgba(255, 26, 26, 0.35);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .neon-red {
+    animation: neon-ignite 2.6s linear 0.5s both;
+  }
+}
+
 /* Лёгкий 3D-наклон карточек услуг при наведении — см. ResultTypePlate.tsx.
    Обычный CSS, а не Tailwind-утилиты, чтобы не зависеть от того, есть ли в
    установленной версии Tailwind нативные 3D-transform утилиты. */

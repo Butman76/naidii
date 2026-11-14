@@ -12,6 +12,7 @@ const NAV_LINKS = [
   { href: "/news", label: "Новости" },
   { href: "/how-it-works", label: "Как это работает" },
   { href: "/tariffs", label: "Тарифы" },
+  { href: "https://apex.naidii.ru", label: "Царь горы" },
 ];
 
 export default function Header() {

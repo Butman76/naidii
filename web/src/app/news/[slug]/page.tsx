@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title: `${post.title} | НайдИИ`,
     description,
-    alternates: { canonical: \https://naidii.ru/news/${post.slug}` },
+       alternates: { canonical: `https://naidii.ru/news/${post.slug}` },
     openGraph: {
       type: "article",
       title: post.title,

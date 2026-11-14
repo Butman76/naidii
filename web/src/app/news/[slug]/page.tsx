@@ -24,13 +24,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title: `${post.title} | НайдИИ`,
     description,
-    alternates: { canonical: `/news/${post.slug}` },
+    alternates: { canonical: \https://naidii.ru/news/${post.slug}` },
     openGraph: {
       type: "article",
       title: post.title,
       description,
       publishedTime: post.publishedAt,
-      images: post.imageUrl ? [post.imageUrl] : undefined,
+      images: post.imageUrl ? [post.imageUrl] : ['https://naidii.ru/og-default.jpg'],
     },
   };
 }

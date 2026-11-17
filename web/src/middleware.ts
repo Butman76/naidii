@@ -26,6 +26,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Витрина APEX («Царь горы», пункт меню на naidii.ru) — это отдельная
+  // landing-страница «скоро запуск», а не профиль специалиста.
+  // См. web/src/app/apex/page.tsx.
+  if (subdomain === "apex") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/apex";
+    return NextResponse.rewrite(url);
+  }
+
   try {
     const res = await fetch(
       `${PB_URL}/api/collections/specialist_profiles/records?` +
